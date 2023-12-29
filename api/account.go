@@ -68,7 +68,7 @@ func HandleAccountRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if isValidUsername(request.Username) {
+	if !isValidUsername(request.Username) {
 		http.Error(w, "invalid username", http.StatusBadRequest)
 		return
 	}
@@ -116,7 +116,7 @@ func HandleAccountLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if isValidUsername(request.Username) {
+	if !isValidUsername(request.Username) {
 		http.Error(w, "invalid username", http.StatusBadRequest)
 		return
 	}
