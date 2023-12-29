@@ -142,7 +142,7 @@ func (s *Server) HandleAccountLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token := make([]byte, 16)
+	token := make([]byte, 32)
 
 	_, err = rand.Read(token)
 	if err != nil {
