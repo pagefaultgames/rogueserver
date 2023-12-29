@@ -40,7 +40,7 @@ func GetUsernameFromToken(token []byte) (string, error) {
 
 func GetAccountKeySaltFromUsername(username string) ([]byte, []byte, error) {
 	var key, salt []byte
-	err := handle.QueryRow("SELECT [key], salt FROM accounts WHERE username = ?", username).Scan(&key, &salt)
+	err := handle.QueryRow("SELECT a.key, a.salt FROM accounts a WHERE a.username = ?", username).Scan(&key, &salt)
 	if err != nil {
 		return nil, nil, err
 	}
