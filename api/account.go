@@ -21,7 +21,7 @@ const (
 	argonKeyLength = 32
 )
 
-var isValidUsername = regexp.MustCompile(`^\w{6,16}$`).MatchString
+var isValidUsername = regexp.MustCompile(`^\w{1,16}$`).MatchString
 
 // /api/account/info - get account info
 
@@ -96,7 +96,7 @@ func HandleAccountRegister(w http.ResponseWriter, r *http.Request) {
 
 	err = db.AddAccountRecord(uuid, request.Username, argon2.IDKey([]byte(request.Password), salt, argonTime, argonMemory, argonThreads, argonKeyLength), salt)
 	if err != nil {
-		http.Error(w, "failed to add account record", http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("failed to add account record: %s", err), http.StatusInternalServerError)
 		return
 	}
 
