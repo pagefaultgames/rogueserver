@@ -37,6 +37,10 @@ func main() {
 		log.Fatalf("failed to create net listener: %s", err)
 	}
 
+	if *network == "unix" {
+		os.Chmod(*address, 0777)
+	}
+
 	// account
 	http.HandleFunc("/api/account/info", api.HandleAccountInfo)
 	http.HandleFunc("/api/account/register", api.HandleAccountRegister)
