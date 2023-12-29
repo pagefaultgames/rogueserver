@@ -41,6 +41,11 @@ func (s *Server) HandleAccountInfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if len(token) != 32 {
+		http.Error(w, "invalid token", http.StatusBadRequest)
+		return
+	}
+
 	username, err := db.GetUsernameFromToken(token)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
