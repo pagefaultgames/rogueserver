@@ -13,7 +13,7 @@ import (
 
 func main() {
 	proto := flag.String("proto", "tcp", "protocol for api to use (tcp, unix)")
-	address := flag.String("address", "0.0.0.0", "network address for server to listen on")
+	addr := flag.String("addr", "0.0.0.0", "network address for server to listen on")
 
 	dbuser := flag.String("dbuser", "pokerogue", "database username")
 	dbpass := flag.String("dbpass", "", "database password")
@@ -29,16 +29,16 @@ func main() {
 	}
 
 	if *proto == "unix" {
-		os.Remove(*address)
+		os.Remove(*addr)
 	}
 
-	listener, err := net.Listen(*proto, *address)
+	listener, err := net.Listen(*proto, *addr)
 	if err != nil {
 		log.Fatalf("failed to create net listener: %s", err)
 	}
 
 	if *proto == "unix" {
-		os.Chmod(*address, 0777)
+		os.Chmod(*addr, 0777)
 	}
 
 	// account
