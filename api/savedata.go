@@ -2,7 +2,7 @@ package api
 
 import "net/http"
 
-// /api/savedata/get - get save data
+// /savedata/get - get save data
 
 type SavedataGetRequest struct{}
 type SavedataGetResponse struct{}
@@ -11,7 +11,7 @@ func (s *Server) HandleSavedataGet(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// /api/savedata/update - update save data
+// /savedata/update - update save data
 
 type SavedataUpdateRequest struct{}
 type SavedataUpdateResponse struct{}
@@ -20,7 +20,7 @@ func (s *Server) HandleSavedataUpdate(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// /api/savedata/delete - delete save date
+// /savedata/delete - delete save date
 
 type SavedataDeleteRequest struct{}
 type SavedataDeleteResponse struct{}

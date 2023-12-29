@@ -23,7 +23,7 @@ const (
 
 var isValidUsername = regexp.MustCompile(`^\w{1,16}$`).MatchString
 
-// /api/account/info - get account info
+// /account/info - get account info
 
 type AccountInfoResponse struct{
 	Username string `json:"string"`
@@ -61,7 +61,7 @@ func (s *Server) HandleAccountInfo(w http.ResponseWriter, r *http.Request) {
 	w.Write(response)
 }
 
-// /api/account/register - register account
+// /account/register - register account
 
 type AccountRegisterRequest GenericAuthRequest
 
@@ -108,7 +108,7 @@ func (s *Server) HandleAccountRegister(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// /api/account/login - log into account
+// /account/login - log into account
 
 type AccountLoginRequest GenericAuthRequest
 type AccountLoginResponse GenericAuthResponse
@@ -170,7 +170,7 @@ func (s *Server) HandleAccountLogin(w http.ResponseWriter, r *http.Request) {
 	w.Write(response)
 }
 
-// /api/account/logout - log out of account
+// /account/logout - log out of account
 
 func (s *Server) HandleAccountLogout(w http.ResponseWriter, r *http.Request) {
 	token, err := base64.StdEncoding.DecodeString(r.Header.Get("Authorization"))
