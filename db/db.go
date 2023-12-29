@@ -17,4 +17,3 @@ func Init(username, password, protocol, address, database string) error {
 
 	return nil
 }
-

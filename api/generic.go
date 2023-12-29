@@ -1,11 +1,5 @@
 package api
 
-// error
-
-type ErrorResponse struct{
-	Message string `json:"message"`
-}
-
 // auth
 
 type GenericAuthRequest struct {
