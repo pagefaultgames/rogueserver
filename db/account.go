@@ -16,7 +16,7 @@ func AddAccountRecord(uuid []byte, username string, key, salt []byte) error {
 }
 
 func AddAccountSession(username string, token []byte) error {
-	_, err := handle.Exec("INSERT INTO sessions (token, uuid, expire) SELECT a.uuid, ?, DATE_ADD(UTC_TIMESTAMP(), INTERVAL 1 WEEK) FROM accounts a WHERE a.username = ?", token, username)
+	_, err := handle.Exec("INSERT INTO sessions (uuid, token, expire) SELECT a.uuid, ?, DATE_ADD(UTC_TIMESTAMP(), INTERVAL 1 WEEK) FROM accounts a WHERE a.username = ?", token, username)
 	if err != nil {
 		return err
 	}
