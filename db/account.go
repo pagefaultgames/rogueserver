@@ -7,7 +7,7 @@ import (
 )
 
 func AddAccountRecord(uuid []byte, username string, key, salt []byte) error {
-	_, err := handle.Exec("INSERT INTO accounts (uuid, username, key, salt, registered) VALUES (?, ?, ?, ?, UTC_TIMESTAMP())", uuid, username, key, salt)
+	_, err := handle.Exec("INSERT INTO accounts (uuid, username, [key], salt, registered) VALUES (?, ?, ?, ?, UTC_TIMESTAMP())", uuid, username, key, salt)
 	if err != nil {
 		return err
 	}
@@ -40,7 +40,7 @@ func GetUsernameFromToken(token []byte) (string, error) {
 
 func GetAccountKeySaltFromUsername(username string) ([]byte, []byte, error) {
 	var key, salt []byte
-	err := handle.QueryRow("SELECT key, salt FROM accounts WHERE username = ?", username).Scan(&key, &salt)
+	err := handle.QueryRow("SELECT [key], salt FROM accounts WHERE username = ?", username).Scan(&key, &salt)
 	if err != nil {
 		return nil, nil, err
 	}
