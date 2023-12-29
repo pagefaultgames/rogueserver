@@ -28,10 +28,6 @@ func GetUsernameFromToken(token []byte) (string, error) {
 	var username string
 	err := handle.QueryRow("SELECT a.username FROM accounts a JOIN sessions s ON s.uuid = a.uuid WHERE s.token = ? AND s.expire > UTC_TIMESTAMP()", token).Scan(&username)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return "", err
-		}
-
 		return "", err
 	}
 
