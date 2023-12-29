@@ -8,8 +8,8 @@ type Server struct {
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if s.Debug {
-		w.Header().Add("Access-Control-Allow-Origin", "*")
-
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		
 		if r.Method == "OPTIONS" {
 			w.WriteHeader(http.StatusOK)
 			return
