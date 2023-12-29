@@ -18,7 +18,7 @@ func main() {
 	dbuser := flag.String("dbuser", "pokerogue", "database username")
 	dbpass := flag.String("dbpass", "", "database password")
 	dbproto := flag.String("dbproto", "tcp", "protocol for database connection")
-	dbaddr := flag.String("dbaddr", "127.0.0.1", "database address")
+	dbaddr := flag.String("dbaddr", "localhost", "database address")
 	dbname := flag.String("dbname", "pokeroguedb", "database name")
 
 	flag.Parse()
