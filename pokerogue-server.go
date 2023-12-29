@@ -13,7 +13,7 @@ import (
 
 func main() {
 	proto := flag.String("proto", "tcp", "protocol for api to use (tcp, unix)")
-	addr := flag.String("addr", "0.0.0.0", "network address for server to listen on")
+	addr := flag.String("addr", "0.0.0.0", "network address for api to listen on")
 
 	dbuser := flag.String("dbuser", "pokerogue", "database username")
 	dbpass := flag.String("dbpass", "", "database password")
