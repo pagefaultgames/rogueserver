@@ -7,7 +7,7 @@ import "net/http"
 type SavedataGetRequest struct{}
 type SavedataGetResponse struct{}
 
-func HandleSavedataGet(w http.ResponseWriter, r *http.Request) {
+func (s *Server) HandleSavedataGet(w http.ResponseWriter, r *http.Request) {
 
 }
 
@@ -16,7 +16,7 @@ func HandleSavedataGet(w http.ResponseWriter, r *http.Request) {
 type SavedataUpdateRequest struct{}
 type SavedataUpdateResponse struct{}
 
-func HandleSavedataUpdate(w http.ResponseWriter, r *http.Request) {
+func (s *Server) HandleSavedataUpdate(w http.ResponseWriter, r *http.Request) {
 
 }
 
@@ -25,6 +25,6 @@ func HandleSavedataUpdate(w http.ResponseWriter, r *http.Request) {
 type SavedataDeleteRequest struct{}
 type SavedataDeleteResponse struct{}
 
-func HandleSavedataDelete(w http.ResponseWriter, r *http.Request) {
+func (s *Server) HandleSavedataDelete(w http.ResponseWriter, r *http.Request) {
 
 }

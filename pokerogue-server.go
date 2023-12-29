@@ -12,6 +12,8 @@ import (
 )
 
 func main() {
+	debug := flag.Bool("debug", false, "debug mode")
+
 	proto := flag.String("proto", "tcp", "protocol for api to use (tcp, unix)")
 	addr := flag.String("addr", "0.0.0.0", "network address for api to listen on")
 
@@ -41,18 +43,7 @@ func main() {
 		os.Chmod(*addr, 0777)
 	}
 
-	// account
-	http.HandleFunc("/account/info", api.HandleAccountInfo)
-	http.HandleFunc("/account/register", api.HandleAccountRegister)
-	http.HandleFunc("/account/login", api.HandleAccountLogin)
-	http.HandleFunc("/account/logout", api.HandleAccountLogout)
-
-	// savedata
-	http.HandleFunc("/savedata/get", api.HandleSavedataGet)
-	http.HandleFunc("/savedata/update", api.HandleSavedataUpdate)
-	http.HandleFunc("/savedata/delete", api.HandleSavedataDelete)
-	
-	err = http.Serve(listener, nil)
+	err = http.Serve(listener, &api.Server{Debug: *debug})
 	if err != nil {
 		log.Fatalf("failed to create http server or server errored: %s", err)
 	}

@@ -29,7 +29,7 @@ type AccountInfoResponse struct{
 	Username string `json:"string"`
 }
 
-func HandleAccountInfo(w http.ResponseWriter, r *http.Request) {
+func (s *Server) HandleAccountInfo(w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("Authorization") == "" {
 		http.Error(w, "missing token", http.StatusBadRequest)
 		return
@@ -60,7 +60,7 @@ func HandleAccountInfo(w http.ResponseWriter, r *http.Request) {
 
 type AccountRegisterRequest GenericAuthRequest
 
-func HandleAccountRegister(w http.ResponseWriter, r *http.Request) {
+func (s *Server) HandleAccountRegister(w http.ResponseWriter, r *http.Request) {
 	var request AccountRegisterRequest
 	err := json.NewDecoder(r.Body).Decode(&request)
 	if err != nil {
@@ -108,7 +108,7 @@ func HandleAccountRegister(w http.ResponseWriter, r *http.Request) {
 type AccountLoginRequest GenericAuthRequest
 type AccountLoginResponse GenericAuthResponse
 
-func HandleAccountLogin(w http.ResponseWriter, r *http.Request) {
+func (s *Server) HandleAccountLogin(w http.ResponseWriter, r *http.Request) {
 	var request AccountLoginRequest
 	err := json.NewDecoder(r.Body).Decode(&request)
 	if err != nil {
@@ -167,7 +167,7 @@ func HandleAccountLogin(w http.ResponseWriter, r *http.Request) {
 
 // /api/account/logout - log out of account
 
-func HandleAccountLogout(w http.ResponseWriter, r *http.Request) {
+func (s *Server) HandleAccountLogout(w http.ResponseWriter, r *http.Request) {
 	token, err := base64.StdEncoding.DecodeString(r.Header.Get("Authorization"))
 	if err != nil {
 		http.Error(w, fmt.Sprintf("failed to decode token: %s", err), http.StatusBadRequest)
