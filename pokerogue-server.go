@@ -5,6 +5,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os"
 
 	"github.com/Flashfyre/pokerogue-server/api"
 	"github.com/Flashfyre/pokerogue-server/db"
@@ -25,6 +26,10 @@ func main() {
 	err := db.Init(*dbuser, *dbpass, *dbproto, *dbaddr, *dbname)
 	if err != nil {
 		log.Fatalf("failed to initialize database: %s", err)
+	}
+
+	if *network == "unix" {
+		os.Remove(*address)
 	}
 
 	listener, err := net.Listen(*network, *address)
