@@ -12,7 +12,7 @@ import (
 )
 
 func main() {
-	network := flag.String("network", "tcp", "network type for server to listen on (tcp, unix)")
+	proto := flag.String("proto", "tcp", "protocol for api to use (tcp, unix)")
 	address := flag.String("address", "0.0.0.0", "network address for server to listen on")
 
 	dbuser := flag.String("dbuser", "pokerogue", "database username")
@@ -28,16 +28,16 @@ func main() {
 		log.Fatalf("failed to initialize database: %s", err)
 	}
 
-	if *network == "unix" {
+	if *proto == "unix" {
 		os.Remove(*address)
 	}
 
-	listener, err := net.Listen(*network, *address)
+	listener, err := net.Listen(*proto, *address)
 	if err != nil {
 		log.Fatalf("failed to create net listener: %s", err)
 	}
 
-	if *network == "unix" {
+	if *proto == "unix" {
 		os.Chmod(*address, 0777)
 	}
 
