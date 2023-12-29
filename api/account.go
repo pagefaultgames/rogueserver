@@ -21,7 +21,7 @@ const (
 	argonKeyLength = 32
 )
 
-var isValidUsername = regexp.MustCompile(`^\w{6,16}$`).MatchString
+var isValidUsername = regexp.MustCompile(`^\w{1,16}$`).MatchString
 
 // /api/account/info - get account info
 
