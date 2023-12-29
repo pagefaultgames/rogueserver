@@ -42,15 +42,15 @@ func main() {
 	}
 
 	// account
-	http.HandleFunc("/api/account/info", api.HandleAccountInfo)
-	http.HandleFunc("/api/account/register", api.HandleAccountRegister)
-	http.HandleFunc("/api/account/login", api.HandleAccountLogin)
-	http.HandleFunc("/api/account/logout", api.HandleAccountLogout)
+	http.HandleFunc("/account/info", api.HandleAccountInfo)
+	http.HandleFunc("/account/register", api.HandleAccountRegister)
+	http.HandleFunc("/account/login", api.HandleAccountLogin)
+	http.HandleFunc("/account/logout", api.HandleAccountLogout)
 
 	// savedata
-	http.HandleFunc("/api/savedata/get", api.HandleSavedataGet)
-	http.HandleFunc("/api/savedata/update", api.HandleSavedataUpdate)
-	http.HandleFunc("/api/savedata/delete", api.HandleSavedataDelete)
+	http.HandleFunc("/savedata/get", api.HandleSavedataGet)
+	http.HandleFunc("/savedata/update", api.HandleSavedataUpdate)
+	http.HandleFunc("/savedata/delete", api.HandleSavedataDelete)
 	
 	err = http.Serve(listener, nil)
 	if err != nil {
