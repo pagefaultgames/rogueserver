@@ -5,9 +5,11 @@ import (
 	"crypto/rand"
 	"database/sql"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"regexp"
 
 	"github.com/Flashfyre/pokerogue-server/db"
@@ -26,7 +28,8 @@ var isValidUsername = regexp.MustCompile(`^\w{1,16}$`).MatchString
 // /account/info - get account info
 
 type AccountInfoResponse struct{
-	Username string `json:"string"`
+	Username string `json:"username"`
+	HasGameSession bool `json:"hasGameSession"`
 }
 
 func (s *Server) HandleAccountInfo(w http.ResponseWriter, r *http.Request) {
@@ -36,7 +39,15 @@ func (s *Server) HandleAccountInfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response, err := json.Marshal(AccountInfoResponse{Username: username})
+	uuid, err := GetUuidFromRequest(r) // lazy
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	_, err = os.Stat("userdata/" + hex.EncodeToString(uuid) + "/session.pzs")
+
+	response, err := json.Marshal(AccountInfoResponse{Username: username, HasGameSession: err != nil})
 	if err != nil {
 		http.Error(w, fmt.Sprintf("failed to marshal response json: %s", err), http.StatusInternalServerError)
 		return
