@@ -30,23 +30,7 @@ type AccountInfoResponse struct{
 }
 
 func (s *Server) HandleAccountInfo(w http.ResponseWriter, r *http.Request) {
-	if r.Header.Get("Authorization") == "" {
-		http.Error(w, "missing token", http.StatusBadRequest)
-		return
-	}
-
-	token, err := base64.StdEncoding.DecodeString(r.Header.Get("Authorization"))
-	if err != nil {
-		http.Error(w, fmt.Sprintf("failed to decode token: %s", err), http.StatusBadRequest)
-		return
-	}
-
-	if len(token) != 32 {
-		http.Error(w, "invalid token", http.StatusBadRequest)
-		return
-	}
-
-	username, err := db.GetUsernameFromToken(token)
+	username, err := GetUsernameFromRequest(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

@@ -49,7 +49,7 @@ func GetAccountKeySaltFromUsername(username string) ([]byte, []byte, error) {
 	return key, salt, nil
 }
 
-func GetUUIDFromToken(token []byte) ([]byte, error) {
+func GetUuidFromToken(token []byte) ([]byte, error) {
 	var uuid []byte
 	err := handle.QueryRow("SELECT uuid FROM sessions WHERE token = ? AND expire > UTC_TIMESTAMP()", token).Scan(&uuid)
 	if err != nil {
