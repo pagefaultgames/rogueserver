@@ -1,6 +1,9 @@
 package api
 
-import "net/http"
+import (
+	"encoding/gob"
+	"net/http"
+)
 
 type Server struct {
 	Debug bool
@@ -11,12 +14,15 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Headers", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "*")
 		w.Header().Set("Access-Control-Allow-Origin", "*")
-		
+
 		if r.Method == "OPTIONS" {
 			w.WriteHeader(http.StatusOK)
 			return
 		}
 	}
+
+	gob.Register([]interface{}{})
+	gob.Register(map[string]interface{}{})
 
 	switch r.URL.Path {
 	case "/account/info":

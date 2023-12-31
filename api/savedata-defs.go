@@ -46,7 +46,6 @@ type SessionSaveData struct {
 	GameMode       GameMode                 `json:"gameMode"`
 	Party          []PokemonData            `json:"party"`
 	EnemyParty     []PokemonData            `json:"enemyParty"`
-	EnemyField     []PokemonData            `json:"enemyField"`
 	Modifiers      []PersistentModifierData `json:"modifiers"`
 	EnemyModifiers []PersistentModifierData `json:"enemyModifiers"`
 	Arena          ArenaData                `json:"arena"`
