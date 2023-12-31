@@ -136,7 +136,7 @@ func (s *Server) HandleSavedataUpdate(w http.ResponseWriter, r *http.Request) {
 		compressed := zstdWriter.EncodeAll(gobBuffer.Bytes(), nil)
 
 		err = os.MkdirAll("userdata/"+hexUuid, 0755)
-		if !os.IsExist(err) {
+		if err != nil && !os.IsExist(err) {
 			http.Error(w, fmt.Sprintf("failed to create userdata folder: %s", err), http.StatusInternalServerError)
 			return
 		}
@@ -170,7 +170,7 @@ func (s *Server) HandleSavedataUpdate(w http.ResponseWriter, r *http.Request) {
 		compressed := zstdWriter.EncodeAll(gobBuffer.Bytes(), nil)
 
 		err = os.MkdirAll("userdata/"+hexUuid, 0755)
-		if !os.IsExist(err) {
+		if err != nil && !os.IsExist(err) {
 			http.Error(w, fmt.Sprintf("failed to create userdata folder: %s", err), http.StatusInternalServerError)
 			return
 		}
@@ -202,13 +202,13 @@ func (s *Server) HandleSavedataDelete(w http.ResponseWriter, r *http.Request) {
 	switch r.URL.Query().Get("datatype") {
 	case "0": // System
 		err := os.Remove("userdata/"+hexUuid+"/system.pzs")
-		if !os.IsNotExist(err) {
+		if err != nil && !os.IsNotExist(err) {
 			http.Error(w, fmt.Sprintf("failed to delete save file: %s", err), http.StatusInternalServerError)
 			return 
 		}
 	case "1": // Session
 		err := os.Remove("userdata/"+hexUuid+"/session.pzs")
-		if !os.IsNotExist(err) {
+		if err != nil && !os.IsNotExist(err) {
 			http.Error(w, fmt.Sprintf("failed to delete save file: %s", err), http.StatusInternalServerError)
 			return 
 		}
