@@ -21,6 +21,11 @@ func AddAccountSession(username string, token []byte) error {
 		return err
 	}
 
+	_, err = handle.Exec("UPDATE accounts SET lastLoggedIn = UTC_TIMESTAMP() WHERE username = ?", username)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
