@@ -47,7 +47,7 @@ func (s *Server) HandleAccountInfo(w http.ResponseWriter, r *http.Request) {
 
 	_, err = os.Stat("userdata/" + hex.EncodeToString(uuid) + "/session.pzs")
 
-	response, err := json.Marshal(AccountInfoResponse{Username: username, HasGameSession: err != nil})
+	response, err := json.Marshal(AccountInfoResponse{Username: username, HasGameSession: err == nil})
 	if err != nil {
 		http.Error(w, fmt.Sprintf("failed to marshal response json: %s", err), http.StatusInternalServerError)
 		return
