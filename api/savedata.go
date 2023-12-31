@@ -188,7 +188,7 @@ func (s *Server) HandleSavedataUpdate(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// /savedata/delete - delete save date
+// /savedata/delete - delete save data
 
 func (s *Server) HandleSavedataDelete(w http.ResponseWriter, r *http.Request) {
 	uuid, err := GetUuidFromRequest(r)
