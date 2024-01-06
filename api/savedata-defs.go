@@ -18,6 +18,7 @@ type DexData map[int]DexEntry
 type DexEntry struct {
 	SeenAttr     interface{} `json:"seenAttr"`   // integer or string
 	CaughtAttr   interface{} `json:"caughtAttr"` // integer or string
+	NatureAttr   int         `json:"natureAttr"`
 	SeenCount    int         `json:"seenCount"`
 	CaughtCount  int         `json:"caughtCount"`
 	HatchedCount int         `json:"hatchedCount"`
