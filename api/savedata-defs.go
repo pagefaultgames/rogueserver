@@ -4,6 +4,7 @@ type SystemSaveData struct {
 	TrainerId      int            `json:"trainerId"`
 	SecretId       int            `json:"secretId"`
 	DexData        DexData        `json:"dexData"`
+	GameStats      GameStats      `json:"gameStats"`
 	Unlocks        Unlocks        `json:"unlocks"`
 	AchvUnlocks    AchvUnlocks    `json:"achvUnlocks"`
 	VoucherUnlocks VoucherUnlocks `json:"voucherUnlocks"`
@@ -24,6 +25,8 @@ type DexEntry struct {
 	HatchedCount int         `json:"hatchedCount"`
 	Ivs          []int       `json:"ivs"`
 }
+
+type GameStats interface{}
 
 type Unlocks map[int]bool
 
