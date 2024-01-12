@@ -47,6 +47,7 @@ type GachaType int
 
 type SessionSaveData struct {
 	Seed           string                   `json:"seed"`
+	PlayTime       int                      `json:"playTime"`
 	GameMode       GameMode                 `json:"gameMode"`
 	Party          []PokemonData            `json:"party"`
 	EnemyParty     []PokemonData            `json:"enemyParty"`
