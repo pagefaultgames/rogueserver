@@ -3,6 +3,7 @@ package api
 type SystemSaveData struct {
 	TrainerId      int            `json:"trainerId"`
 	SecretId       int            `json:"secretId"`
+	Gender         int            `json:"gender"`
 	DexData        DexData        `json:"dexData"`
 	GameStats      GameStats      `json:"gameStats"`
 	Unlocks        Unlocks        `json:"unlocks"`
@@ -76,3 +77,19 @@ type PokeballCounts map[string]int
 type BattleType int
 
 type TrainerData interface{}
+
+type SessionHistoryData struct {
+	Seed        string                   `json:"seed"`
+	PlayTime    int                      `json:"playTime"`
+	Result      SessionHistoryResult     `json:"sessionHistoryResult"`
+	GameMode    GameMode                 `json:"gameMode"`
+	Party       []PokemonData            `json:"party"`
+	Modifiers   []PersistentModifierData `json:"modifiers"`
+	Money       int                      `json:"money"`
+	WaveIndex   int                      `json:"waveIndex"`
+	BattleType  BattleType               `json:"battleType"`
+	GameVersion string                   `json:"gameVersion"`
+	Timestamp   int                      `json:"timestamp"`
+}
+
+type SessionHistoryResult int
