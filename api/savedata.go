@@ -120,6 +120,11 @@ func (s *Server) HandleSavedataUpdate(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		if system.TrainerId == 0 && system.SecretId == 0 {
+			http.Error(w, "invalid system data", http.StatusInternalServerError)
+			return
+		}
+
 		var gobBuffer bytes.Buffer
 		err = gob.NewEncoder(&gobBuffer).Encode(system)
 		if err != nil {
@@ -201,16 +206,16 @@ func (s *Server) HandleSavedataDelete(w http.ResponseWriter, r *http.Request) {
 
 	switch r.URL.Query().Get("datatype") {
 	case "0": // System
-		err := os.Remove("userdata/"+hexUuid+"/system.pzs")
+		err := os.Remove("userdata/" + hexUuid + "/system.pzs")
 		if err != nil && !os.IsNotExist(err) {
 			http.Error(w, fmt.Sprintf("failed to delete save file: %s", err), http.StatusInternalServerError)
-			return 
+			return
 		}
 	case "1": // Session
-		err := os.Remove("userdata/"+hexUuid+"/session.pzs")
+		err := os.Remove("userdata/" + hexUuid + "/session.pzs")
 		if err != nil && !os.IsNotExist(err) {
 			http.Error(w, fmt.Sprintf("failed to delete save file: %s", err), http.StatusInternalServerError)
-			return 
+			return
 		}
 	default:
 		http.Error(w, "invalid data type", http.StatusBadRequest)
