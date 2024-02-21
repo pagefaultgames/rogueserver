@@ -1,18 +1,19 @@
 package api
 
 type SystemSaveData struct {
-	TrainerId      int            `json:"trainerId"`
-	SecretId       int            `json:"secretId"`
-	Gender         int            `json:"gender"`
-	DexData        DexData        `json:"dexData"`
-	GameStats      GameStats      `json:"gameStats"`
-	Unlocks        Unlocks        `json:"unlocks"`
-	AchvUnlocks    AchvUnlocks    `json:"achvUnlocks"`
-	VoucherUnlocks VoucherUnlocks `json:"voucherUnlocks"`
-	VoucherCounts  VoucherCounts  `json:"voucherCounts"`
-	Eggs           []EggData      `json:"eggs"`
-	GameVersion    string         `json:"gameVersion"`
-	Timestamp      int            `json:"timestamp"`
+	TrainerId       int             `json:"trainerId"`
+	SecretId        int             `json:"secretId"`
+	Gender          int             `json:"gender"`
+	DexData         DexData         `json:"dexData"`
+	StarterMoveData StarterMoveData `json:"starterMoveData"`
+	GameStats       GameStats       `json:"gameStats"`
+	Unlocks         Unlocks         `json:"unlocks"`
+	AchvUnlocks     AchvUnlocks     `json:"achvUnlocks"`
+	VoucherUnlocks  VoucherUnlocks  `json:"voucherUnlocks"`
+	VoucherCounts   VoucherCounts   `json:"voucherCounts"`
+	Eggs            []EggData       `json:"eggs"`
+	GameVersion     string          `json:"gameVersion"`
+	Timestamp       int             `json:"timestamp"`
 }
 
 type DexData map[int]DexEntry
@@ -26,6 +27,8 @@ type DexEntry struct {
 	HatchedCount int         `json:"hatchedCount"`
 	Ivs          []int       `json:"ivs"`
 }
+
+type StarterMoveData map[int]interface{}
 
 type GameStats interface{}
 
