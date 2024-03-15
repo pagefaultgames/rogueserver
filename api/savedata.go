@@ -6,10 +6,12 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
 
+	"github.com/Flashfyre/pokerogue-server/db"
 	"github.com/klauspost/compress/zstd"
 )
 
@@ -128,6 +130,11 @@ func (s *Server) HandleSavedataUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	err = db.UpdateAccountLastActivity(uuid)
+	if err != nil {
+		log.Print("failed to update account last activity")
+	}
+
 	hexUuid := hex.EncodeToString(uuid)
 
 	switch r.URL.Query().Get("datatype") {
@@ -235,6 +242,11 @@ func (s *Server) HandleSavedataDelete(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
+	}
+
+	err = db.UpdateAccountLastActivity(uuid)
+	if err != nil {
+		log.Print("failed to update account last activity")
 	}
 
 	hexUuid := hex.EncodeToString(uuid)
