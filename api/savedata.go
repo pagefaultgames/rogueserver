@@ -215,7 +215,7 @@ func (s *Server) HandleSavedataUpdate(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err = os.WriteFile(fmt.Sprintf("userdata/%s/session%s.pzs", hexUuid, fileName), compressed, 0644)
+		err = os.WriteFile(fmt.Sprintf("userdata/%s/%s.pzs", hexUuid, fileName), compressed, 0644)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("failed to write save file: %s", err), http.StatusInternalServerError)
 			return
