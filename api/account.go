@@ -5,21 +5,22 @@ import (
 	"crypto/rand"
 	"database/sql"
 	"encoding/base64"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
 	"regexp"
+	"strconv"
+	"time"
 
 	"github.com/Flashfyre/pokerogue-server/db"
 	"golang.org/x/crypto/argon2"
 )
 
 const (
-	argonTime = 1
-	argonMemory = 256*1024
-	argonThreads = 4
+	argonTime      = 1
+	argonMemory    = 256 * 1024
+	argonThreads   = 4
 	argonKeyLength = 32
 )
 
@@ -27,9 +28,9 @@ var isValidUsername = regexp.MustCompile(`^\w{1,16}$`).MatchString
 
 // /account/info - get account info
 
-type AccountInfoResponse struct{
-	Username string `json:"username"`
-	HasGameSession bool `json:"hasGameSession"`
+type AccountInfoResponse struct {
+	Username        string `json:"username"`
+	LastSessionSlot int    `json:"lastSessionSlot"`
 }
 
 func (s *Server) HandleAccountInfo(w http.ResponseWriter, r *http.Request) {
@@ -45,9 +46,26 @@ func (s *Server) HandleAccountInfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = os.Stat("userdata/" + hex.EncodeToString(uuid) + "/session.pzs")
+	var latestSaveTime time.Time
+	latestSaveId := -1
+	for id := range sessionSlotCount {
+		fileName := "session"
+		if id != 0 {
+			fileName += strconv.Itoa(id)
+		}
 
-	response, err := json.Marshal(AccountInfoResponse{Username: username, HasGameSession: err == nil})
+		stat, err := os.Stat(fmt.Sprintf("userdata/%x/%s.pzs", uuid, fileName))
+		if err != nil {
+			continue
+		}
+
+		if stat.ModTime().After(latestSaveTime) {
+			latestSaveTime = stat.ModTime()
+			latestSaveId = id
+		}
+	}
+
+	response, err := json.Marshal(AccountInfoResponse{Username: username, LastSessionSlot: latestSaveId})
 	if err != nil {
 		http.Error(w, fmt.Sprintf("failed to marshal response json: %s", err), http.StatusInternalServerError)
 		return
