@@ -52,6 +52,8 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	case "/daily/seed":
 		s.HandleSeed(w, r)
+	case "/daily/rankings":
+		s.HandleRankings(w, r)
 	}
 }
 

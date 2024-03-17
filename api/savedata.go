@@ -12,6 +12,7 @@ import (
 	"strconv"
 
 	"github.com/Flashfyre/pokerogue-server/db"
+	"github.com/Flashfyre/pokerogue-server/defs"
 	"github.com/klauspost/compress/zstd"
 )
 
@@ -90,7 +91,7 @@ func (s *Server) HandleSavedataUpdate(w http.ResponseWriter, r *http.Request) {
 
 	switch r.URL.Query().Get("datatype") {
 	case "0": // System
-		var system SystemSaveData
+		var system defs.SystemSaveData
 		err = json.NewDecoder(r.Body).Decode(&system)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("failed to decode request body: %s", err), http.StatusBadRequest)
@@ -145,7 +146,7 @@ func (s *Server) HandleSavedataUpdate(w http.ResponseWriter, r *http.Request) {
 			fileName += strconv.Itoa(slotId)
 		}
 
-		var session SessionSaveData
+		var session defs.SessionSaveData
 		err = json.NewDecoder(r.Body).Decode(&session)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("failed to decode request body: %s", err), http.StatusBadRequest)
@@ -268,7 +269,7 @@ func (s *Server) HandleSavedataClear(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var session SessionSaveData
+	var session defs.SessionSaveData
 	err = json.NewDecoder(r.Body).Decode(&session)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("failed to decode request body: %s", err), http.StatusBadRequest)

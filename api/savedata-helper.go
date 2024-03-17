@@ -8,11 +8,12 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/Flashfyre/pokerogue-server/defs"
 	"github.com/klauspost/compress/zstd"
 )
 
-func GetSystemSaveData(uuid []byte) (SystemSaveData, error) {
-	var system SystemSaveData
+func GetSystemSaveData(uuid []byte) (defs.SystemSaveData, error) {
+	var system defs.SystemSaveData
 
 	save, err := os.ReadFile("userdata/" + hex.EncodeToString(uuid) + "/system.pzs")
 	if err != nil {
@@ -39,8 +40,8 @@ func GetSystemSaveData(uuid []byte) (SystemSaveData, error) {
 	return system, nil
 }
 
-func GetSessionSaveData(uuid []byte, slotId int) (SessionSaveData, error) {
-	var session SessionSaveData
+func GetSessionSaveData(uuid []byte, slotId int) (defs.SessionSaveData, error) {
+	var session defs.SessionSaveData
 
 	fileName := "session"
 	if slotId != 0 {
@@ -72,7 +73,7 @@ func GetSessionSaveData(uuid []byte, slotId int) (SessionSaveData, error) {
 	return session, nil
 }
 
-func ValidateSessionCompleted(session SessionSaveData) bool {
+func ValidateSessionCompleted(session defs.SessionSaveData) bool {
 	switch session.GameMode {
 	case 0:
 		return session.WaveIndex == 200

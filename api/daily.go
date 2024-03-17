@@ -2,6 +2,8 @@ package api
 
 import (
 	"encoding/base64"
+	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -33,4 +35,21 @@ func InitDailyRun() {
 
 func (s *Server) HandleSeed(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(dailyRunSeed))
+}
+
+// /daily/rankings - fetch daily rankings
+
+func (s *Server) HandleRankings(w http.ResponseWriter, r *http.Request) {
+	rankings, err := db.GetRankings()
+	if err != nil {
+		log.Print("failed to retrieve rankings")
+	}
+
+	response, err := json.Marshal(rankings)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("failed to marshal response json: %s", err), http.StatusInternalServerError)
+		return
+	}
+
+	w.Write(response)
 }
