@@ -278,7 +278,7 @@ func (s *Server) HandleSavedataClear(w http.ResponseWriter, r *http.Request) {
 	newCompletion := false
 
 	if sessionCompleted {
-		newCompletion, err = db.TryAddSeedCompletion(uuid, session.Seed)
+		newCompletion, err = db.TryAddSeedCompletion(uuid, session.Seed, int(session.GameMode))
 		if err != nil {
 			log.Print("failed to mark seed as completed")
 		}

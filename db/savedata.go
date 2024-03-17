@@ -1,6 +1,6 @@
 package db
 
-func TryAddSeedCompletion(uuid []byte, seed string) (bool, error) {
+func TryAddSeedCompletion(uuid []byte, seed string, mode int) (bool, error) {
 	if len(seed) < 24 {
 		for range 24 - len(seed) {
 			seed += "0"
@@ -15,7 +15,7 @@ func TryAddSeedCompletion(uuid []byte, seed string) (bool, error) {
 		return false, nil
 	}
 
-	_, err = handle.Exec("INSERT INTO seedCompletions (uuid, seed, timestamp) VALUES (?, ?, UTC_TIMESTAMP())", uuid, seed)
+	_, err = handle.Exec("INSERT INTO seedCompletions (uuid, seed, mode, timestamp) VALUES (?, ?, ?, UTC_TIMESTAMP())", uuid, seed, mode)
 	if err != nil {
 		return false, err
 	}
