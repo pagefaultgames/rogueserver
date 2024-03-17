@@ -26,34 +26,11 @@ func (s *Server) HandleSavedataGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hexUuid := hex.EncodeToString(uuid)
-
 	switch r.URL.Query().Get("datatype") {
 	case "0": // System
-		save, err := os.ReadFile("userdata/" + hexUuid + "/system.pzs")
+		system, err := GetSystemSaveData(uuid)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("failed to read save file: %s", err), http.StatusInternalServerError)
-			return
-		}
-
-		zstdReader, err := zstd.NewReader(nil)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("failed to create zstd reader: %s", err), http.StatusInternalServerError)
-			return
-		}
-
-		decompressed, err := zstdReader.DecodeAll(save, nil)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("failed to decompress save file: %s", err), http.StatusInternalServerError)
-			return
-		}
-
-		gobDecoderBuf := bytes.NewBuffer(decompressed)
-
-		var system SystemSaveData
-		err = gob.NewDecoder(gobDecoderBuf).Decode(&system)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("failed to deserialize save: %s", err), http.StatusInternalServerError)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
@@ -76,35 +53,9 @@ func (s *Server) HandleSavedataGet(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		fileName := "session"
-		if slotId != 0 {
-			fileName += strconv.Itoa(slotId)
-		}
-
-		save, err := os.ReadFile(fmt.Sprintf("userdata/%s/%s.pzs", hexUuid, fileName))
+		session, err := GetSessionSaveData(uuid, slotId)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("failed to read save file: %s", err), http.StatusInternalServerError)
-			return
-		}
-
-		zstdReader, err := zstd.NewReader(nil)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("failed to create zstd reader: %s", err), http.StatusInternalServerError)
-			return
-		}
-
-		decompressed, err := zstdReader.DecodeAll(save, nil)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("failed to decompress save file: %s", err), http.StatusInternalServerError)
-			return
-		}
-
-		gobDecoderBuf := bytes.NewBuffer(decompressed)
-
-		var session SessionSaveData
-		err = gob.NewDecoder(gobDecoderBuf).Decode(&session)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("failed to deserialize save: %s", err), http.StatusInternalServerError)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
@@ -286,4 +237,71 @@ func (s *Server) HandleSavedataDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+type SavedataClearResponse struct {
+	Success bool `json:"success"`
+}
+
+// /savedata/clear - mark session save data as cleared and delete
+
+func (s *Server) HandleSavedataClear(w http.ResponseWriter, r *http.Request) {
+	uuid, err := GetUuidFromRequest(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err = db.UpdateAccountLastActivity(uuid)
+	if err != nil {
+		log.Print("failed to update account last activity")
+	}
+
+	slotId, err := strconv.Atoi(r.URL.Query().Get("slot"))
+	if err != nil {
+		http.Error(w, fmt.Sprintf("failed to convert slot id: %s", err), http.StatusBadRequest)
+		return
+	}
+
+	if slotId < 0 || slotId >= sessionSlotCount {
+		http.Error(w, fmt.Sprintf("slot id %d out of range", slotId), http.StatusBadRequest)
+		return
+	}
+
+	session, err := GetSessionSaveData(uuid, slotId)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	sessionCompleted := ValidateSessionCompleted(session)
+	newCompletion := false
+
+	if sessionCompleted {
+		newCompletion, err = db.TryAddSeedCompletion(uuid, session.Seed)
+		if err != nil {
+			log.Print("failed to mark seed as completed")
+		}
+	}
+
+	response, err := json.Marshal(SavedataClearResponse{Success: newCompletion})
+	if err != nil {
+		http.Error(w, fmt.Sprintf("failed to marshal response json: %s", err), http.StatusInternalServerError)
+		return
+	}
+
+	if sessionCompleted {
+		fileName := "session"
+		if slotId != 0 {
+			fileName += strconv.Itoa(slotId)
+		}
+
+		err = os.Remove(fmt.Sprintf("userdata/%s/%s.pzs", hex.EncodeToString(uuid), fileName))
+		if err != nil && !os.IsNotExist(err) {
+			http.Error(w, fmt.Sprintf("failed to delete save file: %s", err), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	w.Write(response)
 }

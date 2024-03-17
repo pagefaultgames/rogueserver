@@ -3,11 +3,18 @@ package api
 import (
 	"encoding/gob"
 	"net/http"
+	"time"
+
+	"github.com/go-co-op/gocron"
 )
 
 type Server struct {
 	Debug bool
 }
+
+var (
+	scheduler = gocron.NewScheduler(time.UTC)
+)
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if s.Debug {
@@ -40,6 +47,11 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		s.HandleSavedataUpdate(w, r)
 	case "/savedata/delete":
 		s.HandleSavedataDelete(w, r)
+	case "/savedata/clear":
+		s.HandleSavedataClear(w, r)
+
+	case "/daily/seed":
+		s.HandleSeed(w, r)
 	}
 }
 
