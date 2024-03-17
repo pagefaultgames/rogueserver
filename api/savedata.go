@@ -268,9 +268,10 @@ func (s *Server) HandleSavedataClear(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	session, err := GetSessionSaveData(uuid, slotId)
+	var session SessionSaveData
+	err = json.NewDecoder(r.Body).Decode(&session)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("failed to decode request body: %s", err), http.StatusBadRequest)
 		return
 	}
 
@@ -278,9 +279,9 @@ func (s *Server) HandleSavedataClear(w http.ResponseWriter, r *http.Request) {
 	newCompletion := false
 
 	if sessionCompleted {
-		newCompletion, err = db.TryAddSeedCompletion(uuid, session.Seed, int(session.GameMode))
+		newCompletion, err = db.TryAddSeedCompletion(uuid, session.Seed, int(session.GameMode), session.Score)
 		if err != nil {
-			log.Print("failed to mark seed as completed")
+			log.Printf("failed to mark seed as completed: %s", err.Error())
 		}
 	}
 

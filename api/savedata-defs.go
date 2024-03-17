@@ -63,6 +63,7 @@ type SessionSaveData struct {
 	Arena          ArenaData                `json:"arena"`
 	PokeballCounts PokeballCounts           `json:"pokeballCounts"`
 	Money          int                      `json:"money"`
+	Score          int                      `json:"score"`
 	WaveIndex      int                      `json:"waveIndex"`
 	BattleType     BattleType               `json:"battleType"`
 	Trainer        TrainerData              `json:"trainer"`
@@ -92,6 +93,7 @@ type SessionHistoryData struct {
 	Party       []PokemonData            `json:"party"`
 	Modifiers   []PersistentModifierData `json:"modifiers"`
 	Money       int                      `json:"money"`
+	Score       int                      `json:"score"`
 	WaveIndex   int                      `json:"waveIndex"`
 	BattleType  BattleType               `json:"battleType"`
 	GameVersion string                   `json:"gameVersion"`
