@@ -13,10 +13,12 @@ func TryAddDailyRun(seed string) error {
 	return nil
 }
 
-func GetRankings() ([]defs.DailyRanking, error) {
+func GetRankings(page int) ([]defs.DailyRanking, error) {
 	var rankings []defs.DailyRanking
 
-	results, err := handle.Query("SELECT RANK() OVER (ORDER BY sc.score DESC, sc.timestamp), a.username, sc.score FROM seedCompletions sc JOIN dailyRuns dr ON dr.seed = sc.seed JOIN accounts a ON sc.uuid = a.uuid WHERE dr.date = UTC_DATE()")
+	offset := (page - 1) * 10
+
+	results, err := handle.Query("SELECT RANK() OVER (ORDER BY sc.score DESC, sc.timestamp), a.username, sc.score FROM seedCompletions sc JOIN dailyRuns dr ON dr.seed = sc.seed JOIN accounts a ON sc.uuid = a.uuid WHERE dr.date = UTC_DATE() LIMIT 10 OFFSET ?", offset)
 	if err != nil {
 		return rankings, err
 	}

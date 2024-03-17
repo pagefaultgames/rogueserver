@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/Flashfyre/pokerogue-server/db"
@@ -40,7 +41,20 @@ func (s *Server) HandleSeed(w http.ResponseWriter, r *http.Request) {
 // /daily/rankings - fetch daily rankings
 
 func (s *Server) HandleRankings(w http.ResponseWriter, r *http.Request) {
-	rankings, err := db.GetRankings()
+	var err error
+	var page int
+
+	if r.URL.Query().Has("page") {
+		page, err = strconv.Atoi(r.URL.Query().Get("page"))
+		if err != nil {
+			http.Error(w, fmt.Sprintf("failed to convert page: %s", err), http.StatusBadRequest)
+			return
+		}
+	} else {
+		page = 1
+	}
+
+	rankings, err := db.GetRankings(page)
 	if err != nil {
 		log.Print("failed to retrieve rankings")
 	}
