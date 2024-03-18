@@ -1,8 +1,6 @@
 package db
 
 import (
-	"database/sql"
-
 	"github.com/Flashfyre/pokerogue-server/defs"
 )
 
@@ -15,20 +13,6 @@ func TryAddDailyRun(seed string) error {
 	return nil
 }
 
-func GetDailyRunSeed() (string, error) {
-	var seed string
-	err := handle.QueryRow("SELECT seed FROM dailyRuns WHERE date = UTC_DATE()").Scan(&seed)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return "", err
-		}
-
-		return "", err
-	}
-
-	return seed, nil
-}
-
 func AddOrUpdateAccountDailyRun(uuid []byte, score int, wave int) error {
 	_, err := handle.Exec("INSERT INTO accountDailyRuns (uuid, date, score, wave, timestamp) VALUES (?, UTC_DATE(), ?, ?, UTC_TIMESTAMP()) ON DUPLICATE KEY UPDATE score = ?, wave = GREATEST(wave, ?), timestamp = IF(score < ?, UTC_TIMESTAMP(), timestamp)", uuid, score, wave, score, wave, score)
 	if err != nil {
@@ -38,7 +22,7 @@ func AddOrUpdateAccountDailyRun(uuid []byte, score int, wave int) error {
 	return nil
 }
 
-func GetRankings(page int) ([]defs.DailyRanking, error) {
+func FetchRankings(page int) ([]defs.DailyRanking, error) {
 	var rankings []defs.DailyRanking
 
 	offset := (page - 1) * 10

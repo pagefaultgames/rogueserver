@@ -38,7 +38,7 @@ func UpdateAccountLastActivity(uuid []byte) error {
 	return nil
 }
 
-func GetUsernameFromToken(token []byte) (string, error) {
+func FetchUsernameFromToken(token []byte) (string, error) {
 	var username string
 	err := handle.QueryRow("SELECT a.username FROM accounts a JOIN sessions s ON s.uuid = a.uuid WHERE s.token = ? AND s.expire > UTC_TIMESTAMP()", token).Scan(&username)
 	if err != nil {
@@ -48,7 +48,7 @@ func GetUsernameFromToken(token []byte) (string, error) {
 	return username, nil
 }
 
-func GetAccountKeySaltFromUsername(username string) ([]byte, []byte, error) {
+func FetchAccountKeySaltFromUsername(username string) ([]byte, []byte, error) {
 	var key, salt []byte
 	err := handle.QueryRow("SELECT hash, salt FROM accounts WHERE username = ?", username).Scan(&key, &salt)
 	if err != nil {
@@ -58,7 +58,7 @@ func GetAccountKeySaltFromUsername(username string) ([]byte, []byte, error) {
 	return key, salt, nil
 }
 
-func GetUuidFromToken(token []byte) ([]byte, error) {
+func FetchUuidFromToken(token []byte) ([]byte, error) {
 	var uuid []byte
 	err := handle.QueryRow("SELECT uuid FROM sessions WHERE token = ? AND expire > UTC_TIMESTAMP()", token).Scan(&uuid)
 	if err != nil {

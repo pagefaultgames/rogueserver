@@ -144,7 +144,7 @@ func (s *Server) HandleAccountLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	key, salt, err := db.GetAccountKeySaltFromUsername(request.Username)
+	key, salt, err := db.FetchAccountKeySaltFromUsername(request.Username)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			http.Error(w, "account doesn't exist", http.StatusBadRequest)

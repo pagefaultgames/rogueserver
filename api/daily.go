@@ -1,17 +1,26 @@
 package api
 
 import (
+	"crypto/md5"
+	"crypto/rand"
+	"encoding/base64"
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
+	"time"
 
 	"github.com/Flashfyre/pokerogue-server/db"
 )
 
+const secondsPerDay = 60 * 60 * 24
+
 var (
-	dailyRunSeed string
+	dailyRunSecret []byte
+	dailyRunSeed   string
 )
 
 func ScheduleDailyRunRefresh() {
@@ -21,24 +30,48 @@ func ScheduleDailyRunRefresh() {
 }
 
 func InitDailyRun() {
-	var err error
-	dailyRunSeed, err = db.GetDailyRunSeed()
+	secret, err := os.ReadFile("secret.key")
 	if err != nil {
-		log.Printf("failed to generated daily run seed: %s", err.Error())
+		if !os.IsNotExist(err) {
+			log.Fatalf("failed to read daily seed secret: %s", err)
+		}
+
+		newSecret := make([]byte, 32)
+		_, err := rand.Read(newSecret)
+		if err != nil {
+			log.Fatalf("failed to generate daily seed secret: %s", err)
+		}
+
+		err = os.WriteFile("secret.key", newSecret, 0400)
+		if err != nil {
+			log.Fatalf("failed to write daily seed secret: %s", err)
+		}
+
+		secret = newSecret
 	}
 
-	if dailyRunSeed == "" {
-		dailyRunSeed = RandString(24)
-		err := db.TryAddDailyRun(dailyRunSeed)
-		if err != nil {
-			log.Print(err.Error())
-		} else {
-			log.Printf("Daily Run Seed: %s", dailyRunSeed)
-		}
+	dailyRunSecret = secret
+
+	dailyRunSeed = base64.StdEncoding.EncodeToString(DeriveDailyRunSeed(time.Now().UTC()))
+
+	err = db.TryAddDailyRun(dailyRunSeed)
+	if err != nil {
+		log.Print(err.Error())
+	} else {
+		log.Printf("Daily Run Seed: %s", dailyRunSeed)
 	}
 }
 
-// /daily/seed - get daily run seed
+func DeriveDailyRunSeed(seedTime time.Time) []byte {
+	day := make([]byte, 8)
+	binary.BigEndian.PutUint64(day, uint64(seedTime.Unix()/secondsPerDay))
+
+	hashedSeed := md5.Sum(append(day, dailyRunSecret...))
+
+	return hashedSeed[:]
+}
+
+// /daily/seed - fetch daily run seed
 
 func (s *Server) HandleSeed(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(dailyRunSeed))
@@ -60,7 +93,7 @@ func (s *Server) HandleRankings(w http.ResponseWriter, r *http.Request) {
 		page = 1
 	}
 
-	rankings, err := db.GetRankings(page)
+	rankings, err := db.FetchRankings(page)
 	if err != nil {
 		log.Print("failed to retrieve rankings")
 	}

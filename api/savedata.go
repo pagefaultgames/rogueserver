@@ -29,7 +29,7 @@ func (s *Server) HandleSavedataGet(w http.ResponseWriter, r *http.Request) {
 
 	switch r.URL.Query().Get("datatype") {
 	case "0": // System
-		system, err := GetSystemSaveData(uuid)
+		system, err := ReadSystemSaveData(uuid)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -54,7 +54,7 @@ func (s *Server) HandleSavedataGet(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		session, err := GetSessionSaveData(uuid, slotId)
+		session, err := ReadSessionSaveData(uuid, slotId)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -276,12 +276,12 @@ func (s *Server) HandleSavedataClear(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sessionCompleted := session.BattleType == 2 && ValidateSessionCompleted(session)
+	sessionCompleted := ValidateSessionCompleted(session)
 	newCompletion := false
 
 	if session.GameMode == 3 {
 		waveCompleted := session.WaveIndex
-		if session.BattleType != 2 {
+		if !sessionCompleted {
 			waveCompleted--
 		}
 		err = db.AddOrUpdateAccountDailyRun(uuid, session.Score, waveCompleted)
