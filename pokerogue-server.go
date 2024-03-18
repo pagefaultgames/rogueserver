@@ -11,8 +11,6 @@ import (
 	"github.com/Flashfyre/pokerogue-server/db"
 )
 
-var key []byte
-
 func main() {
 	debug := flag.Bool("debug", false, "debug mode")
 
@@ -45,12 +43,6 @@ func main() {
 		os.Chmod(*addr, 0777)
 	}
 
-	key, err = os.ReadFile("key")
-	if err != nil {
-		log.Fatalf("failed to read key file!")
-	}
-
-	api.SetSeedKey(key)
 	api.ScheduleDailyRunRefresh()
 	api.InitDailyRun()
 

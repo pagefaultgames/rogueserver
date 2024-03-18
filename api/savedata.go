@@ -276,11 +276,22 @@ func (s *Server) HandleSavedataClear(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sessionCompleted := ValidateSessionCompleted(session)
+	sessionCompleted := session.BattleType == 2 && ValidateSessionCompleted(session)
 	newCompletion := false
 
+	if session.GameMode == 3 {
+		waveCompleted := session.WaveIndex
+		if session.BattleType != 2 {
+			waveCompleted--
+		}
+		err = db.AddOrUpdateAccountDailyRun(uuid, session.Score, waveCompleted)
+		if err != nil {
+			log.Printf("failed to add or update daily run record: %s", err.Error())
+		}
+	}
+
 	if sessionCompleted {
-		newCompletion, err = db.TryAddSeedCompletion(uuid, session.Seed, int(session.GameMode), session.Score)
+		newCompletion, err = db.TryAddSeedCompletion(uuid, session.Seed, int(session.GameMode))
 		if err != nil {
 			log.Printf("failed to mark seed as completed: %s", err.Error())
 		}

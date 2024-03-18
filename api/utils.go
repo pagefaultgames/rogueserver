@@ -1,23 +1,20 @@
 package api
 
 import (
-	"crypto/md5"
-	"encoding/binary"
-	"math"
-	"time"
+	"crypto/rand"
 )
 
-var seedKey []byte // 32 bytes
+const randRunes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"
+const lenRandRunes = len(randRunes)
 
-func SetSeedKey(key []byte) {
-	seedKey = key
-}
+func RandString(length int) string {
+	b := make([]byte, length)
 
-func SeedFromTime(seedTime time.Time) []byte {
-	day := make([]byte, 8)
-	binary.BigEndian.PutUint64(day, uint64(math.Floor(float64(seedTime.Unix())/float64(time.Hour*24))))
+	rand.Read(b)
 
-	sum := md5.Sum(append(seedKey, day...))
+	for i := range b {
+		b[i] = randRunes[int(b[i])%lenRandRunes]
+	}
 
-	return sum[:]
+	return string(b)
 }

@@ -1,13 +1,11 @@
 package api
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/Flashfyre/pokerogue-server/db"
 )
@@ -23,12 +21,20 @@ func ScheduleDailyRunRefresh() {
 }
 
 func InitDailyRun() {
-	dailyRunSeed = base64.StdEncoding.EncodeToString(SeedFromTime(time.Now().UTC()))
-	err := db.TryAddDailyRun(dailyRunSeed)
+	var err error
+	dailyRunSeed, err = db.GetDailyRunSeed()
 	if err != nil {
-		log.Print(err.Error())
-	} else {
-		log.Printf("Daily Run Seed: %s", dailyRunSeed)
+		log.Printf("failed to generated daily run seed: %s", err.Error())
+	}
+
+	if dailyRunSeed == "" {
+		dailyRunSeed = RandString(24)
+		err := db.TryAddDailyRun(dailyRunSeed)
+		if err != nil {
+			log.Print(err.Error())
+		} else {
+			log.Printf("Daily Run Seed: %s", dailyRunSeed)
+		}
 	}
 }
 
