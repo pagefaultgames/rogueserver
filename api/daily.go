@@ -14,19 +14,20 @@ import (
 	"time"
 
 	"github.com/Flashfyre/pokerogue-server/db"
+	"github.com/go-co-op/gocron"
 )
 
 const secondsPerDay = 60 * 60 * 24
 
 var (
-	dailyRunSecret []byte
-	dailyRunSeed   string
+	dailyRunScheduler = gocron.NewScheduler(time.UTC)
+	dailyRunSecret    []byte
+	dailyRunSeed      string
 )
 
 func ScheduleDailyRunRefresh() {
-	scheduler.Every(1).Day().At("00:00").Do(func() {
-		InitDailyRun()
-	})
+	dailyRunScheduler.Every(1).Day().At("00:00").Do(InitDailyRun)
+	dailyRunScheduler.StartAsync()
 }
 
 func InitDailyRun() {
@@ -57,9 +58,8 @@ func InitDailyRun() {
 	err = db.TryAddDailyRun(dailyRunSeed)
 	if err != nil {
 		log.Print(err.Error())
-	} else {
-		log.Printf("Daily Run Seed: %s", dailyRunSeed)
 	}
+	log.Printf("Daily Run Seed: %s", dailyRunSeed)
 }
 
 func DeriveDailyRunSeed(seedTime time.Time) []byte {

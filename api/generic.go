@@ -3,18 +3,11 @@ package api
 import (
 	"encoding/gob"
 	"net/http"
-	"time"
-
-	"github.com/go-co-op/gocron"
 )
 
 type Server struct {
 	Debug bool
 }
-
-var (
-	scheduler = gocron.NewScheduler(time.UTC)
-)
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if s.Debug {
