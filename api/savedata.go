@@ -303,17 +303,15 @@ func (s *Server) HandleSavedataClear(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if sessionCompleted {
-		fileName := "session"
-		if slotId != 0 {
-			fileName += strconv.Itoa(slotId)
-		}
+	fileName := "session"
+	if slotId != 0 {
+		fileName += strconv.Itoa(slotId)
+	}
 
-		err = os.Remove(fmt.Sprintf("userdata/%s/%s.pzs", hex.EncodeToString(uuid), fileName))
-		if err != nil && !os.IsNotExist(err) {
-			http.Error(w, fmt.Sprintf("failed to delete save file: %s", err), http.StatusInternalServerError)
-			return
-		}
+	err = os.Remove(fmt.Sprintf("userdata/%s/%s.pzs", hex.EncodeToString(uuid), fileName))
+	if err != nil && !os.IsNotExist(err) {
+		http.Error(w, fmt.Sprintf("failed to delete save file: %s", err), http.StatusInternalServerError)
+		return
 	}
 
 	w.Write(response)
