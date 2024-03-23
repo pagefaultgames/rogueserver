@@ -47,6 +47,8 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		s.HandleSeed(w, r)
 	case "/daily/rankings":
 		s.HandleRankings(w, r)
+	case "/daily/rankingpagecount":
+		s.HandleRankingPageCount(w, r)
 	}
 }
 

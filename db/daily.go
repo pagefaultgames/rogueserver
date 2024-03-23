@@ -1,6 +1,8 @@
 package db
 
 import (
+	"math"
+
 	"github.com/Flashfyre/pokerogue-server/defs"
 )
 
@@ -22,12 +24,20 @@ func AddOrUpdateAccountDailyRun(uuid []byte, score int, wave int) error {
 	return nil
 }
 
-func FetchRankings(page int) ([]defs.DailyRanking, error) {
+func FetchRankings(category int, page int) ([]defs.DailyRanking, error) {
 	var rankings []defs.DailyRanking
 
 	offset := (page - 1) * 10
 
-	results, err := handle.Query("SELECT RANK() OVER (ORDER BY adr.score DESC, adr.timestamp), a.username, adr.score, adr.wave FROM accountDailyRuns adr JOIN dailyRuns dr ON dr.date = adr.date JOIN accounts a ON adr.uuid = a.uuid WHERE dr.date = UTC_DATE() LIMIT 10 OFFSET ?", offset)
+	var query string
+	switch category {
+	case 0:
+		query = "SELECT RANK() OVER (ORDER BY adr.score DESC, adr.timestamp), a.username, adr.score, adr.wave FROM accountDailyRuns adr JOIN dailyRuns dr ON dr.date = adr.date JOIN accounts a ON adr.uuid = a.uuid WHERE dr.date = UTC_DATE() LIMIT 10 OFFSET ?"
+	case 1:
+		query = "SELECT RANK() OVER (ORDER BY SUM(adr.score) DESC, adr.timestamp), a.username, SUM(adr.score), 0 FROM accountDailyRuns adr JOIN dailyRuns dr ON dr.date = adr.date JOIN accounts a ON adr.uuid = a.uuid WHERE dr.date >= DATE_SUB(DATE(UTC_TIMESTAMP()), INTERVAL DAYOFWEEK(UTC_TIMESTAMP()) - 1 DAY) GROUP BY a.username ORDER BY 1 LIMIT 10 OFFSET ?"
+	}
+
+	results, err := handle.Query(query, offset)
 	if err != nil {
 		return rankings, err
 	}
@@ -45,4 +55,23 @@ func FetchRankings(page int) ([]defs.DailyRanking, error) {
 	}
 
 	return rankings, nil
+}
+
+func FetchRankingPageCount(category int) (int, error) {
+	var recordCount int
+
+	var query string
+	switch category {
+	case 0:
+		query = "SELECT COUNT(a.username) FROM accountDailyRuns adr JOIN dailyRuns dr ON dr.date = adr.date JOIN accounts a ON adr.uuid = a.uuid WHERE dr.date = UTC_DATE()"
+	case 1:
+		query = "SELECT COUNT(a.username) FROM accountDailyRuns adr JOIN dailyRuns dr ON dr.date = adr.date JOIN accounts a ON adr.uuid = a.uuid WHERE dr.date >= DATE_SUB(DATE(UTC_TIMESTAMP()), INTERVAL DAYOFWEEK(UTC_TIMESTAMP()) - 1 DAY)"
+	}
+
+	err := handle.QueryRow(query).Scan(&recordCount)
+	if err != nil {
+		return 0, err
+	}
+
+	return int(math.Ceil(float64(recordCount) / 10)), nil
 }

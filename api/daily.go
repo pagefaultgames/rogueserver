@@ -81,7 +81,18 @@ func (s *Server) HandleSeed(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) HandleRankings(w http.ResponseWriter, r *http.Request) {
 	var err error
+	var category int
 	var page int
+
+	if r.URL.Query().Has("category") {
+		category, err = strconv.Atoi(r.URL.Query().Get("category"))
+		if err != nil {
+			http.Error(w, fmt.Sprintf("failed to convert category: %s", err), http.StatusBadRequest)
+			return
+		}
+	} else {
+		category = 0
+	}
 
 	if r.URL.Query().Has("page") {
 		page, err = strconv.Atoi(r.URL.Query().Get("page"))
@@ -93,12 +104,42 @@ func (s *Server) HandleRankings(w http.ResponseWriter, r *http.Request) {
 		page = 1
 	}
 
-	rankings, err := db.FetchRankings(page)
+	rankings, err := db.FetchRankings(category, page)
 	if err != nil {
 		log.Print("failed to retrieve rankings")
 	}
 
 	response, err := json.Marshal(rankings)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("failed to marshal response json: %s", err), http.StatusInternalServerError)
+		return
+	}
+
+	w.Write(response)
+}
+
+// /daily/rankingpagecount - fetch daily ranking page count
+
+func (s *Server) HandleRankingPageCount(w http.ResponseWriter, r *http.Request) {
+	var err error
+	var category int
+
+	if r.URL.Query().Has("category") {
+		category, err = strconv.Atoi(r.URL.Query().Get("category"))
+		if err != nil {
+			http.Error(w, fmt.Sprintf("failed to convert category: %s", err), http.StatusBadRequest)
+			return
+		}
+	} else {
+		category = 0
+	}
+
+	pageCount, err := db.FetchRankingPageCount(category)
+	if err != nil {
+		log.Print("failed to retrieve ranking page count")
+	}
+
+	response, err := json.Marshal(pageCount)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("failed to marshal response json: %s", err), http.StatusInternalServerError)
 		return
