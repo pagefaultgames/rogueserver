@@ -84,6 +84,18 @@ func (s *Server) HandleRankings(w http.ResponseWriter, r *http.Request) {
 	var category int
 	var page int
 
+	var uuid []byte
+	uuid, err = GetUuidFromRequest(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err = db.UpdateAccountLastActivity(uuid)
+	if err != nil {
+		log.Print("failed to update account last activity")
+	}
+
 	if r.URL.Query().Has("category") {
 		category, err = strconv.Atoi(r.URL.Query().Get("category"))
 		if err != nil {
