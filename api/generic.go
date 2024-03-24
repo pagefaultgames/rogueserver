@@ -34,6 +34,9 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case "/account/logout":
 		s.HandleAccountLogout(w, r)
 
+	case "/game/playercount":
+		s.HandlePlayerCountGet(w, r)
+
 	case "/savedata/get":
 		s.HandleSavedataGet(w, r)
 	case "/savedata/update":
