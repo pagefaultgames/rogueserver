@@ -279,7 +279,7 @@ func (s *Server) HandleSavedataClear(w http.ResponseWriter, r *http.Request) {
 	sessionCompleted := ValidateSessionCompleted(session)
 	newCompletion := false
 
-	if session.GameMode == 3 {
+	if session.GameMode == 3 && session.Seed == dailyRunSeed {
 		waveCompleted := session.WaveIndex
 		if !sessionCompleted {
 			waveCompleted--
