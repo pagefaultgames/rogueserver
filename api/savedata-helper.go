@@ -12,7 +12,10 @@ import (
 	"github.com/klauspost/compress/zstd"
 )
 
-func ReadSystemSaveData(uuid []byte) (defs.SystemSaveData, error) {
+func readSystemSaveData(uuid []byte) (defs.SystemSaveData, error) {
+	gob.Register([]interface{}{})
+	gob.Register(map[string]interface{}{})
+
 	var system defs.SystemSaveData
 
 	save, err := os.ReadFile("userdata/" + hex.EncodeToString(uuid) + "/system.pzs")
@@ -40,7 +43,10 @@ func ReadSystemSaveData(uuid []byte) (defs.SystemSaveData, error) {
 	return system, nil
 }
 
-func ReadSessionSaveData(uuid []byte, slotId int) (defs.SessionSaveData, error) {
+func readSessionSaveData(uuid []byte, slotId int) (defs.SessionSaveData, error) {
+	gob.Register([]interface{}{})
+	gob.Register(map[string]interface{}{})
+
 	var session defs.SessionSaveData
 
 	fileName := "session"
@@ -73,12 +79,13 @@ func ReadSessionSaveData(uuid []byte, slotId int) (defs.SessionSaveData, error) 
 	return session, nil
 }
 
-func ValidateSessionCompleted(session defs.SessionSaveData) bool {
+func validateSessionCompleted(session defs.SessionSaveData) bool {
 	switch session.GameMode {
 	case 0:
 		return session.BattleType == 2 && session.WaveIndex == 200
 	case 3:
 		return session.BattleType == 2 && session.WaveIndex == 50
 	}
+
 	return false
 }

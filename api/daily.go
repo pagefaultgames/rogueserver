@@ -53,16 +53,17 @@ func InitDailyRun() {
 
 	dailyRunSecret = secret
 
-	dailyRunSeed = base64.StdEncoding.EncodeToString(DeriveDailyRunSeed(time.Now().UTC()))
+	dailyRunSeed = base64.StdEncoding.EncodeToString(deriveDailyRunSeed(time.Now().UTC()))
 
 	err = db.TryAddDailyRun(dailyRunSeed)
 	if err != nil {
-		log.Print(err.Error())
+		log.Print(err)
 	}
+
 	log.Printf("Daily Run Seed: %s", dailyRunSeed)
 }
 
-func DeriveDailyRunSeed(seedTime time.Time) []byte {
+func deriveDailyRunSeed(seedTime time.Time) []byte {
 	day := make([]byte, 8)
 	binary.BigEndian.PutUint64(day, uint64(seedTime.Unix()/secondsPerDay))
 
@@ -72,20 +73,13 @@ func DeriveDailyRunSeed(seedTime time.Time) []byte {
 }
 
 // /daily/seed - fetch daily run seed
-
-func (s *Server) HandleSeed(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleSeed(w http.ResponseWriter) {
 	w.Write([]byte(dailyRunSeed))
 }
 
 // /daily/rankings - fetch daily rankings
-
-func (s *Server) HandleRankings(w http.ResponseWriter, r *http.Request) {
-	var err error
-	var category int
-	var page int
-
-	var uuid []byte
-	uuid, err = GetUuidFromRequest(r)
+func (s *Server) handleRankings(w http.ResponseWriter, r *http.Request) {
+	uuid, err := getUuidFromRequest(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -96,24 +90,22 @@ func (s *Server) HandleRankings(w http.ResponseWriter, r *http.Request) {
 		log.Print("failed to update account last activity")
 	}
 
+	var category int
 	if r.URL.Query().Has("category") {
 		category, err = strconv.Atoi(r.URL.Query().Get("category"))
 		if err != nil {
 			http.Error(w, fmt.Sprintf("failed to convert category: %s", err), http.StatusBadRequest)
 			return
 		}
-	} else {
-		category = 0
 	}
 
+	page := 1
 	if r.URL.Query().Has("page") {
 		page, err = strconv.Atoi(r.URL.Query().Get("page"))
 		if err != nil {
 			http.Error(w, fmt.Sprintf("failed to convert page: %s", err), http.StatusBadRequest)
 			return
 		}
-	} else {
-		page = 1
 	}
 
 	rankings, err := db.FetchRankings(category, page)
@@ -131,8 +123,7 @@ func (s *Server) HandleRankings(w http.ResponseWriter, r *http.Request) {
 }
 
 // /daily/rankingpagecount - fetch daily ranking page count
-
-func (s *Server) HandleRankingPageCount(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleRankingPageCount(w http.ResponseWriter, r *http.Request) {
 	var err error
 	var category int
 
@@ -142,8 +133,6 @@ func (s *Server) HandleRankingPageCount(w http.ResponseWriter, r *http.Request) 
 			http.Error(w, fmt.Sprintf("failed to convert category: %s", err), http.StatusBadRequest)
 			return
 		}
-	} else {
-		category = 0
 	}
 
 	pageCount, err := db.FetchRankingPageCount(category)

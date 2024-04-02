@@ -8,12 +8,12 @@ import (
 	"github.com/Flashfyre/pokerogue-server/db"
 )
 
-func GetUsernameFromRequest(request *http.Request) (string, error) {
-	if request.Header.Get("Authorization") == "" {
+func getUsernameFromRequest(r *http.Request) (string, error) {
+	if r.Header.Get("Authorization") == "" {
 		return "", fmt.Errorf("missing token")
 	}
 
-	token, err := base64.StdEncoding.DecodeString(request.Header.Get("Authorization"))
+	token, err := base64.StdEncoding.DecodeString(r.Header.Get("Authorization"))
 	if err != nil {
 		return "", fmt.Errorf("failed to decode token: %s", err)
 	}
@@ -30,12 +30,12 @@ func GetUsernameFromRequest(request *http.Request) (string, error) {
 	return username, nil
 }
 
-func GetUuidFromRequest(request *http.Request) ([]byte, error) {
-	if request.Header.Get("Authorization") == "" {
+func getUuidFromRequest(r *http.Request) ([]byte, error) {
+	if r.Header.Get("Authorization") == "" {
 		return nil, fmt.Errorf("missing token")
 	}
 
-	token, err := base64.StdEncoding.DecodeString(request.Header.Get("Authorization"))
+	token, err := base64.StdEncoding.DecodeString(r.Header.Get("Authorization"))
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode token: %s", err)
 	}

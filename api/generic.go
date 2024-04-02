@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/gob"
 	"net/http"
 )
 
@@ -21,37 +20,34 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	gob.Register([]interface{}{})
-	gob.Register(map[string]interface{}{})
-
 	switch r.URL.Path {
 	case "/account/info":
-		s.HandleAccountInfo(w, r)
+		s.handleAccountInfo(w, r)
 	case "/account/register":
-		s.HandleAccountRegister(w, r)
+		s.handleAccountRegister(w, r)
 	case "/account/login":
-		s.HandleAccountLogin(w, r)
+		s.handleAccountLogin(w, r)
 	case "/account/logout":
-		s.HandleAccountLogout(w, r)
+		s.handleAccountLogout(w, r)
 
 	case "/game/playercount":
-		s.HandlePlayerCountGet(w, r)
+		s.handlePlayerCountGet(w)
 
 	case "/savedata/get":
-		s.HandleSavedataGet(w, r)
+		s.handleSavedataGet(w, r)
 	case "/savedata/update":
-		s.HandleSavedataUpdate(w, r)
+		s.handleSavedataUpdate(w, r)
 	case "/savedata/delete":
-		s.HandleSavedataDelete(w, r)
+		s.handleSavedataDelete(w, r)
 	case "/savedata/clear":
-		s.HandleSavedataClear(w, r)
+		s.handleSavedataClear(w, r)
 
 	case "/daily/seed":
-		s.HandleSeed(w, r)
+		s.handleSeed(w)
 	case "/daily/rankings":
-		s.HandleRankings(w, r)
+		s.handleRankings(w, r)
 	case "/daily/rankingpagecount":
-		s.HandleRankingPageCount(w, r)
+		s.handleRankingPageCount(w, r)
 	}
 }
 

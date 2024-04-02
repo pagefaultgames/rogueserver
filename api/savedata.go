@@ -19,9 +19,8 @@ import (
 const sessionSlotCount = 3
 
 // /savedata/get - get save data
-
-func (s *Server) HandleSavedataGet(w http.ResponseWriter, r *http.Request) {
-	uuid, err := GetUuidFromRequest(r)
+func (s *Server) handleSavedataGet(w http.ResponseWriter, r *http.Request) {
+	uuid, err := getUuidFromRequest(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -29,7 +28,7 @@ func (s *Server) HandleSavedataGet(w http.ResponseWriter, r *http.Request) {
 
 	switch r.URL.Query().Get("datatype") {
 	case "0": // System
-		system, err := ReadSystemSaveData(uuid)
+		system, err := readSystemSaveData(uuid)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -54,7 +53,7 @@ func (s *Server) HandleSavedataGet(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		session, err := ReadSessionSaveData(uuid, slotId)
+		session, err := readSessionSaveData(uuid, slotId)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -74,9 +73,8 @@ func (s *Server) HandleSavedataGet(w http.ResponseWriter, r *http.Request) {
 }
 
 // /savedata/update - update save data
-
-func (s *Server) HandleSavedataUpdate(w http.ResponseWriter, r *http.Request) {
-	uuid, err := GetUuidFromRequest(r)
+func (s *Server) handleSavedataUpdate(w http.ResponseWriter, r *http.Request) {
+	uuid, err := getUuidFromRequest(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -188,9 +186,8 @@ func (s *Server) HandleSavedataUpdate(w http.ResponseWriter, r *http.Request) {
 }
 
 // /savedata/delete - delete save data
-
-func (s *Server) HandleSavedataDelete(w http.ResponseWriter, r *http.Request) {
-	uuid, err := GetUuidFromRequest(r)
+func (s *Server) handleSavedataDelete(w http.ResponseWriter, r *http.Request) {
+	uuid, err := getUuidFromRequest(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -245,9 +242,8 @@ type SavedataClearResponse struct {
 }
 
 // /savedata/clear - mark session save data as cleared and delete
-
-func (s *Server) HandleSavedataClear(w http.ResponseWriter, r *http.Request) {
-	uuid, err := GetUuidFromRequest(r)
+func (s *Server) handleSavedataClear(w http.ResponseWriter, r *http.Request) {
+	uuid, err := getUuidFromRequest(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -276,7 +272,7 @@ func (s *Server) HandleSavedataClear(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sessionCompleted := ValidateSessionCompleted(session)
+	sessionCompleted := validateSessionCompleted(session)
 	newCompletion := false
 
 	if session.GameMode == 3 && session.Seed == dailyRunSeed {
@@ -286,14 +282,14 @@ func (s *Server) HandleSavedataClear(w http.ResponseWriter, r *http.Request) {
 		}
 		err = db.AddOrUpdateAccountDailyRun(uuid, session.Score, waveCompleted)
 		if err != nil {
-			log.Printf("failed to add or update daily run record: %s", err.Error())
+			log.Printf("failed to add or update daily run record: %s", err)
 		}
 	}
 
 	if sessionCompleted {
 		newCompletion, err = db.TryAddSeedCompletion(uuid, session.Seed, int(session.GameMode))
 		if err != nil {
-			log.Printf("failed to mark seed as completed: %s", err.Error())
+			log.Printf("failed to mark seed as completed: %s", err)
 		}
 	}
 

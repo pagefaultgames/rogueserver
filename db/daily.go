@@ -45,7 +45,7 @@ func FetchRankings(category int, page int) ([]defs.DailyRanking, error) {
 	defer results.Close()
 
 	for results.Next() {
-		ranking := defs.DailyRanking{}
+		var ranking defs.DailyRanking
 		err = results.Scan(&ranking.Rank, &ranking.Username, &ranking.Score, &ranking.Wave)
 		if err != nil {
 			return rankings, err
@@ -58,8 +58,6 @@ func FetchRankings(category int, page int) ([]defs.DailyRanking, error) {
 }
 
 func FetchRankingPageCount(category int) (int, error) {
-	var recordCount int
-
 	var query string
 	switch category {
 	case 0:
@@ -68,6 +66,7 @@ func FetchRankingPageCount(category int) (int, error) {
 		query = "SELECT COUNT(DISTINCT a.username) FROM accountDailyRuns adr JOIN dailyRuns dr ON dr.date = adr.date JOIN accounts a ON adr.uuid = a.uuid WHERE dr.date >= DATE_SUB(DATE(UTC_TIMESTAMP()), INTERVAL DAYOFWEEK(UTC_TIMESTAMP()) - 1 DAY)"
 	}
 
+	var recordCount int
 	err := handle.QueryRow(query).Scan(&recordCount)
 	if err != nil {
 		return 0, err

@@ -26,21 +26,20 @@ const (
 
 var isValidUsername = regexp.MustCompile(`^\w{1,16}$`).MatchString
 
-// /account/info - get account info
-
 type AccountInfoResponse struct {
 	Username        string `json:"username"`
 	LastSessionSlot int    `json:"lastSessionSlot"`
 }
 
-func (s *Server) HandleAccountInfo(w http.ResponseWriter, r *http.Request) {
-	username, err := GetUsernameFromRequest(r)
+// /account/info - get account info
+func (s *Server) handleAccountInfo(w http.ResponseWriter, r *http.Request) {
+	username, err := getUsernameFromRequest(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	uuid, err := GetUuidFromRequest(r) // lazy
+	uuid, err := getUuidFromRequest(r) // lazy
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -74,11 +73,11 @@ func (s *Server) HandleAccountInfo(w http.ResponseWriter, r *http.Request) {
 	w.Write(response)
 }
 
-// /account/register - register account
 
 type AccountRegisterRequest GenericAuthRequest
 
-func (s *Server) HandleAccountRegister(w http.ResponseWriter, r *http.Request) {
+// /account/register - register account
+func (s *Server) handleAccountRegister(w http.ResponseWriter, r *http.Request) {
 	var request AccountRegisterRequest
 	err := json.NewDecoder(r.Body).Decode(&request)
 	if err != nil {
@@ -121,12 +120,11 @@ func (s *Server) HandleAccountRegister(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// /account/login - log into account
-
 type AccountLoginRequest GenericAuthRequest
 type AccountLoginResponse GenericAuthResponse
 
-func (s *Server) HandleAccountLogin(w http.ResponseWriter, r *http.Request) {
+// /account/login - log into account
+func (s *Server) handleAccountLogin(w http.ResponseWriter, r *http.Request) {
 	var request AccountLoginRequest
 	err := json.NewDecoder(r.Body).Decode(&request)
 	if err != nil {
@@ -184,8 +182,7 @@ func (s *Server) HandleAccountLogin(w http.ResponseWriter, r *http.Request) {
 }
 
 // /account/logout - log out of account
-
-func (s *Server) HandleAccountLogout(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleAccountLogout(w http.ResponseWriter, r *http.Request) {
 	token, err := base64.StdEncoding.DecodeString(r.Header.Get("Authorization"))
 	if err != nil {
 		http.Error(w, fmt.Sprintf("failed to decode token: %s", err), http.StatusBadRequest)
