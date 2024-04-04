@@ -15,7 +15,7 @@ func main() {
 	debug := flag.Bool("debug", false, "debug mode")
 
 	proto := flag.String("proto", "tcp", "protocol for api to use (tcp, unix)")
-	addr := flag.String("addr", "0.0.0.0", "network address for api to listen on")
+	addr := flag.String("addr", "0.0.0.0:8001", "network address for api to listen on")
 
 	dbuser := flag.String("dbuser", "pokerogue", "database username")
 	dbpass := flag.String("dbpass", "", "database password")
@@ -46,6 +46,8 @@ func main() {
 	api.SchedulePlayerCountRefresh()
 	api.ScheduleDailyRunRefresh()
 	api.InitDailyRun()
+
+	log.Printf("listening on %s %s", *proto, *addr)
 
 	err = http.Serve(listener, &api.Server{Debug: *debug})
 	if err != nil {

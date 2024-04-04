@@ -1,0 +1,65 @@
+version: '3'
+
+volumes:
+  mariadb:
+    driver: local
+  cache:
+    driver: local
+
+networks:
+  db:
+    driver: bridge
+
+services:
+  mariadb:
+    image: mariadb:10.6
+    restart: always
+    environment:
+      MYSQL_ROOT_USER: root
+      MYSQL_ROOT_PASSWORD: mariadb
+      MYSQL_USER: pokerogue
+      MYSQL_PASSWORD: mariadb
+      MYSQL_DATABASE: pokeroguedb
+    expose:
+      - "3306"
+    volumes:
+      - mariadb:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      db:
+    healthcheck:
+      test: 'mysqladmin ping -h localhost -u$$MYSQL_ROOT_USER -p$$MYSQL_ROOT_PASSWORD' 
+      interval: 2s
+      timeout: 5s
+      retries: 5
+      start_period: 2s
+
+  phpmyadmin:
+    image: phpmyadmin
+    restart: always
+    expose:
+      - "40001"
+    ports:
+      - "40001:80"
+    environment:
+      - PMA_HOST=mariadb
+      - PMA_PORT=3306
+    networks:
+      db:
+
+  pokerogue:
+    image: golang
+    restart: always
+    working_dir: /app
+    volumes:
+      - .:/app
+      - cache:/go
+    ports:
+      - "8001:8001"
+    networks:
+      db:
+
+    command: go run pokerogue-server.go --addr=0.0.0.0:8001 --dbaddr=mariadb --dbuser=pokerogue --dbpass=mariadb --dbname=pokeroguedb --debug=true
+    depends_on:
+      mariadb:
+        condition: service_healthy
