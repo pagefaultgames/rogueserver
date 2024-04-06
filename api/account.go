@@ -73,7 +73,6 @@ func (s *Server) handleAccountInfo(w http.ResponseWriter, r *http.Request) {
 	w.Write(response)
 }
 
-
 type AccountRegisterRequest GenericAuthRequest
 
 // /account/register - register account

@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/gob"
 	"net/http"
 )
 
@@ -9,6 +10,9 @@ type Server struct {
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	gob.Register([]interface{}{})
+	gob.Register(map[string]interface{}{})
+
 	if s.Debug {
 		w.Header().Set("Access-Control-Allow-Headers", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "*")

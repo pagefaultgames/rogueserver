@@ -2,7 +2,10 @@ package db
 
 import (
 	"database/sql"
+	"fmt"
+	"slices"
 
+	"github.com/Flashfyre/pokerogue-server/defs"
 	_ "github.com/go-sql-driver/mysql"
 )
 
@@ -31,6 +34,65 @@ func AddAccountSession(username string, token []byte) error {
 
 func UpdateAccountLastActivity(uuid []byte) error {
 	_, err := handle.Exec("UPDATE accounts SET lastActivity = UTC_TIMESTAMP() WHERE uuid = ?", uuid)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func UpdateAccountStats(uuid []byte, stats defs.GameStats) error {
+	var columns = []string{"playTime", "battles", "classicSessionsPlayed", "sessionsWon", "highestEndlessWave", "highestLevel", "pokemonSeen", "pokemonDefeated", "pokemonCaught", "pokemonHatched", "eggsPulled"}
+
+	var statCols []string
+	var statValues []interface{}
+
+	m, ok := stats.(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("expected map[string]interface{}, got %T", stats)
+	}
+
+	for k, v := range m {
+		value, ok := v.(float64)
+		if !ok {
+			return fmt.Errorf("expected float64, got %T", v)
+		}
+
+		if slices.Contains(columns, k) {
+			statCols = append(statCols, k)
+			statValues = append(statValues, value)
+		}
+	}
+
+	var statArgs []interface{}
+	statArgs = append(statArgs, uuid)
+	for range 2 {
+		statArgs = append(statArgs, statValues...)
+	}
+
+	query := "INSERT INTO accountStats (uuid"
+
+	for _, col := range statCols {
+		query += ", " + col
+	}
+
+	query += ") VALUES (?"
+
+	for range len(statCols) {
+		query += ", ?"
+	}
+
+	query += ") ON DUPLICATE KEY UPDATE "
+
+	for i, col := range statCols {
+		if i > 0 {
+			query += ", "
+		}
+
+		query += col + " = ?"
+	}
+
+	_, err := handle.Exec(query, statArgs...)
 	if err != nil {
 		return err
 	}

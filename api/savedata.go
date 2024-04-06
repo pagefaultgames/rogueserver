@@ -101,6 +101,12 @@ func (s *Server) handleSavedataUpdate(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		err = db.UpdateAccountStats(uuid, system.GameStats)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("failed to update account stats: %s", err), http.StatusBadRequest)
+			return
+		}
+
 		var gobBuffer bytes.Buffer
 		err = gob.NewEncoder(&gobBuffer).Encode(system)
 		if err != nil {

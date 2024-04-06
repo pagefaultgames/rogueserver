@@ -13,9 +13,6 @@ import (
 )
 
 func readSystemSaveData(uuid []byte) (defs.SystemSaveData, error) {
-	gob.Register([]interface{}{})
-	gob.Register(map[string]interface{}{})
-
 	var system defs.SystemSaveData
 
 	save, err := os.ReadFile("userdata/" + hex.EncodeToString(uuid) + "/system.pzs")
@@ -44,9 +41,6 @@ func readSystemSaveData(uuid []byte) (defs.SystemSaveData, error) {
 }
 
 func readSessionSaveData(uuid []byte, slotId int) (defs.SessionSaveData, error) {
-	gob.Register([]interface{}{})
-	gob.Register(map[string]interface{}{})
-
 	var session defs.SessionSaveData
 
 	fileName := "session"
