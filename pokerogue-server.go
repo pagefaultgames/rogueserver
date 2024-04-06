@@ -43,7 +43,7 @@ func main() {
 		os.Chmod(*addr, 0777)
 	}
 
-	api.SchedulePlayerCountRefresh()
+	api.ScheduleStatRefresh()
 	api.ScheduleDailyRunRefresh()
 	api.InitDailyRun()
 

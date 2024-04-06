@@ -9,3 +9,23 @@ func FetchPlayerCount() (int, error) {
 
 	return playerCount, nil
 }
+
+func FetchBattleCount() (int, error) {
+	var battleCount int
+	err := handle.QueryRow("SELECT SUM(battles) FROM accountStats").Scan(&battleCount)
+	if err != nil {
+		return 0, err
+	}
+
+	return battleCount, nil
+}
+
+func FetchClassicSessionCount() (int, error) {
+	var classicSessionCount int
+	err := handle.QueryRow("SELECT SUM(classicSessionsPlayed) FROM accountStats").Scan(&classicSessionCount)
+	if err != nil {
+		return 0, err
+	}
+
+	return classicSessionCount, nil
+}

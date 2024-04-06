@@ -36,6 +36,10 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	case "/game/playercount":
 		s.handlePlayerCountGet(w)
+	case "/game/titlestats":
+		s.handleTitleStatsGet(w)
+	case "/game/classicsessioncount":
+		s.handleClassicSessionCountGet(w)
 
 	case "/savedata/get":
 		s.handleSavedataGet(w, r)

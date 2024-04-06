@@ -8,22 +8,33 @@ import (
 	"time"
 
 	"github.com/Flashfyre/pokerogue-server/db"
+	"github.com/Flashfyre/pokerogue-server/defs"
 	"github.com/go-co-op/gocron"
 )
 
 var (
-	playerCountScheduler = gocron.NewScheduler(time.UTC)
-	playerCount          int
+	statScheduler       = gocron.NewScheduler(time.UTC)
+	playerCount         int
+	battleCount         int
+	classicSessionCount int
 )
 
-func SchedulePlayerCountRefresh() {
-	playerCountScheduler.Every(10).Second().Do(updatePlayerCount)
-	playerCountScheduler.StartAsync()
+func ScheduleStatRefresh() {
+	statScheduler.Every(10).Second().Do(updateStats)
+	statScheduler.StartAsync()
 }
 
-func updatePlayerCount() {
+func updateStats() {
 	var err error
 	playerCount, err = db.FetchPlayerCount()
+	if err != nil {
+		log.Print(err)
+	}
+	battleCount, err = db.FetchBattleCount()
+	if err != nil {
+		log.Print(err)
+	}
+	classicSessionCount, err = db.FetchClassicSessionCount()
 	if err != nil {
 		log.Print(err)
 	}
@@ -32,6 +43,32 @@ func updatePlayerCount() {
 // /game/playercount - get player count
 func (s *Server) handlePlayerCountGet(w http.ResponseWriter) {
 	response, err := json.Marshal(playerCount)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("failed to marshal response json: %s", err), http.StatusInternalServerError)
+		return
+	}
+
+	w.Write(response)
+}
+
+// /game/titlestats - get title stats
+func (s *Server) handleTitleStatsGet(w http.ResponseWriter) {
+	titleStats := &defs.TitleStats{
+		PlayerCount: playerCount,
+		BattleCount: battleCount,
+	}
+	response, err := json.Marshal(titleStats)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("failed to marshal response json: %s", err), http.StatusInternalServerError)
+		return
+	}
+
+	w.Write(response)
+}
+
+// /game/classicsessioncount - get classic session count
+func (s *Server) handleClassicSessionCountGet(w http.ResponseWriter) {
+	response, err := json.Marshal(classicSessionCount)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("failed to marshal response json: %s", err), http.StatusInternalServerError)
 		return
