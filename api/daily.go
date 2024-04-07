@@ -81,7 +81,7 @@ func (s *Server) handleSeed(w http.ResponseWriter) {
 func (s *Server) handleRankings(w http.ResponseWriter, r *http.Request) {
 	uuid, err := getUuidFromRequest(r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		httpError(w, r, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -94,7 +94,7 @@ func (s *Server) handleRankings(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Query().Has("category") {
 		category, err = strconv.Atoi(r.URL.Query().Get("category"))
 		if err != nil {
-			http.Error(w, fmt.Sprintf("failed to convert category: %s", err), http.StatusBadRequest)
+			httpError(w, r, fmt.Sprintf("failed to convert category: %s", err), http.StatusBadRequest)
 			return
 		}
 	}
@@ -103,7 +103,7 @@ func (s *Server) handleRankings(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Query().Has("page") {
 		page, err = strconv.Atoi(r.URL.Query().Get("page"))
 		if err != nil {
-			http.Error(w, fmt.Sprintf("failed to convert page: %s", err), http.StatusBadRequest)
+			httpError(w, r, fmt.Sprintf("failed to convert page: %s", err), http.StatusBadRequest)
 			return
 		}
 	}
@@ -115,7 +115,7 @@ func (s *Server) handleRankings(w http.ResponseWriter, r *http.Request) {
 
 	response, err := json.Marshal(rankings)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("failed to marshal response json: %s", err), http.StatusInternalServerError)
+		httpError(w, r, fmt.Sprintf("failed to marshal response json: %s", err), http.StatusInternalServerError)
 		return
 	}
 
@@ -130,7 +130,7 @@ func (s *Server) handleRankingPageCount(w http.ResponseWriter, r *http.Request) 
 	if r.URL.Query().Has("category") {
 		category, err = strconv.Atoi(r.URL.Query().Get("category"))
 		if err != nil {
-			http.Error(w, fmt.Sprintf("failed to convert category: %s", err), http.StatusBadRequest)
+			httpError(w, r, fmt.Sprintf("failed to convert category: %s", err), http.StatusBadRequest)
 			return
 		}
 	}
@@ -142,7 +142,7 @@ func (s *Server) handleRankingPageCount(w http.ResponseWriter, r *http.Request) 
 
 	response, err := json.Marshal(pageCount)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("failed to marshal response json: %s", err), http.StatusInternalServerError)
+		httpError(w, r, fmt.Sprintf("failed to marshal response json: %s", err), http.StatusInternalServerError)
 		return
 	}
 

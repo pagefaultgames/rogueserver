@@ -41,10 +41,10 @@ func updateStats() {
 }
 
 // /game/playercount - get player count
-func (s *Server) handlePlayerCountGet(w http.ResponseWriter) {
+func (s *Server) handlePlayerCountGet(w http.ResponseWriter, r *http.Request) {
 	response, err := json.Marshal(playerCount)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("failed to marshal response json: %s", err), http.StatusInternalServerError)
+		httpError(w, r, fmt.Sprintf("failed to marshal response json: %s", err), http.StatusInternalServerError)
 		return
 	}
 
@@ -52,14 +52,14 @@ func (s *Server) handlePlayerCountGet(w http.ResponseWriter) {
 }
 
 // /game/titlestats - get title stats
-func (s *Server) handleTitleStatsGet(w http.ResponseWriter) {
+func (s *Server) handleTitleStatsGet(w http.ResponseWriter, r *http.Request) {
 	titleStats := &defs.TitleStats{
 		PlayerCount: playerCount,
 		BattleCount: battleCount,
 	}
 	response, err := json.Marshal(titleStats)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("failed to marshal response json: %s", err), http.StatusInternalServerError)
+		httpError(w, r, fmt.Sprintf("failed to marshal response json: %s", err), http.StatusInternalServerError)
 		return
 	}
 
@@ -67,10 +67,10 @@ func (s *Server) handleTitleStatsGet(w http.ResponseWriter) {
 }
 
 // /game/classicsessioncount - get classic session count
-func (s *Server) handleClassicSessionCountGet(w http.ResponseWriter) {
+func (s *Server) handleClassicSessionCountGet(w http.ResponseWriter, r *http.Request) {
 	response, err := json.Marshal(classicSessionCount)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("failed to marshal response json: %s", err), http.StatusInternalServerError)
+		httpError(w, r, fmt.Sprintf("failed to marshal response json: %s", err), http.StatusInternalServerError)
 		return
 	}
 

@@ -22,7 +22,7 @@ const sessionSlotCount = 3
 func (s *Server) handleSavedataGet(w http.ResponseWriter, r *http.Request) {
 	uuid, err := getUuidFromRequest(r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		httpError(w, r, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -30,13 +30,13 @@ func (s *Server) handleSavedataGet(w http.ResponseWriter, r *http.Request) {
 	case "0": // System
 		system, err := readSystemSaveData(uuid)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			httpError(w, r, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
 		saveJson, err := json.Marshal(system)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("failed to marshal save to json: %s", err), http.StatusInternalServerError)
+			httpError(w, r, fmt.Sprintf("failed to marshal save to json: %s", err), http.StatusInternalServerError)
 			return
 		}
 
@@ -44,30 +44,30 @@ func (s *Server) handleSavedataGet(w http.ResponseWriter, r *http.Request) {
 	case "1": // Session
 		slotId, err := strconv.Atoi(r.URL.Query().Get("slot"))
 		if err != nil {
-			http.Error(w, fmt.Sprintf("failed to convert slot id: %s", err), http.StatusBadRequest)
+			httpError(w, r, fmt.Sprintf("failed to convert slot id: %s", err), http.StatusBadRequest)
 			return
 		}
 
 		if slotId < 0 || slotId >= sessionSlotCount {
-			http.Error(w, fmt.Sprintf("slot id %d out of range", slotId), http.StatusBadRequest)
+			httpError(w, r, fmt.Sprintf("slot id %d out of range", slotId), http.StatusBadRequest)
 			return
 		}
 
 		session, err := readSessionSaveData(uuid, slotId)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			httpError(w, r, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
 		saveJson, err := json.Marshal(session)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("failed to marshal save to json: %s", err), http.StatusInternalServerError)
+			httpError(w, r, fmt.Sprintf("failed to marshal save to json: %s", err), http.StatusInternalServerError)
 			return
 		}
 
 		w.Write(saveJson)
 	default:
-		http.Error(w, "invalid data type", http.StatusBadRequest)
+		httpError(w, r, "invalid data type", http.StatusBadRequest)
 		return
 	}
 }
@@ -76,7 +76,7 @@ func (s *Server) handleSavedataGet(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleSavedataUpdate(w http.ResponseWriter, r *http.Request) {
 	uuid, err := getUuidFromRequest(r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		httpError(w, r, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -92,31 +92,31 @@ func (s *Server) handleSavedataUpdate(w http.ResponseWriter, r *http.Request) {
 		var system defs.SystemSaveData
 		err = json.NewDecoder(r.Body).Decode(&system)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("failed to decode request body: %s", err), http.StatusBadRequest)
+			httpError(w, r, fmt.Sprintf("failed to decode request body: %s", err), http.StatusBadRequest)
 			return
 		}
 
 		if system.TrainerId == 0 && system.SecretId == 0 {
-			http.Error(w, "invalid system data", http.StatusInternalServerError)
+			httpError(w, r, "invalid system data", http.StatusInternalServerError)
 			return
 		}
 
 		err = db.UpdateAccountStats(uuid, system.GameStats)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("failed to update account stats: %s", err), http.StatusBadRequest)
+			httpError(w, r, fmt.Sprintf("failed to update account stats: %s", err), http.StatusBadRequest)
 			return
 		}
 
 		var gobBuffer bytes.Buffer
 		err = gob.NewEncoder(&gobBuffer).Encode(system)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("failed to serialize save: %s", err), http.StatusInternalServerError)
+			httpError(w, r, fmt.Sprintf("failed to serialize save: %s", err), http.StatusInternalServerError)
 			return
 		}
 
 		zstdWriter, err := zstd.NewWriter(nil)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("failed to create zstd writer, %s", err), http.StatusInternalServerError)
+			httpError(w, r, fmt.Sprintf("failed to create zstd writer, %s", err), http.StatusInternalServerError)
 			return
 		}
 
@@ -124,24 +124,24 @@ func (s *Server) handleSavedataUpdate(w http.ResponseWriter, r *http.Request) {
 
 		err = os.MkdirAll("userdata/"+hexUuid, 0755)
 		if err != nil && !os.IsExist(err) {
-			http.Error(w, fmt.Sprintf("failed to create userdata folder: %s", err), http.StatusInternalServerError)
+			httpError(w, r, fmt.Sprintf("failed to create userdata folder: %s", err), http.StatusInternalServerError)
 			return
 		}
 
 		err = os.WriteFile("userdata/"+hexUuid+"/system.pzs", compressed, 0644)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("failed to write save file: %s", err), http.StatusInternalServerError)
+			httpError(w, r, fmt.Sprintf("failed to write save file: %s", err), http.StatusInternalServerError)
 			return
 		}
 	case "1": // Session
 		slotId, err := strconv.Atoi(r.URL.Query().Get("slot"))
 		if err != nil {
-			http.Error(w, fmt.Sprintf("failed to convert slot id: %s", err), http.StatusBadRequest)
+			httpError(w, r, fmt.Sprintf("failed to convert slot id: %s", err), http.StatusBadRequest)
 			return
 		}
 
 		if slotId < 0 || slotId >= sessionSlotCount {
-			http.Error(w, fmt.Sprintf("slot id %d out of range", slotId), http.StatusBadRequest)
+			httpError(w, r, fmt.Sprintf("slot id %d out of range", slotId), http.StatusBadRequest)
 			return
 		}
 
@@ -153,20 +153,20 @@ func (s *Server) handleSavedataUpdate(w http.ResponseWriter, r *http.Request) {
 		var session defs.SessionSaveData
 		err = json.NewDecoder(r.Body).Decode(&session)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("failed to decode request body: %s", err), http.StatusBadRequest)
+			httpError(w, r, fmt.Sprintf("failed to decode request body: %s", err), http.StatusBadRequest)
 			return
 		}
 
 		var gobBuffer bytes.Buffer
 		err = gob.NewEncoder(&gobBuffer).Encode(session)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("failed to serialize save: %s", err), http.StatusInternalServerError)
+			httpError(w, r, fmt.Sprintf("failed to serialize save: %s", err), http.StatusInternalServerError)
 			return
 		}
 
 		zstdWriter, err := zstd.NewWriter(nil)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("failed to create zstd writer, %s", err), http.StatusInternalServerError)
+			httpError(w, r, fmt.Sprintf("failed to create zstd writer, %s", err), http.StatusInternalServerError)
 			return
 		}
 
@@ -174,17 +174,17 @@ func (s *Server) handleSavedataUpdate(w http.ResponseWriter, r *http.Request) {
 
 		err = os.MkdirAll("userdata/"+hexUuid, 0755)
 		if err != nil && !os.IsExist(err) {
-			http.Error(w, fmt.Sprintf("failed to create userdata folder: %s", err), http.StatusInternalServerError)
+			httpError(w, r, fmt.Sprintf("failed to create userdata folder: %s", err), http.StatusInternalServerError)
 			return
 		}
 
 		err = os.WriteFile(fmt.Sprintf("userdata/%s/%s.pzs", hexUuid, fileName), compressed, 0644)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("failed to write save file: %s", err), http.StatusInternalServerError)
+			httpError(w, r, fmt.Sprintf("failed to write save file: %s", err), http.StatusInternalServerError)
 			return
 		}
 	default:
-		http.Error(w, "invalid data type", http.StatusBadRequest)
+		httpError(w, r, "invalid data type", http.StatusBadRequest)
 		return
 	}
 
@@ -195,7 +195,7 @@ func (s *Server) handleSavedataUpdate(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleSavedataDelete(w http.ResponseWriter, r *http.Request) {
 	uuid, err := getUuidFromRequest(r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		httpError(w, r, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -210,18 +210,18 @@ func (s *Server) handleSavedataDelete(w http.ResponseWriter, r *http.Request) {
 	case "0": // System
 		err := os.Remove("userdata/" + hexUuid + "/system.pzs")
 		if err != nil && !os.IsNotExist(err) {
-			http.Error(w, fmt.Sprintf("failed to delete save file: %s", err), http.StatusInternalServerError)
+			httpError(w, r, fmt.Sprintf("failed to delete save file: %s", err), http.StatusInternalServerError)
 			return
 		}
 	case "1": // Session
 		slotId, err := strconv.Atoi(r.URL.Query().Get("slot"))
 		if err != nil {
-			http.Error(w, fmt.Sprintf("failed to convert slot id: %s", err), http.StatusBadRequest)
+			httpError(w, r, fmt.Sprintf("failed to convert slot id: %s", err), http.StatusBadRequest)
 			return
 		}
 
 		if slotId < 0 || slotId >= sessionSlotCount {
-			http.Error(w, fmt.Sprintf("slot id %d out of range", slotId), http.StatusBadRequest)
+			httpError(w, r, fmt.Sprintf("slot id %d out of range", slotId), http.StatusBadRequest)
 			return
 		}
 
@@ -232,11 +232,11 @@ func (s *Server) handleSavedataDelete(w http.ResponseWriter, r *http.Request) {
 
 		err = os.Remove(fmt.Sprintf("userdata/%s/%s.pzs", hexUuid, fileName))
 		if err != nil && !os.IsNotExist(err) {
-			http.Error(w, fmt.Sprintf("failed to delete save file: %s", err), http.StatusInternalServerError)
+			httpError(w, r, fmt.Sprintf("failed to delete save file: %s", err), http.StatusInternalServerError)
 			return
 		}
 	default:
-		http.Error(w, "invalid data type", http.StatusBadRequest)
+		httpError(w, r, "invalid data type", http.StatusBadRequest)
 		return
 	}
 
@@ -251,7 +251,7 @@ type SavedataClearResponse struct {
 func (s *Server) handleSavedataClear(w http.ResponseWriter, r *http.Request) {
 	uuid, err := getUuidFromRequest(r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		httpError(w, r, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -262,19 +262,19 @@ func (s *Server) handleSavedataClear(w http.ResponseWriter, r *http.Request) {
 
 	slotId, err := strconv.Atoi(r.URL.Query().Get("slot"))
 	if err != nil {
-		http.Error(w, fmt.Sprintf("failed to convert slot id: %s", err), http.StatusBadRequest)
+		httpError(w, r, fmt.Sprintf("failed to convert slot id: %s", err), http.StatusBadRequest)
 		return
 	}
 
 	if slotId < 0 || slotId >= sessionSlotCount {
-		http.Error(w, fmt.Sprintf("slot id %d out of range", slotId), http.StatusBadRequest)
+		httpError(w, r, fmt.Sprintf("slot id %d out of range", slotId), http.StatusBadRequest)
 		return
 	}
 
 	var session defs.SessionSaveData
 	err = json.NewDecoder(r.Body).Decode(&session)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("failed to decode request body: %s", err), http.StatusBadRequest)
+		httpError(w, r, fmt.Sprintf("failed to decode request body: %s", err), http.StatusBadRequest)
 		return
 	}
 
@@ -301,7 +301,7 @@ func (s *Server) handleSavedataClear(w http.ResponseWriter, r *http.Request) {
 
 	response, err := json.Marshal(SavedataClearResponse{Success: newCompletion})
 	if err != nil {
-		http.Error(w, fmt.Sprintf("failed to marshal response json: %s", err), http.StatusInternalServerError)
+		httpError(w, r, fmt.Sprintf("failed to marshal response json: %s", err), http.StatusInternalServerError)
 		return
 	}
 
@@ -312,7 +312,7 @@ func (s *Server) handleSavedataClear(w http.ResponseWriter, r *http.Request) {
 
 	err = os.Remove(fmt.Sprintf("userdata/%s/%s.pzs", hex.EncodeToString(uuid), fileName))
 	if err != nil && !os.IsNotExist(err) {
-		http.Error(w, fmt.Sprintf("failed to delete save file: %s", err), http.StatusInternalServerError)
+		httpError(w, r, fmt.Sprintf("failed to delete save file: %s", err), http.StatusInternalServerError)
 		return
 	}
 
