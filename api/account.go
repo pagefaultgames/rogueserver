@@ -95,7 +95,6 @@ func (s *Server) handleAccountRegister(w http.ResponseWriter, r *http.Request) {
 	}
 
 	uuid := make([]byte, 16)
-
 	_, err = rand.Read(uuid)
 	if err != nil {
 		httpError(w, r, fmt.Sprintf("failed to generate uuid: %s", err), http.StatusInternalServerError)
@@ -103,7 +102,6 @@ func (s *Server) handleAccountRegister(w http.ResponseWriter, r *http.Request) {
 	}
 
 	salt := make([]byte, 16)
-
 	_, err = rand.Read(salt)
 	if err != nil {
 		httpError(w, r, fmt.Sprintf("failed to generate salt: %s", err), http.StatusInternalServerError)
@@ -158,7 +156,6 @@ func (s *Server) handleAccountLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	token := make([]byte, 32)
-
 	_, err = rand.Read(token)
 	if err != nil {
 		httpError(w, r, fmt.Sprintf("failed to generate token: %s", err), http.StatusInternalServerError)
