@@ -20,7 +20,7 @@ const sessionSlotCount = 3
 
 // /savedata/get - get save data
 func (s *Server) handleSavedataGet(w http.ResponseWriter, r *http.Request) {
-	uuid, err := getUuidFromRequest(r)
+	uuid, err := getUUIDFromRequest(r)
 	if err != nil {
 		httpError(w, r, err.Error(), http.StatusBadRequest)
 		return
@@ -42,18 +42,18 @@ func (s *Server) handleSavedataGet(w http.ResponseWriter, r *http.Request) {
 
 		w.Write(saveJson)
 	case "1": // Session
-		slotId, err := strconv.Atoi(r.URL.Query().Get("slot"))
+		slotID, err := strconv.Atoi(r.URL.Query().Get("slot"))
 		if err != nil {
 			httpError(w, r, fmt.Sprintf("failed to convert slot id: %s", err), http.StatusBadRequest)
 			return
 		}
 
-		if slotId < 0 || slotId >= sessionSlotCount {
-			httpError(w, r, fmt.Sprintf("slot id %d out of range", slotId), http.StatusBadRequest)
+		if slotID < 0 || slotID >= sessionSlotCount {
+			httpError(w, r, fmt.Sprintf("slot id %d out of range", slotID), http.StatusBadRequest)
 			return
 		}
 
-		session, err := readSessionSaveData(uuid, slotId)
+		session, err := readSessionSaveData(uuid, slotID)
 		if err != nil {
 			httpError(w, r, err.Error(), http.StatusInternalServerError)
 			return
@@ -74,7 +74,7 @@ func (s *Server) handleSavedataGet(w http.ResponseWriter, r *http.Request) {
 
 // /savedata/update - update save data
 func (s *Server) handleSavedataUpdate(w http.ResponseWriter, r *http.Request) {
-	uuid, err := getUuidFromRequest(r)
+	uuid, err := getUUIDFromRequest(r)
 	if err != nil {
 		httpError(w, r, err.Error(), http.StatusBadRequest)
 		return
@@ -85,7 +85,7 @@ func (s *Server) handleSavedataUpdate(w http.ResponseWriter, r *http.Request) {
 		log.Print("failed to update account last activity")
 	}
 
-	hexUuid := hex.EncodeToString(uuid)
+	hexUUID := hex.EncodeToString(uuid)
 
 	switch r.URL.Query().Get("datatype") {
 	case "0": // System
@@ -96,7 +96,7 @@ func (s *Server) handleSavedataUpdate(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if system.TrainerId == 0 && system.SecretId == 0 {
+		if system.TrainerID == 0 && system.SecretID == 0 {
 			httpError(w, r, "invalid system data", http.StatusInternalServerError)
 			return
 		}
@@ -122,32 +122,32 @@ func (s *Server) handleSavedataUpdate(w http.ResponseWriter, r *http.Request) {
 
 		compressed := zstdWriter.EncodeAll(gobBuffer.Bytes(), nil)
 
-		err = os.MkdirAll("userdata/"+hexUuid, 0755)
+		err = os.MkdirAll("userdata/"+hexUUID, 0755)
 		if err != nil && !os.IsExist(err) {
 			httpError(w, r, fmt.Sprintf("failed to create userdata folder: %s", err), http.StatusInternalServerError)
 			return
 		}
 
-		err = os.WriteFile("userdata/"+hexUuid+"/system.pzs", compressed, 0644)
+		err = os.WriteFile("userdata/"+hexUUID+"/system.pzs", compressed, 0644)
 		if err != nil {
 			httpError(w, r, fmt.Sprintf("failed to write save file: %s", err), http.StatusInternalServerError)
 			return
 		}
 	case "1": // Session
-		slotId, err := strconv.Atoi(r.URL.Query().Get("slot"))
+		slotID, err := strconv.Atoi(r.URL.Query().Get("slot"))
 		if err != nil {
 			httpError(w, r, fmt.Sprintf("failed to convert slot id: %s", err), http.StatusBadRequest)
 			return
 		}
 
-		if slotId < 0 || slotId >= sessionSlotCount {
-			httpError(w, r, fmt.Sprintf("slot id %d out of range", slotId), http.StatusBadRequest)
+		if slotID < 0 || slotID >= sessionSlotCount {
+			httpError(w, r, fmt.Sprintf("slot id %d out of range", slotID), http.StatusBadRequest)
 			return
 		}
 
 		fileName := "session"
-		if slotId != 0 {
-			fileName += strconv.Itoa(slotId)
+		if slotID != 0 {
+			fileName += strconv.Itoa(slotID)
 		}
 
 		var session defs.SessionSaveData
@@ -172,13 +172,13 @@ func (s *Server) handleSavedataUpdate(w http.ResponseWriter, r *http.Request) {
 
 		compressed := zstdWriter.EncodeAll(gobBuffer.Bytes(), nil)
 
-		err = os.MkdirAll("userdata/"+hexUuid, 0755)
+		err = os.MkdirAll("userdata/"+hexUUID, 0755)
 		if err != nil && !os.IsExist(err) {
 			httpError(w, r, fmt.Sprintf("failed to create userdata folder: %s", err), http.StatusInternalServerError)
 			return
 		}
 
-		err = os.WriteFile(fmt.Sprintf("userdata/%s/%s.pzs", hexUuid, fileName), compressed, 0644)
+		err = os.WriteFile(fmt.Sprintf("userdata/%s/%s.pzs", hexUUID, fileName), compressed, 0644)
 		if err != nil {
 			httpError(w, r, fmt.Sprintf("failed to write save file: %s", err), http.StatusInternalServerError)
 			return
@@ -193,7 +193,7 @@ func (s *Server) handleSavedataUpdate(w http.ResponseWriter, r *http.Request) {
 
 // /savedata/delete - delete save data
 func (s *Server) handleSavedataDelete(w http.ResponseWriter, r *http.Request) {
-	uuid, err := getUuidFromRequest(r)
+	uuid, err := getUUIDFromRequest(r)
 	if err != nil {
 		httpError(w, r, err.Error(), http.StatusBadRequest)
 		return
@@ -204,33 +204,33 @@ func (s *Server) handleSavedataDelete(w http.ResponseWriter, r *http.Request) {
 		log.Print("failed to update account last activity")
 	}
 
-	hexUuid := hex.EncodeToString(uuid)
+	hexUUID := hex.EncodeToString(uuid)
 
 	switch r.URL.Query().Get("datatype") {
 	case "0": // System
-		err := os.Remove("userdata/" + hexUuid + "/system.pzs")
+		err := os.Remove("userdata/" + hexUUID + "/system.pzs")
 		if err != nil && !os.IsNotExist(err) {
 			httpError(w, r, fmt.Sprintf("failed to delete save file: %s", err), http.StatusInternalServerError)
 			return
 		}
 	case "1": // Session
-		slotId, err := strconv.Atoi(r.URL.Query().Get("slot"))
+		slotID, err := strconv.Atoi(r.URL.Query().Get("slot"))
 		if err != nil {
 			httpError(w, r, fmt.Sprintf("failed to convert slot id: %s", err), http.StatusBadRequest)
 			return
 		}
 
-		if slotId < 0 || slotId >= sessionSlotCount {
-			httpError(w, r, fmt.Sprintf("slot id %d out of range", slotId), http.StatusBadRequest)
+		if slotID < 0 || slotID >= sessionSlotCount {
+			httpError(w, r, fmt.Sprintf("slot id %d out of range", slotID), http.StatusBadRequest)
 			return
 		}
 
 		fileName := "session"
-		if slotId != 0 {
-			fileName += strconv.Itoa(slotId)
+		if slotID != 0 {
+			fileName += strconv.Itoa(slotID)
 		}
 
-		err = os.Remove(fmt.Sprintf("userdata/%s/%s.pzs", hexUuid, fileName))
+		err = os.Remove(fmt.Sprintf("userdata/%s/%s.pzs", hexUUID, fileName))
 		if err != nil && !os.IsNotExist(err) {
 			httpError(w, r, fmt.Sprintf("failed to delete save file: %s", err), http.StatusInternalServerError)
 			return
@@ -249,7 +249,7 @@ type SavedataClearResponse struct {
 
 // /savedata/clear - mark session save data as cleared and delete
 func (s *Server) handleSavedataClear(w http.ResponseWriter, r *http.Request) {
-	uuid, err := getUuidFromRequest(r)
+	uuid, err := getUUIDFromRequest(r)
 	if err != nil {
 		httpError(w, r, err.Error(), http.StatusBadRequest)
 		return
@@ -260,14 +260,14 @@ func (s *Server) handleSavedataClear(w http.ResponseWriter, r *http.Request) {
 		log.Print("failed to update account last activity")
 	}
 
-	slotId, err := strconv.Atoi(r.URL.Query().Get("slot"))
+	slotID, err := strconv.Atoi(r.URL.Query().Get("slot"))
 	if err != nil {
 		httpError(w, r, fmt.Sprintf("failed to convert slot id: %s", err), http.StatusBadRequest)
 		return
 	}
 
-	if slotId < 0 || slotId >= sessionSlotCount {
-		httpError(w, r, fmt.Sprintf("slot id %d out of range", slotId), http.StatusBadRequest)
+	if slotID < 0 || slotID >= sessionSlotCount {
+		httpError(w, r, fmt.Sprintf("slot id %d out of range", slotID), http.StatusBadRequest)
 		return
 	}
 
@@ -306,8 +306,8 @@ func (s *Server) handleSavedataClear(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fileName := "session"
-	if slotId != 0 {
-		fileName += strconv.Itoa(slotId)
+	if slotID != 0 {
+		fileName += strconv.Itoa(slotID)
 	}
 
 	err = os.Remove(fmt.Sprintf("userdata/%s/%s.pzs", hex.EncodeToString(uuid), fileName))

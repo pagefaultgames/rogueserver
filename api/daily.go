@@ -26,26 +26,33 @@ var (
 )
 
 func ScheduleDailyRunRefresh() {
-	dailyRunScheduler.Every(1).Day().At("00:00").Do(InitDailyRun)
+	dailyRunScheduler.Every(1).Day().At("00:00").Do(func() error {
+		err := InitDailyRun()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		return nil
+	}())
 	dailyRunScheduler.StartAsync()
 }
 
-func InitDailyRun() {
+func InitDailyRun() error {
 	secret, err := os.ReadFile("secret.key")
 	if err != nil {
 		if !os.IsNotExist(err) {
-			log.Fatalf("failed to read daily seed secret: %s", err)
+			return fmt.Errorf("failed to read daily seed secret: %s", err)
 		}
 
 		newSecret := make([]byte, 32)
 		_, err := rand.Read(newSecret)
 		if err != nil {
-			log.Fatalf("failed to generate daily seed secret: %s", err)
+			return fmt.Errorf("failed to generate daily seed secret: %s", err)
 		}
 
 		err = os.WriteFile("secret.key", newSecret, 0400)
 		if err != nil {
-			log.Fatalf("failed to write daily seed secret: %s", err)
+			return fmt.Errorf("failed to write daily seed secret: %s", err)
 		}
 
 		secret = newSecret
@@ -61,6 +68,8 @@ func InitDailyRun() {
 	}
 
 	log.Printf("Daily Run Seed: %s", dailyRunSeed)
+
+	return nil
 }
 
 func deriveDailyRunSeed(seedTime time.Time) []byte {
@@ -79,7 +88,7 @@ func (s *Server) handleSeed(w http.ResponseWriter) {
 
 // /daily/rankings - fetch daily rankings
 func (s *Server) handleRankings(w http.ResponseWriter, r *http.Request) {
-	uuid, err := getUuidFromRequest(r)
+	uuid, err := getUUIDFromRequest(r)
 	if err != nil {
 		httpError(w, r, err.Error(), http.StatusBadRequest)
 		return

@@ -18,10 +18,12 @@ import (
 )
 
 const (
-	argonTime      = 1
-	argonMemory    = 256 * 1024
-	argonThreads   = 4
-	argonKeyLength = 32
+	UUIDSize      = 16
+	ArgonTime     = 1
+	ArgonMemory   = 256 * 1024
+	ArgonThreads  = 4
+	ArgonKeySize  = 32
+	ArgonSaltSize = 16
 )
 
 var isValidUsername = regexp.MustCompile(`^\w{1,16}$`).MatchString
@@ -39,14 +41,14 @@ func (s *Server) handleAccountInfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	uuid, err := getUuidFromRequest(r) // lazy
+	uuid, err := getUUIDFromRequest(r) // lazy
 	if err != nil {
 		httpError(w, r, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	var latestSaveTime time.Time
-	latestSaveId := -1
+	var latestSave time.Time
+	latestSaveID := -1
 	for id := range sessionSlotCount {
 		fileName := "session"
 		if id != 0 {
@@ -58,13 +60,13 @@ func (s *Server) handleAccountInfo(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		if stat.ModTime().After(latestSaveTime) {
-			latestSaveTime = stat.ModTime()
-			latestSaveId = id
+		if stat.ModTime().After(latestSave) {
+			latestSave = stat.ModTime()
+			latestSaveID = id
 		}
 	}
 
-	response, err := json.Marshal(AccountInfoResponse{Username: username, LastSessionSlot: latestSaveId})
+	response, err := json.Marshal(AccountInfoResponse{Username: username, LastSessionSlot: latestSaveID})
 	if err != nil {
 		httpError(w, r, fmt.Sprintf("failed to marshal response json: %s", err), http.StatusInternalServerError)
 		return
@@ -94,21 +96,21 @@ func (s *Server) handleAccountRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	uuid := make([]byte, 16)
+	uuid := make([]byte, UUIDSize)
 	_, err = rand.Read(uuid)
 	if err != nil {
 		httpError(w, r, fmt.Sprintf("failed to generate uuid: %s", err), http.StatusInternalServerError)
 		return
 	}
 
-	salt := make([]byte, 16)
+	salt := make([]byte, ArgonSaltSize)
 	_, err = rand.Read(salt)
 	if err != nil {
 		httpError(w, r, fmt.Sprintf("failed to generate salt: %s", err), http.StatusInternalServerError)
 		return
 	}
 
-	err = db.AddAccountRecord(uuid, request.Username, argon2.IDKey([]byte(request.Password), salt, argonTime, argonMemory, argonThreads, argonKeyLength), salt)
+	err = db.AddAccountRecord(uuid, request.Username, argon2.IDKey([]byte(request.Password), salt, ArgonTime, ArgonMemory, ArgonThreads, ArgonKeySize), salt)
 	if err != nil {
 		httpError(w, r, fmt.Sprintf("failed to add account record: %s", err), http.StatusInternalServerError)
 		return
@@ -150,7 +152,7 @@ func (s *Server) handleAccountLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !bytes.Equal(key, argon2.IDKey([]byte(request.Password), salt, argonTime, argonMemory, argonThreads, argonKeyLength)) {
+	if !bytes.Equal(key, argon2.IDKey([]byte(request.Password), salt, ArgonTime, ArgonMemory, ArgonThreads, ArgonKeySize)) {
 		httpError(w, r, "password doesn't match", http.StatusBadRequest)
 		return
 	}

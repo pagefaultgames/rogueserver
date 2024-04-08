@@ -30,7 +30,7 @@ func getUsernameFromRequest(r *http.Request) (string, error) {
 	return username, nil
 }
 
-func getUuidFromRequest(r *http.Request) ([]byte, error) {
+func getUUIDFromRequest(r *http.Request) ([]byte, error) {
 	if r.Header.Get("Authorization") == "" {
 		return nil, fmt.Errorf("missing token")
 	}
@@ -44,7 +44,7 @@ func getUuidFromRequest(r *http.Request) ([]byte, error) {
 		return nil, fmt.Errorf("invalid token length: got %d, expected 32", len(token))
 	}
 
-	uuid, err := db.FetchUuidFromToken(token)
+	uuid, err := db.FetchUUIDFromToken(token)
 	if err != nil {
 		return nil, fmt.Errorf("failed to validate token: %s", err)
 	}

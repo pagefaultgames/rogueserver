@@ -40,12 +40,12 @@ func readSystemSaveData(uuid []byte) (defs.SystemSaveData, error) {
 	return system, nil
 }
 
-func readSessionSaveData(uuid []byte, slotId int) (defs.SessionSaveData, error) {
+func readSessionSaveData(uuid []byte, slotID int) (defs.SessionSaveData, error) {
 	var session defs.SessionSaveData
 
 	fileName := "session"
-	if slotId != 0 {
-		fileName += strconv.Itoa(slotId)
+	if slotID != 0 {
+		fileName += strconv.Itoa(slotID)
 	}
 
 	save, err := os.ReadFile(fmt.Sprintf("userdata/%s/%s.pzs", hex.EncodeToString(uuid), fileName))
