@@ -1,8 +1,8 @@
 package defs
 
 type SystemSaveData struct {
-	TrainerID          int                `json:"trainerId"`
-	SecretID           int                `json:"secretId"`
+	TrainerId          int                `json:"trainerId"`
+	SecretId           int                `json:"secretId"`
 	Gender             int                `json:"gender"`
 	DexData            DexData            `json:"dexData"`
 	StarterMoveData    StarterMoveData    `json:"starterMoveData"`
@@ -44,7 +44,7 @@ type VoucherUnlocks map[string]int
 type VoucherCounts map[string]int
 
 type EggData struct {
-	ID         int       `json:"id"`
+	Id         int       `json:"id"`
 	GachaType  GachaType `json:"gachaType"`
 	HatchWaves int       `json:"hatchWaves"`
 	Timestamp  int       `json:"timestamp"`

@@ -53,7 +53,7 @@ func handleSavedataUpdate(uuid []byte, slot int, save any) error {
 
 	switch save := save.(type) {
 	case defs.SystemSaveData: // System
-		if save.TrainerID == 0 && save.SecretID == 0 {
+		if save.TrainerId == 0 && save.SecretId == 0 {
 			return fmt.Errorf("invalid system data")
 		}
 
