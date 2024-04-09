@@ -159,8 +159,8 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		var save any
-		// /savedata/delete specifies datatype, but doesn't expect data in body
-		if r.URL.Path != "/savedata/delete" {
+		// /savedata/get and /savedata/delete specify datatype, but don't expect data in body
+		if r.URL.Path != "/savedata/get" && r.URL.Path != "/savedata/delete" {
 			if datatype == 0 {
 				var system defs.SystemSaveData
 				err = json.NewDecoder(r.Body).Decode(&system)
