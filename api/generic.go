@@ -199,7 +199,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if save == nil {
+		if save == nil || r.URL.Path == "/savedata/update" {
 			w.WriteHeader(http.StatusOK)
 			return
 		}
