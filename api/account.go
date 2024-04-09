@@ -5,9 +5,7 @@ import (
 	"crypto/rand"
 	"database/sql"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
-	"net/http"
 	"os"
 	"regexp"
 	"strconv"
@@ -34,19 +32,7 @@ type AccountInfoResponse struct {
 }
 
 // /account/info - get account info
-func (s *Server) handleAccountInfo(w http.ResponseWriter, r *http.Request) {
-	username, err := getUsernameFromRequest(r)
-	if err != nil {
-		httpError(w, r, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	uuid, err := getUUIDFromRequest(r) // lazy
-	if err != nil {
-		httpError(w, r, err.Error(), http.StatusBadRequest)
-		return
-	}
-
+func handleAccountInfo(username string, uuid []byte) (AccountInfoResponse, error) {
 	var latestSave time.Time
 	latestSaveID := -1
 	for id := range sessionSlotCount {
@@ -66,142 +52,95 @@ func (s *Server) handleAccountInfo(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	response, err := json.Marshal(AccountInfoResponse{Username: username, LastSessionSlot: latestSaveID})
-	if err != nil {
-		httpError(w, r, fmt.Sprintf("failed to marshal response json: %s", err), http.StatusInternalServerError)
-		return
-	}
-
-	w.Write(response)
+	return AccountInfoResponse{Username: username, LastSessionSlot: latestSaveID}, nil
 }
 
 type AccountRegisterRequest GenericAuthRequest
 
 // /account/register - register account
-func (s *Server) handleAccountRegister(w http.ResponseWriter, r *http.Request) {
-	var request AccountRegisterRequest
-	err := json.NewDecoder(r.Body).Decode(&request)
-	if err != nil {
-		httpError(w, r, fmt.Sprintf("failed to decode request body: %s", err), http.StatusBadRequest)
-		return
+func handleAccountRegister(username, password string) error {
+	if !isValidUsername(username) {
+		return fmt.Errorf("invalid username")
 	}
 
-	if !isValidUsername(request.Username) {
-		httpError(w, r, "invalid username", http.StatusBadRequest)
-		return
-	}
-
-	if len(request.Password) < 6 {
-		httpError(w, r, "invalid password", http.StatusBadRequest)
-		return
+	if len(password) < 6 {
+		return fmt.Errorf("invalid password")
 	}
 
 	uuid := make([]byte, UUIDSize)
-	_, err = rand.Read(uuid)
+	_, err := rand.Read(uuid)
 	if err != nil {
-		httpError(w, r, fmt.Sprintf("failed to generate uuid: %s", err), http.StatusInternalServerError)
-		return
+		return fmt.Errorf("failed to generate uuid: %s", err)
 	}
 
 	salt := make([]byte, ArgonSaltSize)
 	_, err = rand.Read(salt)
 	if err != nil {
-		httpError(w, r, fmt.Sprintf("failed to generate salt: %s", err), http.StatusInternalServerError)
-		return
+		return fmt.Errorf(fmt.Sprintf("failed to generate salt: %s", err))
 	}
 
-	err = db.AddAccountRecord(uuid, request.Username, argon2.IDKey([]byte(request.Password), salt, ArgonTime, ArgonMemory, ArgonThreads, ArgonKeySize), salt)
+	err = db.AddAccountRecord(uuid, username, argon2.IDKey([]byte(password), salt, ArgonTime, ArgonMemory, ArgonThreads, ArgonKeySize), salt)
 	if err != nil {
-		httpError(w, r, fmt.Sprintf("failed to add account record: %s", err), http.StatusInternalServerError)
-		return
+		return fmt.Errorf("failed to add account record: %s", err)
 	}
 
-	w.WriteHeader(http.StatusOK)
+	return nil
 }
 
 type AccountLoginRequest GenericAuthRequest
 type AccountLoginResponse GenericAuthResponse
 
 // /account/login - log into account
-func (s *Server) handleAccountLogin(w http.ResponseWriter, r *http.Request) {
-	var request AccountLoginRequest
-	err := json.NewDecoder(r.Body).Decode(&request)
-	if err != nil {
-		httpError(w, r, fmt.Sprintf("failed to decode request body: %s", err), http.StatusBadRequest)
-		return
+func handleAccountLogin(username, password string) (AccountLoginResponse, error) {
+	if !isValidUsername(username) {
+		return AccountLoginResponse{}, fmt.Errorf("invalid username")
 	}
 
-	if !isValidUsername(request.Username) {
-		httpError(w, r, "invalid username", http.StatusBadRequest)
-		return
+	if len(password) < 6 {
+		return AccountLoginResponse{}, fmt.Errorf("invalid password")
 	}
 
-	if len(request.Password) < 6 {
-		httpError(w, r, "invalid password", http.StatusBadRequest)
-		return
-	}
-
-	key, salt, err := db.FetchAccountKeySaltFromUsername(request.Username)
+	key, salt, err := db.FetchAccountKeySaltFromUsername(username)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			httpError(w, r, "account doesn't exist", http.StatusBadRequest)
-			return
+			return AccountLoginResponse{}, fmt.Errorf("account doesn't exist")
 		}
 
-		httpError(w, r, err.Error(), http.StatusInternalServerError)
-		return
+		return AccountLoginResponse{}, err
 	}
 
-	if !bytes.Equal(key, argon2.IDKey([]byte(request.Password), salt, ArgonTime, ArgonMemory, ArgonThreads, ArgonKeySize)) {
-		httpError(w, r, "password doesn't match", http.StatusBadRequest)
-		return
+	if !bytes.Equal(key, argon2.IDKey([]byte(password), salt, ArgonTime, ArgonMemory, ArgonThreads, ArgonKeySize)) {
+		return AccountLoginResponse{}, fmt.Errorf("password doesn't match")
 	}
 
 	token := make([]byte, 32)
 	_, err = rand.Read(token)
 	if err != nil {
-		httpError(w, r, fmt.Sprintf("failed to generate token: %s", err), http.StatusInternalServerError)
-		return
+		return AccountLoginResponse{}, fmt.Errorf("failed to generate token: %s", err)
 	}
 
-	err = db.AddAccountSession(request.Username, token)
+	err = db.AddAccountSession(username, token)
 	if err != nil {
-		httpError(w, r, "failed to add account session", http.StatusInternalServerError)
-		return
+		return AccountLoginResponse{}, fmt.Errorf("failed to add account session")
 	}
 
-	response, err := json.Marshal(AccountLoginResponse{Token: base64.StdEncoding.EncodeToString(token)})
-	if err != nil {
-		httpError(w, r, fmt.Sprintf("failed to marshal response json: %s", err), http.StatusInternalServerError)
-		return
-	}
-
-	w.Write(response)
+	return AccountLoginResponse{Token: base64.StdEncoding.EncodeToString(token)}, nil
 }
 
 // /account/logout - log out of account
-func (s *Server) handleAccountLogout(w http.ResponseWriter, r *http.Request) {
-	token, err := base64.StdEncoding.DecodeString(r.Header.Get("Authorization"))
-	if err != nil {
-		httpError(w, r, fmt.Sprintf("failed to decode token: %s", err), http.StatusBadRequest)
-		return
-	}
-
+func handleAccountLogout(token []byte) error {
 	if len(token) != 32 {
-		httpError(w, r, "invalid token", http.StatusBadRequest)
-		return
+		return fmt.Errorf("invalid token")
 	}
 
-	err = db.RemoveSessionFromToken(token)
+	err := db.RemoveSessionFromToken(token)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			httpError(w, r, "token not found", http.StatusBadRequest)
-			return
+			return fmt.Errorf("token not found")
 		}
 
-		httpError(w, r, "failed to remove account session", http.StatusInternalServerError)
-		return
+		return fmt.Errorf("failed to remove account session")
 	}
 
-	w.WriteHeader(http.StatusOK)
+	return nil
 }

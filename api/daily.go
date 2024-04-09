@@ -5,15 +5,13 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/binary"
-	"encoding/json"
 	"fmt"
 	"log"
-	"net/http"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/Flashfyre/pokerogue-server/db"
+	"github.com/Flashfyre/pokerogue-server/defs"
 	"github.com/go-co-op/gocron"
 )
 
@@ -81,40 +79,11 @@ func deriveDailyRunSeed(seedTime time.Time) []byte {
 	return hashedSeed[:]
 }
 
-// /daily/seed - fetch daily run seed
-func (s *Server) handleSeed(w http.ResponseWriter) {
-	w.Write([]byte(dailyRunSeed))
-}
-
 // /daily/rankings - fetch daily rankings
-func (s *Server) handleRankings(w http.ResponseWriter, r *http.Request) {
-	uuid, err := getUUIDFromRequest(r)
-	if err != nil {
-		httpError(w, r, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	err = db.UpdateAccountLastActivity(uuid)
+func handleRankings(uuid []byte, category, page int) ([]defs.DailyRanking, error) {
+	err := db.UpdateAccountLastActivity(uuid)
 	if err != nil {
 		log.Print("failed to update account last activity")
-	}
-
-	var category int
-	if r.URL.Query().Has("category") {
-		category, err = strconv.Atoi(r.URL.Query().Get("category"))
-		if err != nil {
-			httpError(w, r, fmt.Sprintf("failed to convert category: %s", err), http.StatusBadRequest)
-			return
-		}
-	}
-
-	page := 1
-	if r.URL.Query().Has("page") {
-		page, err = strconv.Atoi(r.URL.Query().Get("page"))
-		if err != nil {
-			httpError(w, r, fmt.Sprintf("failed to convert page: %s", err), http.StatusBadRequest)
-			return
-		}
 	}
 
 	rankings, err := db.FetchRankings(category, page)
@@ -122,38 +91,15 @@ func (s *Server) handleRankings(w http.ResponseWriter, r *http.Request) {
 		log.Print("failed to retrieve rankings")
 	}
 
-	response, err := json.Marshal(rankings)
-	if err != nil {
-		httpError(w, r, fmt.Sprintf("failed to marshal response json: %s", err), http.StatusInternalServerError)
-		return
-	}
-
-	w.Write(response)
+	return rankings, nil
 }
 
 // /daily/rankingpagecount - fetch daily ranking page count
-func (s *Server) handleRankingPageCount(w http.ResponseWriter, r *http.Request) {
-	var err error
-	var category int
-
-	if r.URL.Query().Has("category") {
-		category, err = strconv.Atoi(r.URL.Query().Get("category"))
-		if err != nil {
-			httpError(w, r, fmt.Sprintf("failed to convert category: %s", err), http.StatusBadRequest)
-			return
-		}
-	}
-
+func handleRankingPageCount(category int) (int, error) {
 	pageCount, err := db.FetchRankingPageCount(category)
 	if err != nil {
 		log.Print("failed to retrieve ranking page count")
 	}
 
-	response, err := json.Marshal(pageCount)
-	if err != nil {
-		httpError(w, r, fmt.Sprintf("failed to marshal response json: %s", err), http.StatusInternalServerError)
-		return
-	}
-
-	w.Write(response)
+	return pageCount, nil
 }
