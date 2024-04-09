@@ -201,6 +201,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		if save == nil {
 			w.WriteHeader(http.StatusOK)
+			return
 		}
 
 		response, err := json.Marshal(save)
