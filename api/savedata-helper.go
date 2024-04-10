@@ -1,7 +1,6 @@
 package api
 
 import (
-	"bytes"
 	"encoding/gob"
 	"encoding/hex"
 	"fmt"
@@ -15,24 +14,17 @@ import (
 func readSystemSaveData(uuid []byte) (defs.SystemSaveData, error) {
 	var system defs.SystemSaveData
 
-	save, err := os.ReadFile("userdata/" + hex.EncodeToString(uuid) + "/system.pzs")
+	file, err := os.Open("userdata/" + hex.EncodeToString(uuid) + "/system.pzs")
 	if err != nil {
-		return system, fmt.Errorf("failed to read save file: %s", err)
+		return system, fmt.Errorf("failed to open save file: %s", err)
 	}
 
-	zstdReader, err := zstd.NewReader(nil)
+	zstdDecoder, err := zstd.NewReader(file)
 	if err != nil {
-		return system, fmt.Errorf("failed to create zstd reader: %s", err)
+		return system, fmt.Errorf("failed to create zstd decoder: %s", err)
 	}
 
-	decompressed, err := zstdReader.DecodeAll(save, nil)
-	if err != nil {
-		return system, fmt.Errorf("failed to decompress save file: %s", err)
-	}
-
-	gobDecoderBuf := bytes.NewBuffer(decompressed)
-
-	err = gob.NewDecoder(gobDecoderBuf).Decode(&system)
+	err = gob.NewDecoder(zstdDecoder).Decode(&system)
 	if err != nil {
 		return system, fmt.Errorf("failed to deserialize save: %s", err)
 	}
@@ -48,24 +40,17 @@ func readSessionSaveData(uuid []byte, slotID int) (defs.SessionSaveData, error) 
 		fileName += strconv.Itoa(slotID)
 	}
 
-	save, err := os.ReadFile(fmt.Sprintf("userdata/%s/%s.pzs", hex.EncodeToString(uuid), fileName))
+	file, err := os.Open(fmt.Sprintf("userdata/%s/%s.pzs", hex.EncodeToString(uuid), fileName))
 	if err != nil {
-		return session, fmt.Errorf("failed to read save file: %s", err)
+		return session, fmt.Errorf("failed to open save file: %s", err)
 	}
 
-	zstdReader, err := zstd.NewReader(nil)
+	zstdDecoder, err := zstd.NewReader(file)
 	if err != nil {
-		return session, fmt.Errorf("failed to create zstd reader: %s", err)
+		return session, fmt.Errorf("failed to create zstd decoder: %s", err)
 	}
 
-	decompressed, err := zstdReader.DecodeAll(save, nil)
-	if err != nil {
-		return session, fmt.Errorf("failed to decompress save file: %s", err)
-	}
-
-	gobDecoderBuf := bytes.NewBuffer(decompressed)
-
-	err = gob.NewDecoder(gobDecoderBuf).Decode(&session)
+	err = gob.NewDecoder(zstdDecoder).Decode(&session)
 	if err != nil {
 		return session, fmt.Errorf("failed to deserialize save: %s", err)
 	}

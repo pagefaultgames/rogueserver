@@ -1,7 +1,6 @@
 package api
 
 import (
-	"bytes"
 	"encoding/gob"
 	"encoding/hex"
 	"fmt"
@@ -72,27 +71,24 @@ func handleSavedataUpdate(uuid []byte, slot int, save any) error {
 			return fmt.Errorf("failed to update account stats: %s", err)
 		}
 
-		var gobBuffer bytes.Buffer
-		err = gob.NewEncoder(&gobBuffer).Encode(save)
-		if err != nil {
-			return fmt.Errorf("failed to serialize save: %s", err)
-		}
-
-		zstdWriter, err := zstd.NewWriter(nil)
-		if err != nil {
-			return fmt.Errorf("failed to create zstd writer, %s", err)
-		}
-
-		compressed := zstdWriter.EncodeAll(gobBuffer.Bytes(), nil)
-
 		err = os.MkdirAll("userdata/"+hexUUID, 0755)
 		if err != nil && !os.IsExist(err) {
 			return fmt.Errorf("failed to create userdata folder: %s", err)
 		}
 
-		err = os.WriteFile("userdata/"+hexUUID+"/system.pzs", compressed, 0644)
+		file, err := os.OpenFile("userdata/"+hexUUID+"/system.pzs", os.O_WRONLY | os.O_TRUNC, 0644)
 		if err != nil {
-			return fmt.Errorf("failed to write save file: %s", err)
+			return fmt.Errorf("failed to open save file for writing: %s", err)
+		}
+
+		zstdEncoder, err := zstd.NewWriter(file)
+		if err != nil {
+			return fmt.Errorf("failed to create zstd encoder: %s", err)
+		}
+
+		err = gob.NewEncoder(zstdEncoder).Encode(save)
+		if err != nil {
+			return fmt.Errorf("failed to serialize save: %s", err)
 		}
 	case defs.SessionSaveData: // Session
 		if slot < 0 || slot >= sessionSlotCount {
@@ -104,27 +100,24 @@ func handleSavedataUpdate(uuid []byte, slot int, save any) error {
 			fileName += strconv.Itoa(slot)
 		}
 
-		var gobBuffer bytes.Buffer
-		err = gob.NewEncoder(&gobBuffer).Encode(save)
-		if err != nil {
-			return fmt.Errorf("failed to serialize save: %s", err)
-		}
-
-		zstdWriter, err := zstd.NewWriter(nil)
-		if err != nil {
-			return fmt.Errorf("failed to create zstd writer, %s", err)
-		}
-
-		compressed := zstdWriter.EncodeAll(gobBuffer.Bytes(), nil)
-
 		err = os.MkdirAll("userdata/"+hexUUID, 0755)
 		if err != nil && !os.IsExist(err) {
 			return fmt.Errorf(fmt.Sprintf("failed to create userdata folder: %s", err))
 		}
 
-		err = os.WriteFile(fmt.Sprintf("userdata/%s/%s.pzs", hexUUID, fileName), compressed, 0644)
+		file, err := os.OpenFile(fmt.Sprintf("userdata/%s/%s.pzs", hexUUID, fileName), os.O_WRONLY | os.O_TRUNC, 0644)
 		if err != nil {
-			return fmt.Errorf("failed to write save file: %s", err)
+			return fmt.Errorf("failed to open save file for writing: %s", err)
+		}
+		
+		zstdEncoder, err := zstd.NewWriter(file)
+		if err != nil {
+			return fmt.Errorf("failed to create zstd encoder: %s", err)
+		}
+
+		err = gob.NewEncoder(zstdEncoder).Encode(save)
+		if err != nil {
+			return fmt.Errorf("failed to serialize save: %s", err)
 		}
 
 		db.DeleteClaimedAccountCompensations(uuid)
