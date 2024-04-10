@@ -5,6 +5,7 @@ import (
 	"encoding/gob"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -261,6 +262,11 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		w.Write([]byte(strconv.Itoa(count)))
 	}
+}
+
+func httpError(w http.ResponseWriter, r *http.Request, err error, code int) {
+	log.Printf("%s: %s\n", r.URL.Path, err)
+	http.Error(w, err.Error(), code)
 }
 
 // auth
