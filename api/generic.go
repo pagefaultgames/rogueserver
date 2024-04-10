@@ -112,7 +112,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		w.WriteHeader(http.StatusOK)
 
-		// /game
+	// /game
 	case "/game/playercount":
 		w.Write([]byte(strconv.Itoa(playerCount)))
 	case "/game/titlestats":
@@ -127,7 +127,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case "/game/classicsessioncount":
 		w.Write([]byte(strconv.Itoa(classicSessionCount)))
 
-		// /savedata
+	// /savedata
 	case "/savedata/get", "/savedata/update", "/savedata/delete", "/savedata/clear":
 		uuid, err := getUUIDFromRequest(r)
 		if err != nil {
@@ -205,7 +205,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// /daily
+	// /daily
 	case "/daily/seed":
 		w.Write([]byte(dailyRunSeed))
 	case "/daily/rankings":
