@@ -58,12 +58,12 @@ func handleAccountInfo(username string, uuid []byte) (AccountInfoResponse, error
 type AccountRegisterRequest GenericAuthRequest
 
 // /account/register - register account
-func handleAccountRegister(username, password string) error {
-	if !isValidUsername(username) {
+func handleAccountRegister(request AccountRegisterRequest) error {
+	if !isValidUsername(request.Username) {
 		return fmt.Errorf("invalid username")
 	}
 
-	if len(password) < 6 {
+	if len(request.Password) < 6 {
 		return fmt.Errorf("invalid password")
 	}
 
@@ -79,7 +79,7 @@ func handleAccountRegister(username, password string) error {
 		return fmt.Errorf(fmt.Sprintf("failed to generate salt: %s", err))
 	}
 
-	err = db.AddAccountRecord(uuid, username, argon2.IDKey([]byte(password), salt, ArgonTime, ArgonMemory, ArgonThreads, ArgonKeySize), salt)
+	err = db.AddAccountRecord(uuid, request.Username, argon2.IDKey([]byte(request.Password), salt, ArgonTime, ArgonMemory, ArgonThreads, ArgonKeySize), salt)
 	if err != nil {
 		return fmt.Errorf("failed to add account record: %s", err)
 	}
@@ -91,16 +91,16 @@ type AccountLoginRequest GenericAuthRequest
 type AccountLoginResponse GenericAuthResponse
 
 // /account/login - log into account
-func handleAccountLogin(username, password string) (AccountLoginResponse, error) {
-	if !isValidUsername(username) {
+func handleAccountLogin(request AccountLoginRequest) (AccountLoginResponse, error) {
+	if !isValidUsername(request.Username) {
 		return AccountLoginResponse{}, fmt.Errorf("invalid username")
 	}
 
-	if len(password) < 6 {
+	if len(request.Password) < 6 {
 		return AccountLoginResponse{}, fmt.Errorf("invalid password")
 	}
 
-	key, salt, err := db.FetchAccountKeySaltFromUsername(username)
+	key, salt, err := db.FetchAccountKeySaltFromUsername(request.Username)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return AccountLoginResponse{}, fmt.Errorf("account doesn't exist")
@@ -109,7 +109,7 @@ func handleAccountLogin(username, password string) (AccountLoginResponse, error)
 		return AccountLoginResponse{}, err
 	}
 
-	if !bytes.Equal(key, argon2.IDKey([]byte(password), salt, ArgonTime, ArgonMemory, ArgonThreads, ArgonKeySize)) {
+	if !bytes.Equal(key, argon2.IDKey([]byte(request.Password), salt, ArgonTime, ArgonMemory, ArgonThreads, ArgonKeySize)) {
 		return AccountLoginResponse{}, fmt.Errorf("password doesn't match")
 	}
 
@@ -119,7 +119,7 @@ func handleAccountLogin(username, password string) (AccountLoginResponse, error)
 		return AccountLoginResponse{}, fmt.Errorf("failed to generate token: %s", err)
 	}
 
-	err = db.AddAccountSession(username, token)
+	err = db.AddAccountSession(request.Username, token)
 	if err != nil {
 		return AccountLoginResponse{}, fmt.Errorf("failed to add account session")
 	}

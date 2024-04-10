@@ -71,7 +71,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err = handleAccountRegister(request.Username, request.Password)
+		err = handleAccountRegister(request)
 		if err != nil {
 			httpError(w, r, err, http.StatusInternalServerError)
 			return
@@ -86,7 +86,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		response, err := handleAccountLogin(request.Username, request.Password)
+		response, err := handleAccountLogin(request)
 		if err != nil {
 			httpError(w, r, err, http.StatusInternalServerError)
 			return
