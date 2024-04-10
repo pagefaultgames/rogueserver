@@ -19,10 +19,14 @@ func readSystemSaveData(uuid []byte) (defs.SystemSaveData, error) {
 		return system, fmt.Errorf("failed to open save file: %s", err)
 	}
 
+	defer file.Close()
+
 	zstdDecoder, err := zstd.NewReader(file)
 	if err != nil {
 		return system, fmt.Errorf("failed to create zstd decoder: %s", err)
 	}
+
+	defer zstdDecoder.Close()
 
 	err = gob.NewDecoder(zstdDecoder).Decode(&system)
 	if err != nil {
@@ -45,10 +49,14 @@ func readSessionSaveData(uuid []byte, slotID int) (defs.SessionSaveData, error) 
 		return session, fmt.Errorf("failed to open save file: %s", err)
 	}
 
+	defer file.Close()
+
 	zstdDecoder, err := zstd.NewReader(file)
 	if err != nil {
 		return session, fmt.Errorf("failed to create zstd decoder: %s", err)
 	}
+
+	defer zstdDecoder.Close()
 
 	err = gob.NewDecoder(zstdDecoder).Decode(&session)
 	if err != nil {
