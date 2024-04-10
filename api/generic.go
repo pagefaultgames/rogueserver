@@ -51,19 +51,17 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		info, err := handleAccountInfo(username, uuid)
+		response, err := handleAccountInfo(username, uuid)
 		if err != nil {
 			httpError(w, r, err, http.StatusInternalServerError)
 			return
 		}
 
-		response, err := json.Marshal(info)
+		err = json.NewEncoder(w).Encode(response)
 		if err != nil {
-			httpError(w, r, fmt.Errorf("failed to marshal response json: %s", err), http.StatusInternalServerError)
+			httpError(w, r, fmt.Errorf("failed to encode response json: %s", err), http.StatusInternalServerError)
 			return
 		}
-
-		w.Write(response)
 	case "/account/register":
 		var request AccountRegisterRequest
 		err := json.NewDecoder(r.Body).Decode(&request)
@@ -87,19 +85,17 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		token, err := handleAccountLogin(request.Username, request.Password)
+		response, err := handleAccountLogin(request.Username, request.Password)
 		if err != nil {
 			httpError(w, r, err, http.StatusInternalServerError)
 			return
 		}
 
-		response, err := json.Marshal(token)
+		err = json.NewEncoder(w).Encode(response)
 		if err != nil {
-			httpError(w, r, fmt.Errorf("failed to marshal response json: %s", err), http.StatusInternalServerError)
+			httpError(w, r, fmt.Errorf("failed to encode response json: %s", err), http.StatusInternalServerError)
 			return
 		}
-
-		w.Write(response)
 	case "/account/logout":
 		token, err := base64.StdEncoding.DecodeString(r.Header.Get("Authorization"))
 		if err != nil {
@@ -119,16 +115,14 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case "/game/playercount":
 		w.Write([]byte(strconv.Itoa(playerCount)))
 	case "/game/titlestats":
-		response, err := json.Marshal(&defs.TitleStats{
+		err := json.NewEncoder(w).Encode(defs.TitleStats{
 			PlayerCount: playerCount,
 			BattleCount: battleCount,
 		})
 		if err != nil {
-			httpError(w, r, fmt.Errorf("failed to marshal response json: %s", err), http.StatusInternalServerError)
+			httpError(w, r, fmt.Errorf("failed to encode response json: %s", err), http.StatusInternalServerError)
 			return
 		}
-
-		w.Write(response)
 	case "/game/classicsessioncount":
 		w.Write([]byte(strconv.Itoa(classicSessionCount)))
 
@@ -204,13 +198,11 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		response, err := json.Marshal(save)
+		err = json.NewEncoder(w).Encode(save)
 		if err != nil {
-			httpError(w, r, fmt.Errorf("failed to marshal response json: %s", err), http.StatusInternalServerError)
+			httpError(w, r, fmt.Errorf("failed to encode response json: %s", err), http.StatusInternalServerError)
 			return
 		}
-
-		w.Write(response)
 
 		// /daily
 	case "/daily/seed":
@@ -246,13 +238,11 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		response, err := json.Marshal(rankings)
+		err = json.NewEncoder(w).Encode(rankings)
 		if err != nil {
-			httpError(w, r, fmt.Errorf("failed to marshal response json: %s", err), http.StatusInternalServerError)
+			httpError(w, r, fmt.Errorf("failed to encode response json: %s", err), http.StatusInternalServerError)
 			return
 		}
-
-		w.Write(response)
 	case "/daily/rankingpagecount":
 		var category int
 		if r.URL.Query().Has("category") {
