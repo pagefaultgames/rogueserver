@@ -100,6 +100,43 @@ func UpdateAccountStats(uuid []byte, stats defs.GameStats) error {
 	return nil
 }
 
+func FetchAndClaimAccountCompensations(uuid []byte) (map[int]int, error) {
+	var compensations = make(map[int]int)
+
+	results, err := handle.Query("SELECT voucherType, count FROM accountCompensations WHERE uuid = ?", uuid)
+	if err != nil {
+		return nil, err
+	}
+
+	defer results.Close()
+
+	for results.Next() {
+		var voucherType int
+		var count int
+		err := results.Scan(&voucherType, &count)
+		if err != nil {
+			return compensations, err
+		}
+		compensations[voucherType] = count
+	}
+
+	_, err = handle.Exec("UPDATE accountCompensations SET claimed = 1 WHERE uuid = ?", uuid)
+	if err != nil {
+		return compensations, err
+	}
+
+	return compensations, nil
+}
+
+func DeleteClaimedAccountCompensations(uuid []byte) error {
+	_, err := handle.Exec("DELETE FROM accountCompensations WHERE uuid = ? AND claimed = 1", uuid)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func FetchUsernameFromToken(token []byte) (string, error) {
 	var username string
 	err := handle.QueryRow("SELECT a.username FROM accounts a JOIN sessions s ON s.uuid = a.uuid WHERE s.token = ? AND s.expire > UTC_TIMESTAMP()", token).Scan(&username)

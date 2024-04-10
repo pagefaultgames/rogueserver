@@ -25,6 +25,16 @@ func handleSavedataGet(uuid []byte, datatype, slot int) (any, error) {
 			return nil, err
 		}
 
+		compensations, err := db.FetchAndClaimAccountCompensations(uuid)
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch compensations: %s", err)
+		}
+
+		for k, v := range compensations {
+			typeKey := strconv.Itoa(k)
+			system.VoucherCounts[typeKey] += v
+		}
+
 		return system, nil
 	case 1: // Session
 		if slot < 0 || slot >= sessionSlotCount {
@@ -116,6 +126,8 @@ func handleSavedataUpdate(uuid []byte, slot int, save any) error {
 		if err != nil {
 			return fmt.Errorf("failed to write save file: %s", err)
 		}
+
+		db.DeleteClaimedAccountCompensations(uuid)
 	default:
 		return fmt.Errorf("invalid data type")
 	}
