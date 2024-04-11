@@ -16,7 +16,7 @@ func readSystemSaveData(uuid []byte) (defs.SystemSaveData, error) {
 
 	file, err := os.Open("userdata/" + hex.EncodeToString(uuid) + "/system.pzs")
 	if err != nil {
-		return system, fmt.Errorf("failed to open save file: %s", err)
+		return system, fmt.Errorf("failed to open save file for reading: %s", err)
 	}
 
 	defer file.Close()
@@ -46,7 +46,7 @@ func readSessionSaveData(uuid []byte, slotID int) (defs.SessionSaveData, error) 
 
 	file, err := os.Open(fmt.Sprintf("userdata/%s/%s.pzs", hex.EncodeToString(uuid), fileName))
 	if err != nil {
-		return session, fmt.Errorf("failed to open save file: %s", err)
+		return session, fmt.Errorf("failed to open save file for reading: %s", err)
 	}
 
 	defer file.Close()

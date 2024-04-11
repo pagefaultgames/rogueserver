@@ -76,15 +76,19 @@ func handleSavedataUpdate(uuid []byte, slot int, save any) error {
 			return fmt.Errorf("failed to create userdata folder: %s", err)
 		}
 
-		file, err := os.OpenFile("userdata/"+hexUUID+"/system.pzs", os.O_WRONLY | os.O_TRUNC, 0644)
+		file, err := os.OpenFile("userdata/"+hexUUID+"/system.pzs", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 		if err != nil {
 			return fmt.Errorf("failed to open save file for writing: %s", err)
 		}
+
+		defer file.Close()
 
 		zstdEncoder, err := zstd.NewWriter(file)
 		if err != nil {
 			return fmt.Errorf("failed to create zstd encoder: %s", err)
 		}
+
+		defer zstdEncoder.Close()
 
 		err = gob.NewEncoder(zstdEncoder).Encode(save)
 		if err != nil {
@@ -105,15 +109,19 @@ func handleSavedataUpdate(uuid []byte, slot int, save any) error {
 			return fmt.Errorf(fmt.Sprintf("failed to create userdata folder: %s", err))
 		}
 
-		file, err := os.OpenFile(fmt.Sprintf("userdata/%s/%s.pzs", hexUUID, fileName), os.O_WRONLY | os.O_TRUNC, 0644)
+		file, err := os.OpenFile(fmt.Sprintf("userdata/%s/%s.pzs", hexUUID, fileName), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 		if err != nil {
 			return fmt.Errorf("failed to open save file for writing: %s", err)
 		}
-		
+
+		defer file.Close()
+
 		zstdEncoder, err := zstd.NewWriter(file)
 		if err != nil {
 			return fmt.Errorf("failed to create zstd encoder: %s", err)
 		}
+
+		defer zstdEncoder.Close()
 
 		err = gob.NewEncoder(zstdEncoder).Encode(save)
 		if err != nil {
