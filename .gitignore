@@ -1,4 +1,5 @@
 
-pokerogue-server.exe
+# no extension on linux, .exe on windows
+pokerogue-server*
 userdata/*
 secret.key
