@@ -94,6 +94,8 @@ func handleSavedataUpdate(uuid []byte, slot int, save any) error {
 		if err != nil {
 			return fmt.Errorf("failed to serialize save: %s", err)
 		}
+
+		db.DeleteClaimedAccountCompensations(uuid)
 	case defs.SessionSaveData: // Session
 		if slot < 0 || slot >= sessionSlotCount {
 			return fmt.Errorf("slot id %d out of range", slot)
@@ -127,8 +129,6 @@ func handleSavedataUpdate(uuid []byte, slot int, save any) error {
 		if err != nil {
 			return fmt.Errorf("failed to serialize save: %s", err)
 		}
-
-		db.DeleteClaimedAccountCompensations(uuid)
 	default:
 		return fmt.Errorf("invalid data type")
 	}
