@@ -41,8 +41,8 @@ func UpdateAccountLastActivity(uuid []byte) error {
 	return nil
 }
 
-func UpdateAccountStats(uuid []byte, stats defs.GameStats) error {
-	var columns = []string{"playTime", "battles", "classicSessionsPlayed", "sessionsWon", "highestEndlessWave", "highestLevel", "pokemonSeen", "pokemonDefeated", "pokemonCaught", "pokemonHatched", "eggsPulled"}
+func UpdateAccountStats(uuid []byte, stats defs.GameStats, voucherCounts map[string]int) error {
+	var columns = []string{"playTime", "battles", "classicSessionsPlayed", "sessionsWon", "highestEndlessWave", "highestLevel", "pokemonSeen", "pokemonDefeated", "pokemonCaught", "pokemonHatched", "eggsPulled", "regularVouchers", "plusVouchers", "premiumVouchers", "goldenVouchers"}
 
 	var statCols []string
 	var statValues []interface{}
@@ -62,6 +62,24 @@ func UpdateAccountStats(uuid []byte, stats defs.GameStats) error {
 			statCols = append(statCols, k)
 			statValues = append(statValues, value)
 		}
+	}
+
+	for k, v := range voucherCounts {
+		var column string
+		switch k {
+		case "0":
+			column = "regularVouchers"
+		case "1":
+			column = "plusVouchers"
+		case "2":
+			column = "premiumVouchers"
+		case "3":
+			column = "goldenVouchers"
+		default:
+			continue
+		}
+		statCols = append(statCols, column)
+		statValues = append(statValues, v)
 	}
 
 	var statArgs []interface{}

@@ -66,7 +66,7 @@ func handleSavedataUpdate(uuid []byte, slot int, save any) error {
 			return fmt.Errorf("invalid system data")
 		}
 
-		err = db.UpdateAccountStats(uuid, save.GameStats)
+		err = db.UpdateAccountStats(uuid, save.GameStats, save.VoucherCounts)
 		if err != nil {
 			return fmt.Errorf("failed to update account stats: %s", err)
 		}
