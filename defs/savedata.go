@@ -5,8 +5,9 @@ type SystemSaveData struct {
 	SecretId           int                `json:"secretId"`
 	Gender             int                `json:"gender"`
 	DexData            DexData            `json:"dexData"`
-	StarterMoveData    StarterMoveData    `json:"starterMoveData"`
-	StarterEggMoveData StarterEggMoveData `json:"starterEggMoveData"`
+	StarterData        StarterData        `json:"starterData"`
+	StarterMoveData    StarterMoveData    `json:"starterMoveData"`    // Legacy
+	StarterEggMoveData StarterEggMoveData `json:"starterEggMoveData"` // Legacy
 	GameStats          GameStats          `json:"gameStats"`
 	Unlocks            Unlocks            `json:"unlocks"`
 	AchvUnlocks        AchvUnlocks        `json:"achvUnlocks"`
@@ -27,6 +28,17 @@ type DexEntry struct {
 	CaughtCount  int         `json:"caughtCount"`
 	HatchedCount int         `json:"hatchedCount"`
 	Ivs          []int       `json:"ivs"`
+}
+
+type StarterData map[int]StarterEntry
+
+type StarterEntry struct {
+	Moveset        interface{} `json:"moveset"`
+	EggMoves       int         `json:"eggMoves"`
+	CandyCount     int         `json:"candyCount"`
+	PassiveAttr    int         `json:"passiveAttr"`
+	VariantAttr    int         `json:"variantAttr"`
+	ValueReduction int         `json:"valueReduction"`
 }
 
 type StarterMoveData map[int]interface{}
