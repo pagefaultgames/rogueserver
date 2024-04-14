@@ -12,16 +12,11 @@ import (
 	"time"
 
 	"github.com/Flashfyre/pokerogue-server/db"
-	"golang.org/x/crypto/argon2"
 )
 
 const (
-	UUIDSize      = 16
-	ArgonTime     = 1
-	ArgonMemory   = 256 * 1024
-	ArgonThreads  = 4
-	ArgonKeySize  = 32
-	ArgonSaltSize = 16
+	UUIDSize  = 16
+	TokenSize = 32
 )
 
 var isValidUsername = regexp.MustCompile(`^\w{1,16}$`).MatchString
@@ -79,7 +74,7 @@ func handleAccountRegister(request AccountRegisterRequest) error {
 		return fmt.Errorf(fmt.Sprintf("failed to generate salt: %s", err))
 	}
 
-	err = db.AddAccountRecord(uuid, request.Username, argon2.IDKey([]byte(request.Password), salt, ArgonTime, ArgonMemory, ArgonThreads, ArgonKeySize), salt)
+	err = db.AddAccountRecord(uuid, request.Username, deriveArgon2IDKey([]byte(request.Password), salt), salt)
 	if err != nil {
 		return fmt.Errorf("failed to add account record: %s", err)
 	}
@@ -109,11 +104,11 @@ func handleAccountLogin(request AccountLoginRequest) (AccountLoginResponse, erro
 		return AccountLoginResponse{}, err
 	}
 
-	if !bytes.Equal(key, argon2.IDKey([]byte(request.Password), salt, ArgonTime, ArgonMemory, ArgonThreads, ArgonKeySize)) {
+	if !bytes.Equal(key, deriveArgon2IDKey([]byte(request.Password), salt)) {
 		return AccountLoginResponse{}, fmt.Errorf("password doesn't match")
 	}
 
-	token := make([]byte, 32)
+	token := make([]byte, TokenSize)
 	_, err = rand.Read(token)
 	if err != nil {
 		return AccountLoginResponse{}, fmt.Errorf("failed to generate token: %s", err)
@@ -129,7 +124,7 @@ func handleAccountLogin(request AccountLoginRequest) (AccountLoginResponse, erro
 
 // /account/logout - log out of account
 func handleAccountLogout(token []byte) error {
-	if len(token) != 32 {
+	if len(token) != TokenSize {
 		return fmt.Errorf("invalid token")
 	}
 
