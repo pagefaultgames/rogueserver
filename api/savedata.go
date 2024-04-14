@@ -178,17 +178,17 @@ type SavedataClearResponse struct {
 
 // /savedata/clear - mark session save data as cleared and delete
 func handleSavedataClear(uuid []byte, slot int, save defs.SessionSaveData) (SavedataClearResponse, error) {
+	var response SavedataClearResponse
 	err := db.UpdateAccountLastActivity(uuid)
 	if err != nil {
 		log.Print("failed to update account last activity")
 	}
 
 	if slot < 0 || slot >= sessionSlotCount {
-		return SavedataClearResponse{}, fmt.Errorf("slot id %d out of range", slot)
+		return response, fmt.Errorf("slot id %d out of range", slot)
 	}
 
 	sessionCompleted := validateSessionCompleted(save)
-	newCompletion := false
 
 	if save.GameMode == 3 && save.Seed == dailyRunSeed {
 		waveCompleted := save.WaveIndex
@@ -202,7 +202,7 @@ func handleSavedataClear(uuid []byte, slot int, save defs.SessionSaveData) (Save
 	}
 
 	if sessionCompleted {
-		newCompletion, err = db.TryAddSeedCompletion(uuid, save.Seed, int(save.GameMode))
+		response.Success, err = db.TryAddSeedCompletion(uuid, save.Seed, int(save.GameMode))
 		if err != nil {
 			log.Printf("failed to mark seed as completed: %s", err)
 		}
@@ -215,8 +215,8 @@ func handleSavedataClear(uuid []byte, slot int, save defs.SessionSaveData) (Save
 
 	err = os.Remove(fmt.Sprintf("userdata/%s/%s.pzs", hex.EncodeToString(uuid), fileName))
 	if err != nil && !os.IsNotExist(err) {
-		return SavedataClearResponse{}, fmt.Errorf("failed to delete save file: %s", err)
+		return response, fmt.Errorf("failed to delete save file: %s", err)
 	}
 
-	return SavedataClearResponse{Success: newCompletion}, nil
+	return response, nil
 }
