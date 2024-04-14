@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/Flashfyre/pokerogue-server/api"
-	"github.com/Flashfyre/pokerogue-server/db"
+	"github.com/pagefaultgames/pokerogue-server/api"
+	"github.com/pagefaultgames/pokerogue-server/db"
 )
 
 func main() {

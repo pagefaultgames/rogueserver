@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/Flashfyre/pokerogue-server/db"
+	"github.com/pagefaultgames/pokerogue-server/db"
 )
 
 func getUsernameFromRequest(r *http.Request) (string, error) {

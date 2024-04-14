@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/Flashfyre/pokerogue-server/defs"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/pagefaultgames/pokerogue-server/defs"
 )
 
 func AddAccountRecord(uuid []byte, username string, key, salt []byte) error {

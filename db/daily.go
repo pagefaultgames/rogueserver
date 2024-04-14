@@ -3,7 +3,7 @@ package db
 import (
 	"math"
 
-	"github.com/Flashfyre/pokerogue-server/defs"
+	"github.com/pagefaultgames/pokerogue-server/defs"
 )
 
 func TryAddDailyRun(seed string) error {

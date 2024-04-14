@@ -1,4 +1,4 @@
-module github.com/Flashfyre/pokerogue-server
+module github.com/pagefaultgames/pokerogue-server
 
 go 1.22
 

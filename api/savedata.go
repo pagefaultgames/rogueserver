@@ -8,9 +8,9 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/Flashfyre/pokerogue-server/db"
-	"github.com/Flashfyre/pokerogue-server/defs"
 	"github.com/klauspost/compress/zstd"
+	"github.com/pagefaultgames/pokerogue-server/db"
+	"github.com/pagefaultgames/pokerogue-server/defs"
 )
 
 const sessionSlotCount = 3

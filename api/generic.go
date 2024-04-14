@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/Flashfyre/pokerogue-server/defs"
+	"github.com/pagefaultgames/pokerogue-server/defs"
 )
 
 type Server struct {

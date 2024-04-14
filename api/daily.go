@@ -10,9 +10,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/Flashfyre/pokerogue-server/db"
-	"github.com/Flashfyre/pokerogue-server/defs"
 	"github.com/go-co-op/gocron"
+	"github.com/pagefaultgames/pokerogue-server/db"
+	"github.com/pagefaultgames/pokerogue-server/defs"
 )
 
 const secondsPerDay = 60 * 60 * 24

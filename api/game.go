@@ -4,8 +4,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/Flashfyre/pokerogue-server/db"
 	"github.com/go-co-op/gocron"
+	"github.com/pagefaultgames/pokerogue-server/db"
 )
 
 var (

@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/Flashfyre/pokerogue-server/db"
+	"github.com/pagefaultgames/pokerogue-server/db"
 )
 
 const (
