@@ -5,8 +5,14 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/pagefaultgames/pokerogue-server/api/daily"
 	"github.com/pagefaultgames/pokerogue-server/db"
 )
+
+func Init() {
+	scheduleStatRefresh()
+	daily.Init()
+}
 
 func getUsernameFromRequest(r *http.Request) (string, error) {
 	if r.Header.Get("Authorization") == "" {

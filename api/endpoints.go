@@ -9,6 +9,9 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/pagefaultgames/pokerogue-server/api/account"
+	"github.com/pagefaultgames/pokerogue-server/api/daily"
+	"github.com/pagefaultgames/pokerogue-server/api/savedata"
 	"github.com/pagefaultgames/pokerogue-server/defs"
 )
 
@@ -52,7 +55,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		response, err := handleAccountInfo(username, uuid)
+		response, err := account.Info(username, uuid)
 		if err != nil {
 			httpError(w, r, err, http.StatusInternalServerError)
 			return
@@ -64,14 +67,14 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	case "/account/register":
-		var request AccountRegisterRequest
+		var request account.RegisterRequest
 		err := json.NewDecoder(r.Body).Decode(&request)
 		if err != nil {
 			httpError(w, r, fmt.Errorf("failed to decode request body: %s", err), http.StatusBadRequest)
 			return
 		}
 
-		err = handleAccountRegister(request)
+		err = account.Register(request)
 		if err != nil {
 			httpError(w, r, err, http.StatusInternalServerError)
 			return
@@ -79,14 +82,14 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		w.WriteHeader(http.StatusOK)
 	case "/account/login":
-		var request AccountLoginRequest
+		var request account.LoginRequest
 		err := json.NewDecoder(r.Body).Decode(&request)
 		if err != nil {
 			httpError(w, r, fmt.Errorf("failed to decode request body: %s", err), http.StatusBadRequest)
 			return
 		}
 
-		response, err := handleAccountLogin(request)
+		response, err := account.Login(request)
 		if err != nil {
 			httpError(w, r, err, http.StatusInternalServerError)
 			return
@@ -104,7 +107,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err = handleAccountLogout(token)
+		err = account.Logout(token)
 		if err != nil {
 			httpError(w, r, err, http.StatusInternalServerError)
 			return
@@ -180,14 +183,14 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		switch r.URL.Path {
 		case "/savedata/get":
-			save, err = handleSavedataGet(uuid, datatype, slot)
+			save, err = savedata.Get(uuid, datatype, slot)
 		case "/savedata/update":
-			err = handleSavedataUpdate(uuid, slot, save)
+			err = savedata.Update(uuid, slot, save)
 		case "/savedata/delete":
-			err = handleSavedataDelete(uuid, datatype, slot)
+			err = savedata.Delete(uuid, datatype, slot)
 		case "/savedata/clear":
 			// doesn't return a save, but it works
-			save, err = handleSavedataClear(uuid, slot, save.(defs.SessionSaveData))
+			save, err = savedata.Clear(uuid, slot, daily.Seed(), save.(defs.SessionSaveData))
 		}
 		if err != nil {
 			httpError(w, r, err, http.StatusInternalServerError)
@@ -207,7 +210,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// /daily
 	case "/daily/seed":
-		w.Write([]byte(dailyRunSeed))
+		w.Write([]byte(daily.Seed()))
 	case "/daily/rankings":
 		uuid, err := getUUIDFromRequest(r)
 		if err != nil {
@@ -233,7 +236,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		rankings, err := handleRankings(uuid, category, page)
+		rankings, err := daily.Rankings(uuid, category, page)
 		if err != nil {
 			httpError(w, r, err, http.StatusInternalServerError)
 			return
@@ -255,7 +258,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		count, err := handleRankingPageCount(category)
+		count, err := daily.RankingPageCount(category)
 		if err != nil {
 			httpError(w, r, err, http.StatusInternalServerError)
 		}
@@ -267,15 +270,4 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func httpError(w http.ResponseWriter, r *http.Request, err error, code int) {
 	log.Printf("%s: %s\n", r.URL.Path, err)
 	http.Error(w, err.Error(), code)
-}
-
-// auth
-
-type GenericAuthRequest struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-}
-
-type GenericAuthResponse struct {
-	Token string `json:"token"`
 }

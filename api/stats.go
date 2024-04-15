@@ -15,7 +15,7 @@ var (
 	classicSessionCount int
 )
 
-func ScheduleStatRefresh() {
+func scheduleStatRefresh() {
 	statScheduler.Every(10).Second().Do(updateStats)
 	statScheduler.StartAsync()
 }

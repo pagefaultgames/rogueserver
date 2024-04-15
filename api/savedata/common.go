@@ -1,4 +1,4 @@
-package api
+package savedata
 
 import (
 	"encoding/gob"

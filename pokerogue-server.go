@@ -43,9 +43,7 @@ func main() {
 		os.Chmod(*addr, 0777)
 	}
 
-	api.ScheduleStatRefresh()
-	api.ScheduleDailyRunRefresh()
-	api.InitDailyRun()
+	api.Init()
 
 	err = http.Serve(listener, &api.Server{Debug: *debug})
 	if err != nil {
