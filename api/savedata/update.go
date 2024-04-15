@@ -57,6 +57,10 @@ func Update(uuid []byte, slot int, save any) error {
 			return fmt.Errorf("failed to serialize save: %s", err)
 		}
 
+		if save.GameVersion != "1.0.1" {
+			return fmt.Errorf("client version out of date")
+		}
+
 		db.DeleteClaimedAccountCompensations(uuid)
 	case defs.SessionSaveData: // Session
 		if slot < 0 || slot >= defs.SessionSlotCount {
