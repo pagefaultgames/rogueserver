@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/pagefaultgames/pokerogue-server/api/account"
 	"github.com/pagefaultgames/pokerogue-server/api/daily"
 	"github.com/pagefaultgames/pokerogue-server/db"
 )
@@ -24,8 +25,8 @@ func getUsernameFromRequest(r *http.Request) (string, error) {
 		return "", fmt.Errorf("failed to decode token: %s", err)
 	}
 
-	if len(token) != 32 {
-		return "", fmt.Errorf("invalid token length: got %d, expected 32", len(token))
+	if len(token) != account.TokenSize {
+		return "", fmt.Errorf("invalid token length: got %d, expected %d", len(token), account.TokenSize)
 	}
 
 	username, err := db.FetchUsernameFromToken(token)
@@ -46,8 +47,8 @@ func getUUIDFromRequest(r *http.Request) ([]byte, error) {
 		return nil, fmt.Errorf("failed to decode token: %s", err)
 	}
 
-	if len(token) != 32 {
-		return nil, fmt.Errorf("invalid token length: got %d, expected 32", len(token))
+	if len(token) != account.TokenSize {
+		return nil, fmt.Errorf("invalid token length: got %d, expected %d", len(token), account.TokenSize)
 	}
 
 	uuid, err := db.FetchUUIDFromToken(token)
