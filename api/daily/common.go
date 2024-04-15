@@ -44,14 +44,14 @@ func Init() error {
 		secret = newSecret
 	}
 
-	err = recordNewRun()
+	err = recordNewDaily()
 	if err != nil {
 		log.Print(err)
 	}
 
 	log.Printf("Daily Run Seed: %s", Seed())
 
-	scheduler.Every(1).Day().At("00:00").Do(recordNewRun())
+	scheduler.Every(1).Day().At("00:00").Do(recordNewDaily())
 	scheduler.StartAsync()
 
 	return nil
@@ -70,7 +70,7 @@ func deriveSeed(seedTime time.Time) []byte {
 	return hashedSeed[:]
 }
 
-func recordNewRun() error {
+func recordNewDaily() error {
 	err := db.TryAddDailyRun(Seed())
 	if err != nil {
 		return err
