@@ -7,11 +7,6 @@ import (
 	"github.com/pagefaultgames/pokerogue-server/db"
 )
 
-const (
-	UUIDSize  = 16
-	TokenSize = 32
-)
-
 type RegisterRequest GenericAuthRequest
 
 // /account/register - register account

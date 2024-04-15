@@ -21,6 +21,9 @@ const (
 	ArgonThreads  = 4
 	ArgonKeySize  = 32
 	ArgonSaltSize = 16
+
+	UUIDSize  = 16
+	TokenSize = 32
 )
 
 var isValidUsername = regexp.MustCompile(`^\w{1,16}$`).MatchString
