@@ -17,12 +17,14 @@ import (
 const secondsPerDay = 60 * 60 * 24
 
 var (
-	dailyRunScheduler = gocron.NewScheduler(time.UTC)
-	dailyRunSecret    []byte
+	scheduler = gocron.NewScheduler(time.UTC)
+	secret    []byte
 )
 
 func Init() error {
-	secret, err := os.ReadFile("secret.key")
+	var err error
+
+	secret, err = os.ReadFile("secret.key")
 	if err != nil {
 		if !os.IsNotExist(err) {
 			return fmt.Errorf("failed to read daily seed secret: %s", err)
@@ -42,41 +44,37 @@ func Init() error {
 		secret = newSecret
 	}
 
-	dailyRunSecret = secret
-
-	err = db.TryAddDailyRun(Seed())
+	err = recordNewRun()
 	if err != nil {
 		log.Print(err)
 	}
 
 	log.Printf("Daily Run Seed: %s", Seed())
 
-	scheduleRefresh()
+	scheduler.Every(1).Day().At("00:00").Do(recordNewRun())
+	scheduler.StartAsync()
 
 	return nil
 }
 
 func Seed() string {
-	return base64.StdEncoding.EncodeToString(deriveDailyRunSeed(time.Now().UTC()))
+	return base64.StdEncoding.EncodeToString(deriveSeed(time.Now().UTC()))
 }
 
-func scheduleRefresh() {
-	dailyRunScheduler.Every(1).Day().At("00:00").Do(func() error {
-		err := Init()
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		return nil
-	}())
-	dailyRunScheduler.StartAsync()
-}
-
-func deriveDailyRunSeed(seedTime time.Time) []byte {
+func deriveSeed(seedTime time.Time) []byte {
 	day := make([]byte, 8)
 	binary.BigEndian.PutUint64(day, uint64(seedTime.Unix()/secondsPerDay))
 
-	hashedSeed := md5.Sum(append(day, dailyRunSecret...))
+	hashedSeed := md5.Sum(append(day, secret...))
 
 	return hashedSeed[:]
+}
+
+func recordNewRun() error {
+	err := db.TryAddDailyRun(Seed())
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
