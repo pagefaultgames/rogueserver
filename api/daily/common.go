@@ -17,7 +17,7 @@ import (
 const secondsPerDay = 60 * 60 * 24
 
 var (
-	scheduler = cron.New()
+	scheduler = cron.New(cron.WithLocation(time.UTC))
 	secret    []byte
 )
 

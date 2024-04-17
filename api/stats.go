@@ -2,13 +2,14 @@ package api
 
 import (
 	"log"
+	"time"
 
 	"github.com/pagefaultgames/pokerogue-server/db"
 	"github.com/robfig/cron/v3"
 )
 
 var (
-	scheduler           = cron.New()
+	scheduler           = cron.New(cron.WithLocation(time.UTC))
 	playerCount         int
 	battleCount         int
 	classicSessionCount int
