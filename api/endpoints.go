@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"sync"
 
 	"github.com/pagefaultgames/pokerogue-server/api/account"
 	"github.com/pagefaultgames/pokerogue-server/api/daily"
@@ -17,6 +18,7 @@ import (
 
 type Server struct {
 	Debug bool
+	Exit *sync.RWMutex
 }
 
 /*
@@ -26,6 +28,10 @@ type Server struct {
 */
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// kind of misusing the RWMutex but it doesn't matter
+	s.Exit.RLock()
+	defer s.Exit.RUnlock()
+
 	gob.Register([]interface{}{})
 	gob.Register(map[string]interface{}{})
 
