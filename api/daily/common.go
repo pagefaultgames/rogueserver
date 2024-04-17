@@ -10,14 +10,14 @@ import (
 	"os"
 	"time"
 
-	"github.com/go-co-op/gocron"
 	"github.com/pagefaultgames/pokerogue-server/db"
+	"github.com/robfig/cron/v3"
 )
 
 const secondsPerDay = 60 * 60 * 24
 
 var (
-	scheduler = gocron.NewScheduler(time.UTC)
+	scheduler = cron.New()
 	secret    []byte
 )
 
@@ -51,8 +51,14 @@ func Init() error {
 
 	log.Printf("Daily Run Seed: %s", Seed())
 
-	scheduler.Every(1).Day().At("00:00").Do(recordNewDaily())
-	scheduler.StartAsync()
+	scheduler.AddFunc("@daily", func() {
+		err := recordNewDaily()
+		if err != nil {
+			log.Printf("error while recording new daily: %s", err)
+		}
+	})
+
+	scheduler.Start()
 
 	return nil
 }

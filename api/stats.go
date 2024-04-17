@@ -2,38 +2,45 @@ package api
 
 import (
 	"log"
-	"time"
 
-	"github.com/go-co-op/gocron"
 	"github.com/pagefaultgames/pokerogue-server/db"
+	"github.com/robfig/cron/v3"
 )
 
 var (
-	statScheduler       = gocron.NewScheduler(time.UTC)
+	scheduler           = cron.New()
 	playerCount         int
 	battleCount         int
 	classicSessionCount int
 )
 
 func scheduleStatRefresh() {
-	statScheduler.Every(10).Second().Do(updateStats)
-	statScheduler.StartAsync()
+	scheduler.AddFunc("@every 10s", func() {
+		err := updateStats()
+		if err != nil {
+			log.Printf("failed to update stats: %s", err)
+		}
+	})
+
+	scheduler.Start()
 }
 
-func updateStats() {
+func updateStats() error {
 	var err error
 	playerCount, err = db.FetchPlayerCount()
 	if err != nil {
-		log.Print(err)
+		return err
 	}
 
 	battleCount, err = db.FetchBattleCount()
 	if err != nil {
-		log.Print(err)
+		return err
 	}
 
 	classicSessionCount, err = db.FetchClassicSessionCount()
 	if err != nil {
-		log.Print(err)
+		return err
 	}
+
+	return nil
 }
