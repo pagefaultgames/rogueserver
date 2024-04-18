@@ -52,6 +52,8 @@ func Init() error {
 	log.Printf("Daily Run Seed: %s", Seed())
 
 	scheduler.AddFunc("@daily", func() {
+		time.Sleep(time.Second)
+
 		err := recordNewDaily()
 		if err != nil {
 			log.Printf("error while recording new daily: %s", err)
