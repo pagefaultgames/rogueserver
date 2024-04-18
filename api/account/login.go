@@ -10,22 +10,21 @@ import (
 	"github.com/pagefaultgames/pokerogue-server/db"
 )
 
-type LoginRequest GenericAuthRequest
 type LoginResponse GenericAuthResponse
 
 // /account/login - log into account
-func Login(request LoginRequest) (LoginResponse, error) {
+func Login(username, password string) (LoginResponse, error) {
 	var response LoginResponse
 
-	if !isValidUsername(request.Username) {
+	if !isValidUsername(username) {
 		return response, fmt.Errorf("invalid username")
 	}
 
-	if len(request.Password) < 6 {
+	if len(password) < 6 {
 		return response, fmt.Errorf("invalid password")
 	}
 
-	key, salt, err := db.FetchAccountKeySaltFromUsername(request.Username)
+	key, salt, err := db.FetchAccountKeySaltFromUsername(username)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return response, fmt.Errorf("account doesn't exist")
@@ -34,7 +33,7 @@ func Login(request LoginRequest) (LoginResponse, error) {
 		return response, err
 	}
 
-	if !bytes.Equal(key, deriveArgon2IDKey([]byte(request.Password), salt)) {
+	if !bytes.Equal(key, deriveArgon2IDKey([]byte(password), salt)) {
 		return response, fmt.Errorf("password doesn't match")
 	}
 
@@ -44,7 +43,7 @@ func Login(request LoginRequest) (LoginResponse, error) {
 		return response, fmt.Errorf("failed to generate token: %s", err)
 	}
 
-	err = db.AddAccountSession(request.Username, token)
+	err = db.AddAccountSession(username, token)
 	if err != nil {
 		return response, fmt.Errorf("failed to add account session")
 	}

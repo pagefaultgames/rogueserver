@@ -69,14 +69,13 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	case "/account/register":
-		var request account.RegisterRequest
-		err := json.NewDecoder(r.Body).Decode(&request)
+		err := r.ParseForm()
 		if err != nil {
-			httpError(w, r, fmt.Errorf("failed to decode request body: %s", err), http.StatusBadRequest)
+			httpError(w, r, fmt.Errorf("failed to parse request form: %s", err), http.StatusBadRequest)
 			return
 		}
 
-		err = account.Register(request)
+		err = account.Register(r.Form.Get("username"), r.Form.Get("password"))
 		if err != nil {
 			httpError(w, r, err, http.StatusInternalServerError)
 			return
@@ -84,14 +83,13 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		w.WriteHeader(http.StatusOK)
 	case "/account/login":
-		var request account.LoginRequest
-		err := json.NewDecoder(r.Body).Decode(&request)
+		err := r.ParseForm()
 		if err != nil {
-			httpError(w, r, fmt.Errorf("failed to decode request body: %s", err), http.StatusBadRequest)
+			httpError(w, r, fmt.Errorf("failed to parse request form: %s", err), http.StatusBadRequest)
 			return
 		}
 
-		response, err := account.Login(request)
+		response, err := account.Login(r.Form.Get("username"), r.Form.Get("password"))
 		if err != nil {
 			httpError(w, r, err, http.StatusInternalServerError)
 			return

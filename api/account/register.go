@@ -7,15 +7,13 @@ import (
 	"github.com/pagefaultgames/pokerogue-server/db"
 )
 
-type RegisterRequest GenericAuthRequest
-
 // /account/register - register account
-func Register(request RegisterRequest) error {
-	if !isValidUsername(request.Username) {
+func Register(username, password string) error {
+	if !isValidUsername(username) {
 		return fmt.Errorf("invalid username")
 	}
 
-	if len(request.Password) < 6 {
+	if len(password) < 6 {
 		return fmt.Errorf("invalid password")
 	}
 
@@ -31,7 +29,7 @@ func Register(request RegisterRequest) error {
 		return fmt.Errorf(fmt.Sprintf("failed to generate salt: %s", err))
 	}
 
-	err = db.AddAccountRecord(uuid, request.Username, deriveArgon2IDKey([]byte(request.Password), salt), salt)
+	err = db.AddAccountRecord(uuid, username, deriveArgon2IDKey([]byte(password), salt), salt)
 	if err != nil {
 		return fmt.Errorf("failed to add account record: %s", err)
 	}
