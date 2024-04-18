@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/gob"
 	"flag"
 	"log"
 	"net"
@@ -28,6 +29,11 @@ func main() {
 	dbname := flag.String("dbname", "pokeroguedb", "database name")
 
 	flag.Parse()
+
+
+	// register gob types
+	gob.Register([]interface{}{})
+	gob.Register(map[string]interface{}{})
 
 	// get database connection
 	err := db.Init(*dbuser, *dbpass, *dbproto, *dbaddr, *dbname)

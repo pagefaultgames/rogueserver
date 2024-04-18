@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/base64"
-	"encoding/gob"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -31,9 +30,6 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// kind of misusing the RWMutex but it doesn't matter
 	s.Exit.RLock()
 	defer s.Exit.RUnlock()
-
-	gob.Register([]interface{}{})
-	gob.Register(map[string]interface{}{})
 
 	if s.Debug {
 		w.Header().Set("Access-Control-Allow-Headers", "*")
