@@ -1,12 +1,6 @@
 package db
 
 func TryAddSeedCompletion(uuid []byte, seed string, mode int) (bool, error) {
-	if len(seed) < 24 {
-		for range 24 - len(seed) {
-			seed += "0"
-		}
-	}
-
 	var count int
 	err := handle.QueryRow("SELECT COUNT(*) FROM seedCompletions WHERE uuid = ? AND seed = ?", uuid, seed).Scan(&count)
 	if err != nil {
