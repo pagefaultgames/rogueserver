@@ -22,9 +22,8 @@ func Get(uuid []byte, datatype, slot int) (any, error) {
 			return nil, fmt.Errorf("failed to fetch compensations: %s", err)
 		}
 
-		for k, v := range compensations {
-			typeKey := strconv.Itoa(k)
-			system.VoucherCounts[typeKey] += v
+		for compensationType, amount := range compensations {
+			system.VoucherCounts[strconv.Itoa(compensationType)] += amount
 		}
 
 		return system, nil
