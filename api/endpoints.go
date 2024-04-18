@@ -170,7 +170,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				}
 
 				save = system
-				// /savedata/clear doesn't specify datatype, it is assumed to be 1 (session)
+			// /savedata/clear doesn't specify datatype, it is assumed to be 1 (session)
 			} else if datatype == 1 || r.URL.Path == "/savedata/clear" {
 				var session defs.SessionSaveData
 				err = json.NewDecoder(r.Body).Decode(&session)
@@ -191,8 +191,14 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		case "/savedata/delete":
 			err = savedata.Delete(uuid, datatype, slot)
 		case "/savedata/clear":
+			s, ok := save.(defs.SessionSaveData)
+			if !ok {
+				httpError(w, r, fmt.Errorf("save data is not type SessionSaveData"), http.StatusBadRequest)
+				return
+			}
+
 			// doesn't return a save, but it works
-			save, err = savedata.Clear(uuid, slot, daily.Seed(), save.(defs.SessionSaveData))
+			save, err = savedata.Clear(uuid, slot, daily.Seed(), s)
 		}
 		if err != nil {
 			httpError(w, r, err, http.StatusInternalServerError)
