@@ -218,11 +218,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case "/daily/seed":
 		w.Write([]byte(daily.Seed()))
 	case "/daily/rankings":
-		uuid, err := getUUIDFromRequest(r)
-		if err != nil {
-			httpError(w, r, err, http.StatusBadRequest)
-			return
-		}
+		var err error
 
 		var category int
 		if r.URL.Query().Has("category") {
@@ -242,7 +238,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		rankings, err := daily.Rankings(uuid, category, page)
+		rankings, err := daily.Rankings(category, page)
 		if err != nil {
 			httpError(w, r, err, http.StatusInternalServerError)
 			return

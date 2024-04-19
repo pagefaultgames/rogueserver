@@ -8,12 +8,7 @@ import (
 )
 
 // /daily/rankings - fetch daily rankings
-func Rankings(uuid []byte, category, page int) ([]defs.DailyRanking, error) {
-	err := db.UpdateAccountLastActivity(uuid)
-	if err != nil {
-		log.Print("failed to update account last activity")
-	}
-
+func Rankings(category, page int) ([]defs.DailyRanking, error) {
 	rankings, err := db.FetchRankings(category, page)
 	if err != nil {
 		log.Print("failed to retrieve rankings")
