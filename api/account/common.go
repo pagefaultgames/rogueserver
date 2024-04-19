@@ -2,7 +2,6 @@ package account
 
 import (
 	"regexp"
-	"sync"
 
 	"golang.org/x/crypto/argon2"
 )
@@ -18,18 +17,20 @@ const (
 	ArgonKeySize  = 32
 	ArgonSaltSize = 16
 
+	ArgonMaxInstances = 16
+
 	UUIDSize  = 16
 	TokenSize = 32
 )
 
 var (
 	isValidUsername = regexp.MustCompile(`^\w{1,16}$`).MatchString
-	argonMtx sync.Mutex
+	semaphore       = make(chan bool, ArgonMaxInstances)
 )
 
 func deriveArgon2IDKey(password, salt []byte) []byte {
-	argonMtx.Lock()
-	defer argonMtx.Unlock()
+	semaphore <- true
+	defer func() { <-semaphore }()
 
 	return argon2.IDKey(password, salt, ArgonTime, ArgonMemory, ArgonThreads, ArgonKeySize)
 }
