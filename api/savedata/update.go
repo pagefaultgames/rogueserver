@@ -28,7 +28,7 @@ func Update(uuid []byte, slot int, save any) error {
 			return fmt.Errorf("invalid system data")
 		}
 
-		if save.GameVersion != "1.0.1" {
+		if save.GameVersion != "1.0.2" {
 			return fmt.Errorf("client version out of date")
 		}
 

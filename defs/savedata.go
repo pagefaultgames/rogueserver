@@ -38,8 +38,8 @@ type StarterEntry struct {
 	Moveset        interface{} `json:"moveset"`
 	EggMoves       int         `json:"eggMoves"`
 	CandyCount     int         `json:"candyCount"`
+	AbilityAttr    int         `json:"abilityAttr"`
 	PassiveAttr    int         `json:"passiveAttr"`
-	VariantAttr    int         `json:"variantAttr"`
 	ValueReduction int         `json:"valueReduction"`
 }
 
