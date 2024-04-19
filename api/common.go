@@ -10,9 +10,31 @@ import (
 	"github.com/pagefaultgames/pokerogue-server/db"
 )
 
-func Init() {
+func Init(mux *http.ServeMux) {
 	scheduleStatRefresh()
 	daily.Init()
+
+	// account
+	mux.HandleFunc("GET /api/account/info", handleAccountInfo)
+	mux.HandleFunc("POST /api/account/register", handleAccountRegister)
+	mux.HandleFunc("POST /api/account/login", handleAccountLogin)
+	mux.HandleFunc("GET /api/account/logout", handleAccountLogout)
+
+	// game
+	mux.HandleFunc("GET /api/game/playercount", handleGamePlayerCount)
+	mux.HandleFunc("GET /api/game/titlestats", handleGameTitleStats)
+	mux.HandleFunc("GET /api/game/classicsessioncount", handleGameClassicSessionCount)
+
+	// savedata
+	mux.HandleFunc("GET /api/savedata/get", handleSaveData)
+	mux.HandleFunc("POST /api/savedata/update", handleSaveData)
+	mux.HandleFunc("GET /api/savedata/delete", handleSaveData)
+	mux.HandleFunc("POST /api/savedata/clear", handleSaveData)
+
+	// daily
+	mux.HandleFunc("GET /api/daily/seed", handleDailySeed)
+	mux.HandleFunc("GET /api/daily/rankings", handleDailyRankings)
+	mux.HandleFunc("GET /api/daily/rankingpagecount", handleDailyRankingPageCount)
 }
 
 func getUsernameFromRequest(r *http.Request) (string, error) {
