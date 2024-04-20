@@ -68,6 +68,8 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			httpError(w, r, fmt.Errorf("failed to encode response json: %s", err), http.StatusInternalServerError)
 			return
 		}
+
+		w.Header().Set("Content-Type", "application/json")
 	case "/account/register":
 		err := r.ParseForm()
 		if err != nil {
@@ -100,6 +102,8 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			httpError(w, r, fmt.Errorf("failed to encode response json: %s", err), http.StatusInternalServerError)
 			return
 		}
+
+		w.Header().Set("Content-Type", "application/json")
 	case "/account/logout":
 		token, err := base64.StdEncoding.DecodeString(r.Header.Get("Authorization"))
 		if err != nil {
@@ -127,6 +131,8 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			httpError(w, r, fmt.Errorf("failed to encode response json: %s", err), http.StatusInternalServerError)
 			return
 		}
+
+		w.Header().Set("Content-Type", "application/json")
 	case "/game/classicsessioncount":
 		w.Write([]byte(strconv.Itoa(classicSessionCount)))
 
@@ -214,6 +220,8 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		w.Header().Set("Content-Type", "application/json")
+
 	// /daily
 	case "/daily/seed":
 		w.Write([]byte(daily.Seed()))
@@ -249,6 +257,8 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			httpError(w, r, fmt.Errorf("failed to encode response json: %s", err), http.StatusInternalServerError)
 			return
 		}
+
+		w.Header().Set("Content-Type", "application/json")
 	case "/daily/rankingpagecount":
 		var category int
 		if r.URL.Query().Has("category") {
