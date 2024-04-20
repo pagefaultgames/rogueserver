@@ -2,7 +2,6 @@ package savedata
 
 import (
 	"encoding/gob"
-	"encoding/hex"
 	"fmt"
 	"log"
 	"os"
@@ -20,8 +19,6 @@ func Update(uuid []byte, slot int, save any) error {
 		log.Print("failed to update account last activity")
 	}
 
-	hexUUID := hex.EncodeToString(uuid)
-
 	switch save := save.(type) {
 	case defs.SystemSaveData: // System
 		if save.TrainerId == 0 && save.SecretId == 0 {
@@ -37,12 +34,12 @@ func Update(uuid []byte, slot int, save any) error {
 			return fmt.Errorf("failed to update account stats: %s", err)
 		}
 
-		err = os.MkdirAll("userdata/"+hexUUID, 0755)
+		err = os.MkdirAll(fmt.Sprintf("userdata/%x", uuid), 0755)
 		if err != nil && !os.IsExist(err) {
 			return fmt.Errorf("failed to create userdata folder: %s", err)
 		}
 
-		file, err := os.OpenFile("userdata/"+hexUUID+"/system.pzs", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+		file, err := os.OpenFile(fmt.Sprintf("userdata/%x/system.pzs", uuid), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 		if err != nil {
 			return fmt.Errorf("failed to open save file for writing: %s", err)
 		}
@@ -72,12 +69,12 @@ func Update(uuid []byte, slot int, save any) error {
 			fileName += strconv.Itoa(slot)
 		}
 
-		err = os.MkdirAll("userdata/"+hexUUID, 0755)
+		err = os.MkdirAll(fmt.Sprintf("userdata/%x", uuid), 0755)
 		if err != nil && !os.IsExist(err) {
 			return fmt.Errorf(fmt.Sprintf("failed to create userdata folder: %s", err))
 		}
 
-		file, err := os.OpenFile(fmt.Sprintf("userdata/%s/%s.pzs", hexUUID, fileName), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+		file, err := os.OpenFile(fmt.Sprintf("userdata/%x/%s.pzs", uuid, fileName), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 		if err != nil {
 			return fmt.Errorf("failed to open save file for writing: %s", err)
 		}

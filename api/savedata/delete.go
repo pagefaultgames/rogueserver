@@ -1,7 +1,6 @@
 package savedata
 
 import (
-	"encoding/hex"
 	"fmt"
 	"log"
 	"os"
@@ -18,11 +17,9 @@ func Delete(uuid []byte, datatype, slot int) error {
 		log.Print("failed to update account last activity")
 	}
 
-	hexUUID := hex.EncodeToString(uuid)
-
 	switch datatype {
 	case 0: // System
-		err := os.Remove("userdata/" + hexUUID + "/system.pzs")
+		err := os.Remove(fmt.Sprintf("userdata/%x/system.pzs", uuid))
 		if err != nil && !os.IsNotExist(err) {
 			return fmt.Errorf("failed to delete save file: %s", err)
 		}
@@ -36,7 +33,7 @@ func Delete(uuid []byte, datatype, slot int) error {
 			fileName += strconv.Itoa(slot)
 		}
 
-		err = os.Remove(fmt.Sprintf("userdata/%s/%s.pzs", hexUUID, fileName))
+		err = os.Remove(fmt.Sprintf("userdata/%x/%s.pzs", uuid, fileName))
 		if err != nil && !os.IsNotExist(err) {
 			return fmt.Errorf("failed to delete save file: %s", err)
 		}
