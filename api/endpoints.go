@@ -189,76 +189,55 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		var token []byte
-		token, err = base64.StdEncoding.DecodeString(r.Header.Get("Authorization"))
+		token, err = getTokenFromRequest(r)
 		if err != nil {
-			httpError(w, r, fmt.Errorf("failed to decode token: %s", err), http.StatusBadRequest)
+			httpError(w, r, err, http.StatusBadRequest)
 			return
+		}
+
+		var active bool
+		if r.URL.Path == "/savedata/get" {
+			err = db.UpdateActiveSession(uuid, token)
+			if err != nil {
+				httpError(w, r, fmt.Errorf("failed to update active session: %s", err), http.StatusBadRequest)
+				return
+			}
+		} else {
+			active, err = db.IsActiveSession(token)
+			if err != nil {
+				httpError(w, r, fmt.Errorf("failed to check active session: %s", err), http.StatusBadRequest)
+				return
+			}
+
+			// TODO: make this not suck
+			if !active && r.URL.Path != "/savedata/clear"{
+				httpError(w, r, fmt.Errorf("session out of date"), http.StatusBadRequest)
+				return
+			}
 		}
 
 		switch r.URL.Path {
 		case "/savedata/get":
-			err = db.UpdateActiveSession(uuid, token)
-			if err != nil {
-				httpError(w, r, fmt.Errorf("failed to update active session: %s", err), http.StatusInternalServerError)
-				return
-			}
-
 			save, err = savedata.Get(uuid, datatype, slot)
 		case "/savedata/update":
-			var token []byte
-			token, err = base64.StdEncoding.DecodeString(r.Header.Get("Authorization"))
-			if err != nil {
-				httpError(w, r, fmt.Errorf("failed to decode token: %s", err), http.StatusBadRequest)
-				return
-			}
-
-			var active bool
-			active, err = db.IsActiveSession(token)
-			if err != nil {
-				httpError(w, r, fmt.Errorf("failed to check active session: %s", err), http.StatusInternalServerError)
-				return
-			}
-			if !active {
-				httpError(w, r, fmt.Errorf("session out of date"), http.StatusBadRequest)
-				return
-			}
-
 			err = savedata.Update(uuid, slot, save)
 		case "/savedata/delete":
-			var active bool
-			active, err = db.IsActiveSession(token)
-			if err != nil {
-				httpError(w, r, fmt.Errorf("failed to check active session: %s", err), http.StatusInternalServerError)
-				return
-			}
-			if !active {
-				httpError(w, r, fmt.Errorf("session out of date"), http.StatusBadRequest)
-				return
-			}
-
 			err = savedata.Delete(uuid, datatype, slot)
 		case "/savedata/clear":
-			var active bool
-			active, err = db.IsActiveSession(token)
-			if err != nil {
-				httpError(w, r, fmt.Errorf("failed to check active session: %s", err), http.StatusInternalServerError)
-				return
+			if !active {
+				// TODO: make this not suck
+				save = savedata.ClearResponse{Error: "session out of date"}
+				break
 			}
 
-			if active {
-				s, ok := save.(defs.SessionSaveData)
-				if !ok {
-					httpError(w, r, fmt.Errorf("save data is not type SessionSaveData"), http.StatusBadRequest)
-					return
-				}
-
-				// doesn't return a save, but it works
-				save, err = savedata.Clear(uuid, slot, daily.Seed(), s)
-			} else {
-				var response savedata.ClearResponse
-				response.Error = "session out of date"
-				save = response
+			s, ok := save.(defs.SessionSaveData)
+			if !ok {
+				err = fmt.Errorf("save data is not type SessionSaveData")
+				break
 			}
+
+			// doesn't return a save, but it works
+			save, err = savedata.Clear(uuid, slot, daily.Seed(), s)
 		}
 		if err != nil {
 			httpError(w, r, err, http.StatusInternalServerError)
