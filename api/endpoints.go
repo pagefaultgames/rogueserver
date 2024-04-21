@@ -210,7 +210,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 
 			// TODO: make this not suck
-			if !active && r.URL.Path != "/savedata/clear"{
+			if !active && r.URL.Path != "/savedata/clear" {
 				httpError(w, r, fmt.Errorf("session out of date"), http.StatusBadRequest)
 				return
 			}

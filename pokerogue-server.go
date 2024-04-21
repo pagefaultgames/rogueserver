@@ -30,7 +30,6 @@ func main() {
 
 	flag.Parse()
 
-
 	// register gob types
 	gob.Register([]interface{}{})
 	gob.Register(map[string]interface{}{})

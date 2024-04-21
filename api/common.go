@@ -24,7 +24,7 @@ func getTokenFromRequest(r *http.Request) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode token: %s", err)
 	}
-	
+
 	if len(token) != account.TokenSize {
 		return nil, fmt.Errorf("invalid token length: got %d, expected %d", len(token), account.TokenSize)
 	}
