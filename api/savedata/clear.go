@@ -12,7 +12,8 @@ import (
 )
 
 type ClearResponse struct {
-	Success bool `json:"success"`
+	Success bool   `json:"success"`
+	Error   string `json:"error"`
 }
 
 // /savedata/clear - mark session save data as cleared and delete
@@ -34,7 +35,7 @@ func Clear(uuid []byte, slot int, seed string, save defs.SessionSaveData) (Clear
 		if !sessionCompleted {
 			waveCompleted--
 		}
-		
+
 		err = db.AddOrUpdateAccountDailyRun(uuid, save.Score, waveCompleted)
 		if err != nil {
 			log.Printf("failed to add or update daily run record: %s", err)

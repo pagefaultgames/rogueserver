@@ -175,6 +175,25 @@ func FetchAccountKeySaltFromUsername(username string) ([]byte, []byte, error) {
 	return key, salt, nil
 }
 
+func IsActiveSession(token []byte) (bool, error) {
+	var active int
+	err := handle.QueryRow("SELECT `active` FROM sessions WHERE token = ?", token).Scan(&active)
+	if err != nil {
+		return false, err
+	}
+
+	return active == 1, nil
+}
+
+func UpdateActiveSession(uuid []byte, token []byte) error {
+	_, err := handle.Exec("UPDATE sessions SET `active` = CASE WHEN token = ? THEN 1 ELSE 0 END WHERE uuid = ?", token, uuid)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func FetchUUIDFromToken(token []byte) ([]byte, error) {
 	var uuid []byte
 	err := handle.QueryRow("SELECT uuid FROM sessions WHERE token = ? AND expire > UTC_TIMESTAMP()", token).Scan(&uuid)

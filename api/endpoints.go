@@ -12,12 +12,13 @@ import (
 	"github.com/pagefaultgames/pokerogue-server/api/account"
 	"github.com/pagefaultgames/pokerogue-server/api/daily"
 	"github.com/pagefaultgames/pokerogue-server/api/savedata"
+	"github.com/pagefaultgames/pokerogue-server/db"
 	"github.com/pagefaultgames/pokerogue-server/defs"
 )
 
 type Server struct {
 	Debug bool
-	Exit *sync.RWMutex
+	Exit  *sync.RWMutex
 }
 
 /*
@@ -174,7 +175,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				}
 
 				save = system
-			// /savedata/clear doesn't specify datatype, it is assumed to be 1 (session)
+				// /savedata/clear doesn't specify datatype, it is assumed to be 1 (session)
 			} else if datatype == 1 || r.URL.Path == "/savedata/clear" {
 				var session defs.SessionSaveData
 				err = json.NewDecoder(r.Body).Decode(&session)
@@ -187,22 +188,77 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
+		var token []byte
+		token, err = base64.StdEncoding.DecodeString(r.Header.Get("Authorization"))
+		if err != nil {
+			httpError(w, r, fmt.Errorf("failed to decode token: %s", err), http.StatusBadRequest)
+			return
+		}
+
 		switch r.URL.Path {
 		case "/savedata/get":
-			save, err = savedata.Get(uuid, datatype, slot)
-		case "/savedata/update":
-			err = savedata.Update(uuid, slot, save)
-		case "/savedata/delete":
-			err = savedata.Delete(uuid, datatype, slot)
-		case "/savedata/clear":
-			s, ok := save.(defs.SessionSaveData)
-			if !ok {
-				httpError(w, r, fmt.Errorf("save data is not type SessionSaveData"), http.StatusBadRequest)
+			err = db.UpdateActiveSession(uuid, token)
+			if err != nil {
+				httpError(w, r, fmt.Errorf("failed to update active session: %s", err), http.StatusInternalServerError)
 				return
 			}
 
-			// doesn't return a save, but it works
-			save, err = savedata.Clear(uuid, slot, daily.Seed(), s)
+			save, err = savedata.Get(uuid, datatype, slot)
+		case "/savedata/update":
+			var token []byte
+			token, err = base64.StdEncoding.DecodeString(r.Header.Get("Authorization"))
+			if err != nil {
+				httpError(w, r, fmt.Errorf("failed to decode token: %s", err), http.StatusBadRequest)
+				return
+			}
+
+			var active bool
+			active, err = db.IsActiveSession(token)
+			if err != nil {
+				httpError(w, r, fmt.Errorf("failed to check active session: %s", err), http.StatusInternalServerError)
+				return
+			}
+			if !active {
+				httpError(w, r, fmt.Errorf("session out of date"), http.StatusBadRequest)
+				return
+			}
+
+			err = savedata.Update(uuid, slot, save)
+		case "/savedata/delete":
+			var active bool
+			active, err = db.IsActiveSession(token)
+			if err != nil {
+				httpError(w, r, fmt.Errorf("failed to check active session: %s", err), http.StatusInternalServerError)
+				return
+			}
+			if !active {
+				httpError(w, r, fmt.Errorf("session out of date"), http.StatusBadRequest)
+				return
+			}
+
+			err = savedata.Delete(uuid, datatype, slot)
+		case "/savedata/clear":
+			var active bool
+			active, err = db.IsActiveSession(token)
+			if err != nil {
+				httpError(w, r, fmt.Errorf("failed to check active session: %s", err), http.StatusInternalServerError)
+				return
+			}
+
+			if active {
+				s, ok := save.(defs.SessionSaveData)
+				if !ok {
+					httpError(w, r, fmt.Errorf("save data is not type SessionSaveData"), http.StatusBadRequest)
+					return
+				}
+
+				// doesn't return a save, but it works
+				save, err = savedata.Clear(uuid, slot, daily.Seed(), s)
+			} else {
+				var response savedata.ClearResponse
+				response.Error = "session out of date"
+				save = response
+			}
 		}
 		if err != nil {
 			httpError(w, r, err, http.StatusInternalServerError)
