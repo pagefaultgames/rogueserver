@@ -29,8 +29,6 @@ func Update(uuid []byte, slot int, save any) error {
 	}
 
 	var filename string
-	var buf bytes.Buffer
-
 	switch save := save.(type) {
 	case defs.SystemSaveData: // System
 		if save.TrainerId == 0 && save.SecretId == 0 {
@@ -45,13 +43,8 @@ func Update(uuid []byte, slot int, save any) error {
 		if err != nil {
 			return fmt.Errorf("failed to update account stats: %s", err)
 		}
-		
-		filename = "system"
 
-		err = gob.NewEncoder(&buf).Encode(save)
-		if err != nil {
-			return fmt.Errorf("failed to serialize save: %s", err)
-		}
+		filename = "system"
 
 		db.DeleteClaimedAccountCompensations(uuid)
 	case defs.SessionSaveData: // Session
@@ -63,13 +56,14 @@ func Update(uuid []byte, slot int, save any) error {
 		if slot != 0 {
 			filename += strconv.Itoa(slot)
 		}
-
-		err = gob.NewEncoder(&buf).Encode(save)
-		if err != nil {
-			return fmt.Errorf("failed to serialize save: %s", err)
-		}
 	default:
 		return fmt.Errorf("invalid data type")
+	}
+
+	var buf bytes.Buffer
+	err = gob.NewEncoder(&buf).Encode(save)
+	if err != nil {
+		return fmt.Errorf("failed to serialize save: %s", err)
 	}
 
 	if buf.Len() == 0 {
