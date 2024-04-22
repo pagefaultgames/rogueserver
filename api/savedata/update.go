@@ -13,6 +13,8 @@ import (
 	"github.com/pagefaultgames/pokerogue-server/defs"
 )
 
+var zstdEncoder, _ = zstd.NewWriter(nil)
+
 // /savedata/update - update save data
 func Update(uuid []byte, slot int, save any) error {
 	err := db.UpdateAccountLastActivity(uuid)
@@ -28,13 +30,6 @@ func Update(uuid []byte, slot int, save any) error {
 
 	var filename string
 	var buf bytes.Buffer
-
-	zstdEncoder, err := zstd.NewWriter(&buf)
-	if err != nil {
-		return fmt.Errorf("failed to create zstd encoder: %s", err)
-	}
-
-	defer zstdEncoder.Close()
 
 	switch save := save.(type) {
 	case defs.SystemSaveData: // System
@@ -53,7 +48,7 @@ func Update(uuid []byte, slot int, save any) error {
 		
 		filename = "system"
 
-		err = gob.NewEncoder(zstdEncoder).Encode(save)
+		err = gob.NewEncoder(&buf).Encode(save)
 		if err != nil {
 			return fmt.Errorf("failed to serialize save: %s", err)
 		}
@@ -69,7 +64,7 @@ func Update(uuid []byte, slot int, save any) error {
 			filename += strconv.Itoa(slot)
 		}
 
-		err = gob.NewEncoder(zstdEncoder).Encode(save)
+		err = gob.NewEncoder(&buf).Encode(save)
 		if err != nil {
 			return fmt.Errorf("failed to serialize save: %s", err)
 		}
@@ -81,7 +76,7 @@ func Update(uuid []byte, slot int, save any) error {
 		return fmt.Errorf("tried to write empty save file")
 	}
 
-	err = os.WriteFile(fmt.Sprintf("userdata/%x/%s.pzs", uuid, filename), buf.Bytes(), 0644)
+	err = os.WriteFile(fmt.Sprintf("userdata/%x/%s.pzs", uuid, filename), zstdEncoder.EncodeAll(buf.Bytes(), nil), 0644)
 	if err != nil {
 		return fmt.Errorf("failed to write save to disk: %s", err)
 	}
