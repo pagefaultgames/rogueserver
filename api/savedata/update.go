@@ -29,6 +29,13 @@ func Update(uuid []byte, slot int, save any) error {
 	var filename string
 	var buf bytes.Buffer
 
+	zstdEncoder, err := zstd.NewWriter(&buf)
+	if err != nil {
+		return fmt.Errorf("failed to create zstd encoder: %s", err)
+	}
+
+	defer zstdEncoder.Close()
+
 	switch save := save.(type) {
 	case defs.SystemSaveData: // System
 		if save.TrainerId == 0 && save.SecretId == 0 {
@@ -46,13 +53,6 @@ func Update(uuid []byte, slot int, save any) error {
 		
 		filename = "system"
 
-		zstdEncoder, err := zstd.NewWriter(&buf)
-		if err != nil {
-			return fmt.Errorf("failed to create zstd encoder: %s", err)
-		}
-
-		defer zstdEncoder.Close()
-
 		err = gob.NewEncoder(zstdEncoder).Encode(save)
 		if err != nil {
 			return fmt.Errorf("failed to serialize save: %s", err)
@@ -69,19 +69,16 @@ func Update(uuid []byte, slot int, save any) error {
 			filename += strconv.Itoa(slot)
 		}
 
-		zstdEncoder, err := zstd.NewWriter(&buf)
-		if err != nil {
-			return fmt.Errorf("failed to create zstd encoder: %s", err)
-		}
-
-		defer zstdEncoder.Close()
-
 		err = gob.NewEncoder(zstdEncoder).Encode(save)
 		if err != nil {
 			return fmt.Errorf("failed to serialize save: %s", err)
 		}
 	default:
 		return fmt.Errorf("invalid data type")
+	}
+
+	if buf.Len() == 0 {
+		return fmt.Errorf("tried to write empty save file")
 	}
 
 	err = os.WriteFile(fmt.Sprintf("userdata/%x/%s.pzs", uuid, filename), buf.Bytes(), 0644)
