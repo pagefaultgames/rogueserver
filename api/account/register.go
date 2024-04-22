@@ -3,6 +3,7 @@ package account
 import (
 	"crypto/rand"
 	"fmt"
+	"os"
 
 	"github.com/pagefaultgames/pokerogue-server/db"
 )
@@ -32,6 +33,11 @@ func Register(username, password string) error {
 	err = db.AddAccountRecord(uuid, username, deriveArgon2IDKey([]byte(password), salt), salt)
 	if err != nil {
 		return fmt.Errorf("failed to add account record: %s", err)
+	}
+
+	err = os.MkdirAll(fmt.Sprintf("userdata/%x", uuid), 0755)
+	if err != nil && !os.IsExist(err) {
+		return fmt.Errorf(fmt.Sprintf("failed to create userdata folder: %s", err))
 	}
 
 	return nil
