@@ -1,6 +1,6 @@
 package defs
 
-const SessionSlotCount = 3
+const SessionSlotCount = 5
 
 type SystemSaveData struct {
 	TrainerId          int                `json:"trainerId"`
