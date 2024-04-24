@@ -311,6 +311,9 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		w.Write([]byte(strconv.Itoa(count)))
+	default:
+		httpError(w, r, fmt.Errorf("unknown endpoint"), http.StatusNotFound)
+		return
 	}
 }
 
