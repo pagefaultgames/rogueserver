@@ -16,7 +16,7 @@ var (
 )
 
 func scheduleStatRefresh() {
-	scheduler.AddFunc("@every 10s", func() {
+	scheduler.AddFunc("@every 30s", func() {
 		err := updateStats()
 		if err != nil {
 			log.Printf("failed to update stats: %s", err)
