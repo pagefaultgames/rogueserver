@@ -38,7 +38,7 @@ func Init(mux *http.ServeMux) {
 	mux.HandleFunc("/daily/rankingpagecount", handleDailyRankingPageCount)
 }
 
-func getTokenFromRequest(r *http.Request) ([]byte, error) {
+func tokenFromRequest(r *http.Request) ([]byte, error) {
 	if r.Header.Get("Authorization") == "" {
 		return nil, fmt.Errorf("missing token")
 	}
@@ -55,8 +55,8 @@ func getTokenFromRequest(r *http.Request) ([]byte, error) {
 	return token, nil
 }
 
-func getUsernameFromRequest(r *http.Request) (string, error) {
-	token, err := getTokenFromRequest(r)
+func usernameFromRequest(r *http.Request) (string, error) {
+	token, err := tokenFromRequest(r)
 	if err != nil {
 		return "", err
 	}
@@ -69,8 +69,8 @@ func getUsernameFromRequest(r *http.Request) (string, error) {
 	return username, nil
 }
 
-func getUUIDFromRequest(r *http.Request) ([]byte, error) {
-	token, err := getTokenFromRequest(r)
+func uuidFromRequest(r *http.Request) ([]byte, error) {
+	token, err := tokenFromRequest(r)
 	if err != nil {
 		return nil, err
 	}

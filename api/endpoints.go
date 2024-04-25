@@ -23,13 +23,13 @@ import (
 // account
 
 func handleAccountInfo(w http.ResponseWriter, r *http.Request) {
-	username, err := getUsernameFromRequest(r)
+	username, err := usernameFromRequest(r)
 	if err != nil {
 		httpError(w, r, err, http.StatusBadRequest)
 		return
 	}
 
-	uuid, err := getUUIDFromRequest(r) // lazy
+	uuid, err := uuidFromRequest(r) // lazy
 	if err != nil {
 		httpError(w, r, err, http.StatusBadRequest)
 		return
@@ -128,7 +128,7 @@ func handleGameClassicSessionCount(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleSaveData(w http.ResponseWriter, r *http.Request) {
-	uuid, err := getUUIDFromRequest(r)
+	uuid, err := uuidFromRequest(r)
 	if err != nil {
 		httpError(w, r, err, http.StatusBadRequest)
 		return
@@ -178,7 +178,7 @@ func handleSaveData(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var token []byte
-	token, err = getTokenFromRequest(r)
+	token, err = tokenFromRequest(r)
 	if err != nil {
 		httpError(w, r, err, http.StatusBadRequest)
 		return
