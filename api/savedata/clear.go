@@ -43,7 +43,7 @@ func Clear(uuid []byte, slot int, seed string, save defs.SessionSaveData) (Clear
 	}
 
 	if sessionCompleted {
-		response.Success, err = db.TryAddSeedCompletion(uuid, save.Seed, int(save.GameMode))
+		response.Success, err = db.TryAddDailyRunCompletion(uuid, save.Seed, int(save.GameMode))
 		if err != nil {
 			log.Printf("failed to mark seed as completed: %s", err)
 		}
