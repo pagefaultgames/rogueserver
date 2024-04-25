@@ -49,10 +49,10 @@ func main() {
 	api.Init(mux)
 
 	// start web server
-	if !*debug {
-		err = http.Serve(listener, mux)
-	} else {
+	if *debug {
 		err = http.Serve(listener, debugHandler(mux))
+	} else {
+		err = http.Serve(listener, mux)
 	}
 	if err != nil {
 		log.Fatalf("failed to create http server or server errored: %s", err)
@@ -78,14 +78,14 @@ func createListener(proto, addr string) (net.Listener, error) {
 
 func debugHandler(router *http.ServeMux) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Access-Control-Allow-Headers", "*")
-			w.Header().Set("Access-Control-Allow-Methods", "*")
-			w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Headers", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "*")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
 
-			if r.Method == "OPTIONS" {
-				w.WriteHeader(http.StatusOK)
-				return
-			}
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
 
 		router.ServeHTTP(w, r)
 	})
