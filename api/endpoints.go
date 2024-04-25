@@ -203,6 +203,43 @@ func handleSaveData(w http.ResponseWriter, r *http.Request) {
 			httpError(w, r, fmt.Errorf("session out of date"), http.StatusBadRequest)
 			return
 		}
+
+		var trainerId = 0
+		var secretId = 0
+
+		if r.URL.Path != "/savedata/update" || datatype == 1 {
+			if r.URL.Query().Has("trainerId") && r.URL.Query().Has("secretId") {
+				trainerId, err = strconv.Atoi(r.URL.Query().Get("trainerId"))
+				if err != nil {
+					httpError(w, r, err, http.StatusBadRequest)
+					return
+				}
+
+				secretId, err = strconv.Atoi(r.URL.Query().Get("secretId"))
+				if err != nil {
+					httpError(w, r, err, http.StatusBadRequest)
+					return
+				}
+			}
+		} else {
+			trainerId = save.(defs.SystemSaveData).TrainerId
+			secretId = save.(defs.SystemSaveData).SecretId
+		}
+
+		storedTrainerId, storedSecretId, err := db.FetchTrainerIds(uuid)
+		if err != nil {
+			httpError(w, r, err, http.StatusInternalServerError)
+			return
+		}
+
+		if storedTrainerId > 0 || storedSecretId > 0 {
+			if trainerId != storedTrainerId || secretId != storedSecretId {
+				httpError(w, r, fmt.Errorf("session out of date"), http.StatusBadRequest)
+				return
+			}
+		} else {
+			db.UpdateTrainerIds(trainerId, secretId, uuid)
+		}
 	}
 
 	switch r.URL.Path {
