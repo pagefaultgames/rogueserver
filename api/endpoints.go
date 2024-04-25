@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -89,9 +88,9 @@ func handleAccountLogin(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleAccountLogout(w http.ResponseWriter, r *http.Request) {
-	token, err := base64.StdEncoding.DecodeString(r.Header.Get("Authorization"))
+	token, err := tokenFromRequest(r)
 	if err != nil {
-		httpError(w, r, fmt.Errorf("failed to decode token: %s", err), http.StatusBadRequest)
+		httpError(w, r, err, http.StatusBadRequest)
 		return
 	}
 
