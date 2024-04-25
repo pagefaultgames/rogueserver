@@ -175,7 +175,7 @@ func FetchAccountKeySaltFromUsername(username string) ([]byte, []byte, error) {
 	return key, salt, nil
 }
 
-func FetchTrainerIds(uuid []byte) (trainerId int, secretId int, err error) {
+func FetchTrainerIds(uuid []byte) (trainerId, secretId int, err error) {
 	err = handle.QueryRow("SELECT trainerId, secretId FROM accounts WHERE uuid = ?", uuid).Scan(&trainerId, &secretId)
 	if err != nil {
 		return 0, 0, err
@@ -184,7 +184,7 @@ func FetchTrainerIds(uuid []byte) (trainerId int, secretId int, err error) {
 	return trainerId, secretId, nil
 }
 
-func UpdateTrainerIds(trainerId int, secretId int, uuid []byte) error {
+func UpdateTrainerIds(trainerId, secretId int, uuid []byte) error {
 	_, err := handle.Exec("UPDATE accounts SET trainerId = ?, secretId = ? WHERE uuid = ?", trainerId, secretId, uuid)
 	if err != nil {
 		return err
