@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"strconv"
 
@@ -20,11 +19,6 @@ import (
 	Handler functions are responsible for checking the validity of this data and returning a result or error.
 	Handlers should not return serialized JSON, instead return the struct itself.
 */
-
-func httpError(w http.ResponseWriter, r *http.Request, err error, code int) {
-	log.Printf("%s: %s\n", r.URL.Path, err)
-	http.Error(w, err.Error(), code)
-}
 
 // account
 

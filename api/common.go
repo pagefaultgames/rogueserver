@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/base64"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/pagefaultgames/pokerogue-server/api/account"
@@ -80,4 +81,9 @@ func getUUIDFromRequest(r *http.Request) ([]byte, error) {
 	}
 
 	return uuid, nil
+}
+
+func httpError(w http.ResponseWriter, r *http.Request, err error, code int) {
+	log.Printf("%s: %s\n", r.URL.Path, err)
+	http.Error(w, err.Error(), code)
 }
