@@ -16,26 +16,26 @@ func Init(mux *http.ServeMux) {
 	daily.Init()
 
 	// account
-	mux.HandleFunc("/account/info", handleAccountInfo)
-	mux.HandleFunc("/account/register", handleAccountRegister)
-	mux.HandleFunc("/account/login", handleAccountLogin)
-	mux.HandleFunc("/account/logout", handleAccountLogout)
+	mux.HandleFunc("GET /account/info", handleAccountInfo)
+	mux.HandleFunc("POST /account/register", handleAccountRegister)
+	mux.HandleFunc("POST /account/login", handleAccountLogin)
+	mux.HandleFunc("GET /account/logout", handleAccountLogout)
 
 	// game
-	mux.HandleFunc("/game/playercount", handleGamePlayerCount)
-	mux.HandleFunc("/game/titlestats", handleGameTitleStats)
-	mux.HandleFunc("/game/classicsessioncount", handleGameClassicSessionCount)
+	mux.HandleFunc("GET /game/playercount", handleGamePlayerCount)
+	mux.HandleFunc("GET /game/titlestats", handleGameTitleStats)
+	mux.HandleFunc("GET /game/classicsessioncount", handleGameClassicSessionCount)
 
 	// savedata
-	mux.HandleFunc("/savedata/get", handleSaveData)
-	mux.HandleFunc("/savedata/update", handleSaveData)
-	mux.HandleFunc("/savedata/delete", handleSaveData)
-	mux.HandleFunc("/savedata/clear", handleSaveData)
+	mux.HandleFunc("GET /savedata/get", handleSaveData)
+	mux.HandleFunc("POST /savedata/update", handleSaveData)
+	mux.HandleFunc("GET /savedata/delete", handleSaveData)
+	mux.HandleFunc("POST /savedata/clear", handleSaveData)
 
 	// daily
-	mux.HandleFunc("/daily/seed", handleDailySeed)
-	mux.HandleFunc("/daily/rankings", handleDailyRankings)
-	mux.HandleFunc("/daily/rankingpagecount", handleDailyRankingPageCount)
+	mux.HandleFunc("GET /daily/seed", handleDailySeed)
+	mux.HandleFunc("GET /daily/rankings", handleDailyRankings)
+	mux.HandleFunc("GET /daily/rankingpagecount", handleDailyRankingPageCount)
 }
 
 func tokenFromRequest(r *http.Request) ([]byte, error) {
