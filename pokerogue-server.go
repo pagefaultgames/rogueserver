@@ -14,6 +14,8 @@ import (
 
 func main() {
 	// flag stuff
+	debug := flag.Bool("debug", false, "use debug mode")
+
 	proto := flag.String("proto", "tcp", "protocol for api to use (tcp, unix)")
 	addr := flag.String("addr", "0.0.0.0", "network address for api to listen on")
 
@@ -47,7 +49,11 @@ func main() {
 	api.Init(mux)
 
 	// start web server
-	err = http.Serve(listener, mux)
+	if !*debug {
+		err = http.Serve(listener, mux)
+	} else {
+		err = http.Serve(listener, debugHandler(mux))
+	}
 	if err != nil {
 		log.Fatalf("failed to create http server or server errored: %s", err)
 	}
@@ -68,4 +74,19 @@ func createListener(proto, addr string) (net.Listener, error) {
 	}
 
 	return listener, nil
+}
+
+func debugHandler(router *http.ServeMux) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Access-Control-Allow-Headers", "*")
+			w.Header().Set("Access-Control-Allow-Methods", "*")
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+
+			if r.Method == "OPTIONS" {
+				w.WriteHeader(http.StatusOK)
+				return
+			}
+
+		router.ServeHTTP(w, r)
+	})
 }
