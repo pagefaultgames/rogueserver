@@ -7,9 +7,6 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"os/signal"
-	"sync"
-	"syscall"
 
 	"github.com/pagefaultgames/pokerogue-server/api"
 	"github.com/pagefaultgames/pokerogue-server/db"
@@ -17,8 +14,6 @@ import (
 
 func main() {
 	// flag stuff
-	debug := flag.Bool("debug", false, "debug mode")
-
 	proto := flag.String("proto", "tcp", "protocol for api to use (tcp, unix)")
 	addr := flag.String("addr", "0.0.0.0", "network address for api to listen on")
 
@@ -46,15 +41,13 @@ func main() {
 		log.Fatalf("failed to create net listener: %s", err)
 	}
 
-	// create exit handler
-	var exit sync.RWMutex
-	createExitHandler(&exit)
+	mux := http.NewServeMux()
 
 	// init api
-	api.Init()
+	api.Init(mux)
 
 	// start web server
-	err = http.Serve(listener, &api.Server{Debug: *debug, Exit: &exit})
+	err = http.Serve(listener, mux)
 	if err != nil {
 		log.Fatalf("failed to create http server or server errored: %s", err)
 	}
@@ -75,20 +68,4 @@ func createListener(proto, addr string) (net.Listener, error) {
 	}
 
 	return listener, nil
-}
-
-func createExitHandler(mtx *sync.RWMutex) {
-	s := make(chan os.Signal, 1)
-	signal.Notify(s, syscall.SIGINT, syscall.SIGTERM)
-
-	go func() {
-		// wait for exit signal of some kind
-		<-s
-
-		// block new requests and wait for existing ones to finish
-		mtx.Lock()
-
-		// bail
-		os.Exit(0)
-	}()
 }

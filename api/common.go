@@ -10,9 +10,31 @@ import (
 	"github.com/pagefaultgames/pokerogue-server/db"
 )
 
-func Init() {
+func Init(mux *http.ServeMux) {
 	scheduleStatRefresh()
 	daily.Init()
+
+	// account
+	mux.HandleFunc("/account/info", handleAccountInfo)
+	mux.HandleFunc("/account/register", handleAccountRegister)
+	mux.HandleFunc("/account/login", handleAccountLogin)
+	mux.HandleFunc("/account/logout", handleAccountLogout)
+
+	// game
+	mux.HandleFunc("/game/playercount", handleGamePlayerCount)
+	mux.HandleFunc("/game/titlestats", handleGameTitleStats)
+	mux.HandleFunc("/game/classicsessioncount", handleGameClassicSessionCount)
+
+	// savedata
+	mux.HandleFunc("/savedata/get", handleSaveData)
+	mux.HandleFunc("/savedata/update", handleSaveData)
+	mux.HandleFunc("/savedata/delete", handleSaveData)
+	mux.HandleFunc("/savedata/clear", handleSaveData)
+
+	// daily
+	mux.HandleFunc("/daily/seed", handleDailySeed)
+	mux.HandleFunc("/daily/rankings", handleDailyRankings)
+	mux.HandleFunc("/daily/rankingpagecount", handleDailyRankingPageCount)
 }
 
 func getTokenFromRequest(r *http.Request) ([]byte, error) {
