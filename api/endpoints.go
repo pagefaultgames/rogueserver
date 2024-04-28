@@ -87,6 +87,28 @@ func handleAccountLogin(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 }
 
+func handleAccountChangePW(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		httpError(w, r, fmt.Errorf("failed to parse request form: %s", err), http.StatusBadRequest)
+		return
+	}
+
+	uuid, err := uuidFromRequest(r)
+	if err != nil {
+		httpError(w, r, err, http.StatusBadRequest)
+		return
+	}
+
+	err = account.ChangePW(uuid, r.Form.Get("password"))
+	if err != nil {
+		httpError(w, r, err, http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
 func handleAccountLogout(w http.ResponseWriter, r *http.Request) {
 	token, err := tokenFromRequest(r)
 	if err != nil {

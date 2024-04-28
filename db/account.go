@@ -32,6 +32,15 @@ func AddAccountSession(username string, token []byte) error {
 	return nil
 }
 
+func UpdateAccountPassword(uuid, key, salt []byte) error {
+	_, err := handle.Exec("UPDATE accounts SET (hash, salt) VALUES (?, ?) WHERE uuid = ?", key, salt, uuid)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func UpdateAccountLastActivity(uuid []byte) error {
 	_, err := handle.Exec("UPDATE accounts SET lastActivity = UTC_TIMESTAMP() WHERE uuid = ?", uuid)
 	if err != nil {
