@@ -225,8 +225,7 @@ func handleSaveData(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		var trainerId = 0
-		var secretId = 0
+		var trainerId, secretId int
 
 		if r.URL.Path != "/savedata/update" || datatype == 1 {
 			if r.URL.Query().Has("trainerId") && r.URL.Query().Has("secretId") {
