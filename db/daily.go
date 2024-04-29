@@ -1,3 +1,6 @@
+// Copyright (C) 2024 Pagefault Games - All Rights Reserved
+// https://github.com/pagefaultgames
+
 package db
 
 import (
