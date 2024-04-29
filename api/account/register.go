@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/pagefaultgames/pokerogue-server/db"
+	"github.com/pagefaultgames/rogueserver/db"
 )
 
 // /account/register - register account

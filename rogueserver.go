@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/pagefaultgames/pokerogue-server/api"
-	"github.com/pagefaultgames/pokerogue-server/db"
+	"github.com/pagefaultgames/rogueserver/api"
+	"github.com/pagefaultgames/rogueserver/db"
 )
 
 func main() {

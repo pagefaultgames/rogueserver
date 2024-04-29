@@ -3,7 +3,7 @@ package db
 import (
 	"math"
 
-	"github.com/pagefaultgames/pokerogue-server/defs"
+	"github.com/pagefaultgames/rogueserver/defs"
 )
 
 func TryAddDailyRun(seed string) error {

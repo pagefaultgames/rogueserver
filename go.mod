@@ -1,4 +1,4 @@
-module github.com/pagefaultgames/pokerogue-server
+module github.com/pagefaultgames/rogueserver
 
 go 1.22
 

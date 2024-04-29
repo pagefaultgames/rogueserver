@@ -6,7 +6,7 @@ import (
 	"slices"
 
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/pagefaultgames/pokerogue-server/defs"
+	"github.com/pagefaultgames/rogueserver/defs"
 )
 
 func AddAccountRecord(uuid []byte, username string, key, salt []byte) error {

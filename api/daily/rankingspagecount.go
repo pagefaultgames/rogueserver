@@ -3,7 +3,7 @@ package daily
 import (
 	"log"
 
-	"github.com/pagefaultgames/pokerogue-server/db"
+	"github.com/pagefaultgames/rogueserver/db"
 )
 
 // /daily/rankingpagecount - fetch daily ranking page count

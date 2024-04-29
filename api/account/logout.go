@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/pagefaultgames/pokerogue-server/db"
+	"github.com/pagefaultgames/rogueserver/db"
 )
 
 // /account/logout - log out of account

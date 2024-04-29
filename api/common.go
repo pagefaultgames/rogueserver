@@ -6,9 +6,9 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/pagefaultgames/pokerogue-server/api/account"
-	"github.com/pagefaultgames/pokerogue-server/api/daily"
-	"github.com/pagefaultgames/pokerogue-server/db"
+	"github.com/pagefaultgames/rogueserver/api/account"
+	"github.com/pagefaultgames/rogueserver/api/daily"
+	"github.com/pagefaultgames/rogueserver/db"
 )
 
 func Init(mux *http.ServeMux) {

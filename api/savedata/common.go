@@ -8,7 +8,7 @@ import (
 	"strconv"
 
 	"github.com/klauspost/compress/zstd"
-	"github.com/pagefaultgames/pokerogue-server/defs"
+	"github.com/pagefaultgames/rogueserver/defs"
 )
 
 func readSystemSaveData(uuid []byte) (defs.SystemSaveData, error) {

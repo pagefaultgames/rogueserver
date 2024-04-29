@@ -9,8 +9,8 @@ import (
 	"strconv"
 
 	"github.com/klauspost/compress/zstd"
-	"github.com/pagefaultgames/pokerogue-server/db"
-	"github.com/pagefaultgames/pokerogue-server/defs"
+	"github.com/pagefaultgames/rogueserver/db"
+	"github.com/pagefaultgames/rogueserver/defs"
 )
 
 var zstdEncoder, _ = zstd.NewWriter(nil)

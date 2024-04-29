@@ -1,5 +1,5 @@
 
 # no extension on linux, .exe on windows
-pokerogue-server*
+rogueserver*
 userdata/*
 secret.key

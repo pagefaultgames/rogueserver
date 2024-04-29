@@ -1,1 +1,1 @@
-# pokerogue-server
+# rogueserver

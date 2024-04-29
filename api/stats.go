@@ -4,7 +4,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/pagefaultgames/pokerogue-server/db"
+	"github.com/pagefaultgames/rogueserver/db"
 	"github.com/robfig/cron/v3"
 )
 

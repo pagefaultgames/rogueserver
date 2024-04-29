@@ -6,11 +6,11 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/pagefaultgames/pokerogue-server/api/account"
-	"github.com/pagefaultgames/pokerogue-server/api/daily"
-	"github.com/pagefaultgames/pokerogue-server/api/savedata"
-	"github.com/pagefaultgames/pokerogue-server/db"
-	"github.com/pagefaultgames/pokerogue-server/defs"
+	"github.com/pagefaultgames/rogueserver/api/account"
+	"github.com/pagefaultgames/rogueserver/api/daily"
+	"github.com/pagefaultgames/rogueserver/api/savedata"
+	"github.com/pagefaultgames/rogueserver/db"
+	"github.com/pagefaultgames/rogueserver/defs"
 )
 
 /*

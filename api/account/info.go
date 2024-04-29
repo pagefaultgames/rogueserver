@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/pagefaultgames/pokerogue-server/defs"
+	"github.com/pagefaultgames/rogueserver/defs"
 )
 
 type InfoResponse struct {

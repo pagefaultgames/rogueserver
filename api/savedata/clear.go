@@ -7,8 +7,8 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/pagefaultgames/pokerogue-server/db"
-	"github.com/pagefaultgames/pokerogue-server/defs"
+	"github.com/pagefaultgames/rogueserver/db"
+	"github.com/pagefaultgames/rogueserver/defs"
 )
 
 type ClearResponse struct {
