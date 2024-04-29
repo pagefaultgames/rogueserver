@@ -127,6 +127,15 @@ func UpdateAccountStats(uuid []byte, stats defs.GameStats, voucherCounts map[str
 	return nil
 }
 
+func UpdateAccountBanned(uuid []byte, banned bool) error {
+	_, err := handle.Exec("UPDATE accounts SET banned = ? WHERE uuid = ?", banned, uuid)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func FetchAndClaimAccountCompensations(uuid []byte) (map[int]int, error) {
 	var compensations = make(map[int]int)
 
