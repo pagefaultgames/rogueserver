@@ -60,7 +60,7 @@ func Update(uuid []byte, slot int, save any) error {
 		save.VoucherCounts["1"] > 150 ||
 		save.VoucherCounts["2"] > 100 ||
 		save.VoucherCounts["3"] > 10 {
-			db.UpdateAccountBanned(uuid, true)
+			db.SetAccountLimited(uuid, true)
 		}
 
 		err = db.UpdateAccountStats(uuid, save.GameStats, save.VoucherCounts)

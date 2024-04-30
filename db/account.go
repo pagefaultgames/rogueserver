@@ -144,8 +144,8 @@ func UpdateAccountStats(uuid []byte, stats defs.GameStats, voucherCounts map[str
 	return nil
 }
 
-func UpdateAccountBanned(uuid []byte, banned bool) error {
-	_, err := handle.Exec("UPDATE accounts SET banned = ? WHERE uuid = ?", banned, uuid)
+func SetAccountLimited(uuid []byte, limited bool) error {
+	_, err := handle.Exec("UPDATE accounts SET limited = ? WHERE uuid = ?", limited, uuid)
 	if err != nil {
 		return err
 	}
