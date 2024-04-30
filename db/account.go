@@ -144,15 +144,6 @@ func UpdateAccountStats(uuid []byte, stats defs.GameStats, voucherCounts map[str
 	return nil
 }
 
-func SetAccountLimited(uuid []byte, limited bool) error {
-	_, err := handle.Exec("UPDATE accounts SET limited = ? WHERE uuid = ?", limited, uuid)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func FetchAndClaimAccountCompensations(uuid []byte) (map[int]int, error) {
 	var compensations = make(map[int]int)
 
