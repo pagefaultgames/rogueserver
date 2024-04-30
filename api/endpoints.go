@@ -224,10 +224,12 @@ func handleSaveData(w http.ResponseWriter, r *http.Request) {
 
 	var active bool
 	if r.URL.Path == "/savedata/get" {
-		err = db.UpdateActiveSession(uuid, token)
-		if err != nil {
-			httpError(w, r, fmt.Errorf("failed to update active session: %s", err), http.StatusBadRequest)
-			return
+		if datatype == 0 {
+			err = db.UpdateActiveSession(uuid, token)
+			if err != nil {
+				httpError(w, r, fmt.Errorf("failed to update active session: %s", err), http.StatusBadRequest)
+				return
+			}
 		}
 	} else {
 		active, err = db.IsActiveSession(token)
