@@ -279,29 +279,29 @@ func handleSaveData(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if active || r.URL.Path == "/savedata/get" {
-		switch r.URL.Path {
-		case "/savedata/get":
-			save, err = savedata.Get(uuid, datatype, slot)
-		case "/savedata/update":
-			err = savedata.Update(uuid, slot, save)
-		case "/savedata/delete":
-			err = savedata.Delete(uuid, datatype, slot)
-		case "/savedata/clear":
-			s, ok := save.(defs.SessionSaveData)
-			if !ok {
-				err = fmt.Errorf("save data is not type SessionSaveData")
-				break
-			}
-
-			// doesn't return a save, but it works
-			save, err = savedata.Clear(uuid, slot, daily.Seed(), s)
+	switch r.URL.Path {
+	case "/savedata/get":
+		save, err = savedata.Get(uuid, datatype, slot)
+	case "/savedata/update":
+		err = savedata.Update(uuid, slot, save)
+	case "/savedata/delete":
+		err = savedata.Delete(uuid, datatype, slot)
+	case "/savedata/clear":
+		if !active {
+			// TODO: make this not suck
+			save = savedata.ClearResponse{Error: "session out of date"}
+			break
 		}
-	} else {
-		// TODO: make this not suck
-		save = savedata.ClearResponse{Error: "session out of date"}
-	}
 
+		s, ok := save.(defs.SessionSaveData)
+		if !ok {
+			err = fmt.Errorf("save data is not type SessionSaveData")
+			break
+		}
+
+		// doesn't return a save, but it works
+		save, err = savedata.Clear(uuid, slot, daily.Seed(), s)
+	}
 	if err != nil {
 		httpError(w, r, err, http.StatusInternalServerError)
 		return
