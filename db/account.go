@@ -41,6 +41,11 @@ func AddAccountSession(username string, token []byte) error {
 		return err
 	}
 
+	_, err = handle.Exec("UPDATE sessions s JOIN accounts a ON a.uuid = s.uuid SET s.active = 1 WHERE a.username = ? AND a.lastLoggedIn IS NULL", username)
+	if err != nil {
+		return err
+	}
+
 	_, err = handle.Exec("UPDATE accounts SET lastLoggedIn = UTC_TIMESTAMP() WHERE username = ?", username)
 	if err != nil {
 		return err
