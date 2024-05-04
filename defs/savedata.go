@@ -96,6 +96,9 @@ type SessionSaveData struct {
 	PokeballCounts PokeballCounts           `json:"pokeballCounts"`
 	Money          int                      `json:"money"`
 	Score          int                      `json:"score"`
+	VictoryCount   int                      `json:"victoryCount"`
+	FaintCount     int                      `json:"faintCount"`
+	ReviveCount    int                      `json:"reviveCount"`
 	WaveIndex      int                      `json:"waveIndex"`
 	BattleType     BattleType               `json:"battleType"`
 	Trainer        TrainerData              `json:"trainer"`
