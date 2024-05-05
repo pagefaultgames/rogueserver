@@ -18,7 +18,6 @@
 package db
 
 import (
-	"database/sql"
 	"fmt"
 	"slices"
 
@@ -247,10 +246,6 @@ func FetchUUIDFromToken(token []byte) ([]byte, error) {
 	var uuid []byte
 	err := handle.QueryRow("SELECT uuid FROM sessions WHERE token = ?", token).Scan(&uuid)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, err
-		}
-
 		return nil, err
 	}
 
