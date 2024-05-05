@@ -245,7 +245,7 @@ func UpdateActiveSession(uuid []byte, token []byte) error {
 
 func FetchUUIDFromToken(token []byte) ([]byte, error) {
 	var uuid []byte
-	err := handle.QueryRow("SELECT uuid FROM sessions WHERE token = ? AND expire > UTC_TIMESTAMP()", token).Scan(&uuid)
+	err := handle.QueryRow("SELECT uuid FROM sessions WHERE token = ?", token).Scan(&uuid)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, err
