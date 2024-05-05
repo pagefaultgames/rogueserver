@@ -39,15 +39,15 @@ import (
 // account
 
 func handleAccountInfo(w http.ResponseWriter, r *http.Request) {
-	username, err := usernameFromRequest(r)
+	uuid, err := uuidFromRequest(r)
 	if err != nil {
 		httpError(w, r, err, http.StatusBadRequest)
 		return
 	}
 
-	uuid, err := uuidFromRequest(r) // lazy
+	username, err := db.FetchUsernameFromUUID(uuid)
 	if err != nil {
-		httpError(w, r, err, http.StatusBadRequest)
+		httpError(w, r, err, http.StatusInternalServerError)
 		return
 	}
 

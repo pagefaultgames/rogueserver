@@ -73,20 +73,6 @@ func tokenFromRequest(r *http.Request) ([]byte, error) {
 	return token, nil
 }
 
-func usernameFromRequest(r *http.Request) (string, error) {
-	token, err := tokenFromRequest(r)
-	if err != nil {
-		return "", err
-	}
-
-	username, err := db.FetchUsernameFromToken(token)
-	if err != nil {
-		return "", fmt.Errorf("failed to validate token: %s", err)
-	}
-
-	return username, nil
-}
-
 func uuidFromRequest(r *http.Request) ([]byte, error) {
 	token, err := tokenFromRequest(r)
 	if err != nil {

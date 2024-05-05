@@ -185,16 +185,6 @@ func DeleteClaimedAccountCompensations(uuid []byte) error {
 	return nil
 }
 
-func FetchUsernameFromToken(token []byte) (string, error) {
-	var username string
-	err := handle.QueryRow("SELECT a.username FROM accounts a JOIN sessions s ON s.uuid = a.uuid WHERE s.token = ? AND s.expire > UTC_TIMESTAMP()", token).Scan(&username)
-	if err != nil {
-		return "", err
-	}
-
-	return username, nil
-}
-
 func FetchAccountKeySaltFromUsername(username string) ([]byte, []byte, error) {
 	var key, salt []byte
 	err := handle.QueryRow("SELECT hash, salt FROM accounts WHERE username = ?", username).Scan(&key, &salt)
@@ -259,4 +249,14 @@ func RemoveSessionFromToken(token []byte) error {
 	}
 
 	return nil
+}
+
+func FetchUsernameFromUUID(uuid []byte) (string, error) {
+	var username string
+	err := handle.QueryRow("SELECT username FROM accounts WHERE uuid = ?", uuid).Scan(&username)
+	if err != nil {
+		return "", err
+	}
+
+	return username, nil
 }
