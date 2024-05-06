@@ -22,9 +22,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 
+	"github.com/markbates/goth/gothic"
 	"github.com/pagefaultgames/rogueserver/api/account"
 	"github.com/pagefaultgames/rogueserver/api/daily"
 	"github.com/pagefaultgames/rogueserver/api/savedata"
@@ -37,6 +39,10 @@ import (
 	Handler functions are responsible for checking the validity of this data and returning a result or error.
 	Handlers should not return serialized JSON, instead return the struct itself.
 */
+
+var (
+	user = string("")
+)
 
 // account
 
@@ -542,4 +548,55 @@ func handleDailyRankingPageCount(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Write([]byte(strconv.Itoa(count)))
+}
+
+// redirect link after authorizing application link
+func handleProviderCallback(w http.ResponseWriter, r *http.Request) {
+	gothic.GetProviderName = func(r *http.Request) (string, error) { return r.PathValue("provider"), nil }
+
+	// called again with code after authorization
+	code := r.URL.Query().Get("code")
+	if code != "" {
+		userId, err := db.FetchDiscordIdByUsername(user)
+		if err != nil {
+
+		}
+		defer http.Redirect(w, r, "http://localhost:8000", http.StatusSeeOther)
+	}
+
+	gothUser, err := gothic.CompleteUserAuth(w, r)
+	if err != nil {
+		log.Println("callback err", w, r)
+		return
+	} else {
+		err := db.AddDiscordAuthByUsername(gothUser.UserID, user)
+		if err != nil {
+			log.Println("error adding Discord Auth to database")
+			return
+		}
+	}
+	log.Println("user", gothUser.UserID)
+}
+
+func handleProviderLink(w http.ResponseWriter, r *http.Request) {
+	gothic.GetProviderName = func(r *http.Request) (string, error) { return r.PathValue("provider"), nil }
+	username := r.URL.Query().Get("username")
+	// username recorded prior to authorization
+	if username != "" {
+		user = username
+	}
+	// try to get the user without re-authenticating
+	if gothUser, err := gothic.CompleteUserAuth(w, r); err == nil {
+		log.Print("gothUser:", gothUser.Name)
+	} else {
+		gothic.BeginAuthHandler(w, r)
+	}
+
+}
+
+func handleProviderLogout(w http.ResponseWriter, r *http.Request) {
+	gothic.GetProviderName = func(r *http.Request) (string, error) { return r.PathValue("provider"), nil }
+	gothic.Logout(w, r)
+	w.Header().Set("Location", "/")
+	w.WriteHeader(http.StatusTemporaryRedirect)
 }

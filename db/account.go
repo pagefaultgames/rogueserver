@@ -50,6 +50,25 @@ func AddAccountSession(username string, token []byte) error {
 	return nil
 }
 
+func AddDiscordAuthByUsername(discordId []byte, username string) error {
+	_, err := handle.Exec("UPDATE accounts SET discordId = ? WHERE username = ?", discordId, username)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func FetchDiscordIdByUsername(username string) ([]byte, error) {
+	var discordId []byte
+	err := handle.QueryRow("SELECT discordId FROM accounts WHERE username = ?", username).Scan(&discordId)
+	if err != nil {
+		return nil, err
+	}
+
+	return discordId, nil
+}
+
 func UpdateAccountPassword(uuid, key, salt []byte) error {
 	_, err := handle.Exec("UPDATE accounts SET (hash, salt) VALUES (?, ?) WHERE uuid = ?", key, salt, uuid)
 	if err != nil {

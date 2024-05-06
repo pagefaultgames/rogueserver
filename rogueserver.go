@@ -44,6 +44,10 @@ func main() {
 	dbaddr := flag.String("dbaddr", "localhost", "database address")
 	dbname := flag.String("dbname", "pokeroguedb", "database name")
 
+	discordclientid := flag.String("discordclientid", "1225433195617718315", "Discord Oauth2 Client ID")
+	discordsecretid := flag.String("discordsecretid", "LxtTMCEeRagl7Rve0goZzUnv4mnT5Xzm", "Discord Oauth2 Client ID")
+	discordcallbackuri := flag.String("discordcallbackuri", "http://localhost:8001/auth/discord/callback", "Discord Oauth2 Client ID")
+
 	flag.Parse()
 
 	// register gob types
@@ -68,6 +72,7 @@ func main() {
 	if err := api.Init(mux); err != nil {
 		log.Fatal(err)
 	}
+	api.InitAuth(*discordclientid, *discordsecretid, *discordcallbackuri)
 
 	// start web server
 	handler := prodHandler(mux)
