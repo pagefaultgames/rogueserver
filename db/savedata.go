@@ -40,21 +40,11 @@ func TryAddDailyRunCompletion(uuid []byte, seed string, mode int) (bool, error) 
 	return true, nil
 }
 
-type DbSystemSaveData struct {
-	uuid []byte
-	data []byte
-}
-
-type DbSessionSaveData struct {
-	uuid []byte
-	data []byte
-}
-
 func ReadSystemSaveData(uuid []byte) (defs.SystemSaveData, error) {
-	var data DbSystemSaveData
-	err := handle.QueryRow("SELECT uuid, data FROM systemSaveData WHERE uuid = ?", uuid).Scan(&data)
+	var data []byte
+	err := handle.QueryRow("SELECT data FROM systemSaveData WHERE uuid = ?", uuid).Scan(&data)
 
-	reader := bytes.NewReader(data.data)
+	reader := bytes.NewReader(data)
 	system := defs.SystemSaveData{}
 	err = gob.NewDecoder(reader).Decode(&system)
 	return system, err
@@ -73,12 +63,16 @@ func StoreSystemSaveData(uuid []byte, data defs.SystemSaveData) error {
 	return err
 }
 
+func DeleteSystemSaveData(uuid []byte) error {
+	_, err := handle.Exec("DELETE FROM systemSaveData WHERE uuid = ?", uuid)
+	return err
+}
+
 func ReadSessionSaveData(uuid []byte, slot int) (defs.SessionSaveData, error) {
+	var data []byte
+	err := handle.QueryRow("SELECT data FROM sessionSaveData WHERE uuid = ? AND slot = ?", uuid, slot).Scan(&data)
 
-	var data DbSystemSaveData
-	err := handle.QueryRow("SELECT uuid, data FROM sessionSaveData WHERE uuid = ?", uuid).Scan(&data)
-
-	reader := bytes.NewReader(data.data)
+	reader := bytes.NewReader(data)
 	save := defs.SessionSaveData{}
 	err = gob.NewDecoder(reader).Decode(&save)
 
@@ -95,5 +89,10 @@ func StoreSessionSaveData(uuid []byte, data defs.SessionSaveData, slot int) erro
 
 	_, err = handle.Exec("INSERT INTO sessionSaveData (uuid, data, slot, timestamp) VALUES (?, ?, ?, UTC_TIMESTAMP()) ON DUPLICATE KEY UPDATE data = VALUES(data), timestamp = VALUES(timestamp)", uuid, buf.Bytes(), slot)
 
+	return err
+}
+
+func DeleteSessionSaveData(uuid []byte, slot int) error {
+	_, err := handle.Exec("DELETE FROM sessionSaveData WHERE uuid = ? AND slot = ?", uuid, slot)
 	return err
 }

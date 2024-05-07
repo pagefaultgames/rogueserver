@@ -18,14 +18,10 @@
 package savedata
 
 import (
-	"encoding/hex"
 	"fmt"
-	"log"
-	"os"
-	"strconv"
-
 	"github.com/pagefaultgames/rogueserver/db"
 	"github.com/pagefaultgames/rogueserver/defs"
+	"log"
 )
 
 type ClearResponse struct {
@@ -66,14 +62,9 @@ func Clear(uuid []byte, slot int, seed string, save defs.SessionSaveData) (Clear
 		}
 	}
 
-	fileName := "session"
-	if slot != 0 {
-		fileName += strconv.Itoa(slot)
-	}
-
-	err = os.Remove(fmt.Sprintf("userdata/%s/%s.pzs", hex.EncodeToString(uuid), fileName))
-	if err != nil && !os.IsNotExist(err) {
-		return response, fmt.Errorf("failed to delete save file: %s", err)
+	err = db.DeleteSessionSaveData(uuid, slot)
+	if err != nil {
+		log.Printf("failed to delete session save data: %s", err)
 	}
 
 	return response, nil

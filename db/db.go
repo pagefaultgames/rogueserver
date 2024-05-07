@@ -19,9 +19,12 @@ package db
 
 import (
 	"database/sql"
+	"encoding/hex"
 	"fmt"
-
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/pagefaultgames/rogueserver/api/savedata"
+	"log"
+	"os"
 )
 
 var handle *sql.DB
@@ -36,10 +39,80 @@ func Init(username, password, protocol, address, database string) error {
 
 	handle.SetMaxOpenConns(1000)
 
-	handle.Exec("CREATE TABLE IF NOT EXISTS systemSaveData (uuid BINARY(16) PRIMARY KEY, data BLOB, timestamp TIMESTAMP)")
-	handle.Exec("CREATE TABLE IF NOT EXISTS sessionSaveData (uuid BINARY(16) PRIMARY KEY, data BLOB, timestamp TIMESTAMP)")
+	tx, err := handle.Begin()
+	if err != nil {
+		panic(err)
+	}
+	tx.Exec("CREATE TABLE IF NOT EXISTS systemSaveData (uuid BINARY(16) PRIMARY KEY, data BLOB, timestamp TIMESTAMP)")
+	tx.Exec("CREATE TABLE IF NOT EXISTS sessionSaveData (uuid BINARY(16) PRIMARY KEY, slot TINYINT, data BLOB, timestamp TIMESTAMP)")
+	tx.Exec("CREATE CREATE UNIQUE INDEX IF NOT EXISTS sessionSaveDataByIdAndSlot ON sessionSaveData (uuid, slot)")
+	err = tx.Commit()
+	if err != nil {
+		panic(err)
+	}
 
-	//TODO iterate "userdata/accountid" and create rows for each account
+	// TODO temp code
+	entries, err := os.ReadDir("userdata")
+	if err != nil {
+		log.Fatalln(err)
+		return nil
+	}
+
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+
+		uuidString := entry.Name()
+		uuid, err := hex.DecodeString(uuidString)
+		if err != nil {
+			log.Printf("failed to decode uuid: %s", err)
+			continue
+		}
+
+		// store new system data
+		systemData, err := savedata.LegacyReadSystemSaveData(uuid)
+		if err != nil {
+			log.Printf("failed to read system save data for %v: %s", uuidString, err)
+			continue
+		}
+
+		err = StoreSystemSaveData(uuid, systemData)
+		if err != nil {
+			log.Fatalf("failed to store system save data for %v: %s\n", uuidString, err)
+			continue
+		}
+
+		// delete old system data
+		err = os.Remove("userdata/" + uuidString + "/system.pzs")
+		if err != nil {
+			log.Fatalf("failed to remove legacy system save data for %v: %s", uuidString, err)
+		}
+
+		for i := 0; i < 5; i++ {
+			sessionData, err := savedata.LegacyReadSessionSaveData(uuid, i)
+			if err != nil {
+				log.Printf("failed to read session save data %v for %v: %s", i, uuidString, err)
+				continue
+			}
+
+			// store new session data
+			err = StoreSessionSaveData(uuid, sessionData, i)
+			if err != nil {
+				log.Fatalf("failed to store session save data for %v: %s\n", uuidString, err)
+			}
+
+			// delete old session data
+			filename := "session"
+			if i != 0 {
+				filename += fmt.Sprintf("%d", i)
+			}
+			err = os.Remove(fmt.Sprintf("userdata/%s/%s.pzs", uuidString, filename))
+			if err != nil {
+				log.Fatalf("failed to remove legacy session save data %v for %v: %s", i, uuidString, err)
+			}
+		}
+	}
 
 	return nil
 }
