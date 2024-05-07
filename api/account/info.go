@@ -33,7 +33,7 @@ func Info(username string, uuid []byte) (InfoResponse, error) {
 
 	slot, err := db.GetLatestSessionSaveDataSlot(uuid)
 	if err != nil {
-		return response, err
+		response.LastSessionSlot = -1
 	}
 
 	if slot >= defs.SessionSlotCount {
