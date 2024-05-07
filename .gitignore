@@ -3,3 +3,9 @@
 rogueserver*
 userdata/*
 secret.key
+
+# Jetbrains IDEs
+/.idea/
+*.iml
+*.ipr
+*.iws
