@@ -18,11 +18,7 @@
 package account
 
 import (
-	"fmt"
-	"os"
-	"strconv"
-	"time"
-
+	"github.com/pagefaultgames/rogueserver/db"
 	"github.com/pagefaultgames/rogueserver/defs"
 )
 
@@ -33,24 +29,16 @@ type InfoResponse struct {
 
 // /account/info - get account info
 func Info(username string, uuid []byte) (InfoResponse, error) {
-	var latestSave time.Time
-	latestSaveID := -1
-	for id := range defs.SessionSlotCount {
-		fileName := "session"
-		if id != 0 {
-			fileName += strconv.Itoa(id)
-		}
+	response := InfoResponse{Username: username, LastSessionSlot: -1}
 
-		stat, err := os.Stat(fmt.Sprintf("userdata/%x/%s.pzs", uuid, fileName))
-		if err != nil {
-			continue
-		}
-
-		if stat.ModTime().After(latestSave) {
-			latestSave = stat.ModTime()
-			latestSaveID = id
-		}
+	slot, err := db.GetLatestSessionSaveDataSlot(uuid)
+	if err != nil {
+		response.LastSessionSlot = -1
 	}
 
-	return InfoResponse{Username: username, LastSessionSlot: latestSaveID}, nil
+	if slot >= defs.SessionSlotCount {
+		response.LastSessionSlot = -1
+	}
+
+	return response, nil
 }

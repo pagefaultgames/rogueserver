@@ -79,6 +79,16 @@ func ReadSessionSaveData(uuid []byte, slot int) (defs.SessionSaveData, error) {
 	return save, err
 }
 
+func GetLatestSessionSaveDataSlot(uuid []byte) (int, error) {
+	var slot int
+	err := handle.QueryRow("SELECT slot FROM sessionSaveData WHERE uuid = ? ORDER BY timestamp DESC, slot ASC LIMIT 1", uuid).Scan(&slot)
+	if err != nil {
+		return -1, err
+	}
+
+	return slot, nil
+}
+
 func StoreSessionSaveData(uuid []byte, data defs.SessionSaveData, slot int) error {
 
 	var buf bytes.Buffer
