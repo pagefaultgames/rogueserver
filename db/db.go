@@ -43,8 +43,7 @@ func Init(username, password, protocol, address, database string) error {
 		panic(err)
 	}
 	tx.Exec("CREATE TABLE IF NOT EXISTS systemSaveData (uuid BINARY(16) PRIMARY KEY, data BLOB, timestamp TIMESTAMP)")
-	tx.Exec("CREATE TABLE IF NOT EXISTS sessionSaveData (uuid BINARY(16), slot TINYINT, data BLOB, timestamp TIMESTAMP)")
-	tx.Exec("CREATE CREATE UNIQUE INDEX IF NOT EXISTS sessionSaveDataByIdAndSlot ON sessionSaveData (uuid, slot)")
+	tx.Exec("CREATE TABLE IF NOT EXISTS sessionSaveData (uuid BINARY(16), slot TINYINT, data BLOB, timestamp TIMESTAMP PRIMARY KEY (uuid, slot))")
 	err = tx.Commit()
 	if err != nil {
 		panic(err)
