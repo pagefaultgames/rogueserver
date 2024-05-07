@@ -20,7 +20,6 @@ package savedata
 import (
 	"fmt"
 	"log"
-	"os"
 	"strconv"
 
 	"github.com/klauspost/compress/zstd"
@@ -35,12 +34,6 @@ func Update(uuid []byte, slot int, save any) error {
 	err := db.UpdateAccountLastActivity(uuid)
 	if err != nil {
 		log.Print("failed to update account last activity")
-	}
-
-	// ideally should have been done at account creation
-	err = os.MkdirAll(fmt.Sprintf("userdata/%x", uuid), 0755)
-	if err != nil && !os.IsExist(err) {
-		return fmt.Errorf(fmt.Sprintf("failed to create userdata folder: %s", err))
 	}
 
 	switch save := save.(type) {
