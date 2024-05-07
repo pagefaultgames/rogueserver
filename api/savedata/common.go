@@ -28,7 +28,7 @@ import (
 	"github.com/pagefaultgames/rogueserver/defs"
 )
 
-func readSystemSaveData(uuid []byte) (defs.SystemSaveData, error) {
+func legacyReadSystemSaveData(uuid []byte) (defs.SystemSaveData, error) {
 	var system defs.SystemSaveData
 
 	file, err := os.Open("userdata/" + hex.EncodeToString(uuid) + "/system.pzs")
@@ -53,7 +53,7 @@ func readSystemSaveData(uuid []byte) (defs.SystemSaveData, error) {
 	return system, nil
 }
 
-func readSessionSaveData(uuid []byte, slotID int) (defs.SessionSaveData, error) {
+func legacyReadSessionSaveData(uuid []byte, slotID int) (defs.SessionSaveData, error) {
 	var session defs.SessionSaveData
 
 	fileName := "session"

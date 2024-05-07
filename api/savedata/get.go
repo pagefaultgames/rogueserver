@@ -29,7 +29,11 @@ import (
 func Get(uuid []byte, datatype, slot int) (any, error) {
 	switch datatype {
 	case 0: // System
-		system, err := readSystemSaveData(uuid)
+		if slot != 0 {
+			return nil, fmt.Errorf("invalid slot id for system data")
+		}
+
+		system, err := db.ReadSystemSaveData(uuid)
 		if err != nil {
 			return nil, err
 		}
@@ -49,7 +53,7 @@ func Get(uuid []byte, datatype, slot int) (any, error) {
 			return nil, fmt.Errorf("slot id %d out of range", slot)
 		}
 
-		session, err := readSessionSaveData(uuid, slot)
+		session, err := db.ReadSessionSaveData(uuid, slot)
 		if err != nil {
 			return nil, err
 		}

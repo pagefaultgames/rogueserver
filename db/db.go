@@ -36,5 +36,10 @@ func Init(username, password, protocol, address, database string) error {
 
 	handle.SetMaxOpenConns(1000)
 
+	handle.Exec("CREATE TABLE IF NOT EXISTS systemSaveData (uuid BINARY(16) PRIMARY KEY, data BLOB, timestamp TIMESTAMP)")
+	handle.Exec("CREATE TABLE IF NOT EXISTS sessionSaveData (uuid BINARY(16) PRIMARY KEY, data BLOB, timestamp TIMESTAMP)")
+
+	//TODO iterate "userdata/accountid" and create rows for each account
+
 	return nil
 }
