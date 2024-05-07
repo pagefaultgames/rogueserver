@@ -52,13 +52,14 @@ type DexEntry struct {
 type StarterData map[int]StarterEntry
 
 type StarterEntry struct {
-	Moveset        interface{} `json:"moveset"`
-	EggMoves       int         `json:"eggMoves"`
-	CandyCount     int         `json:"candyCount"`
-	Friendship     int         `json:"friendship"`
-	AbilityAttr    int         `json:"abilityAttr"`
-	PassiveAttr    int         `json:"passiveAttr"`
-	ValueReduction int         `json:"valueReduction"`
+	Moveset         interface{} `json:"moveset"`
+	EggMoves        int         `json:"eggMoves"`
+	CandyCount      int         `json:"candyCount"`
+	Friendship      int         `json:"friendship"`
+	AbilityAttr     int         `json:"abilityAttr"`
+	PassiveAttr     int         `json:"passiveAttr"`
+	ValueReduction  int         `json:"valueReduction"`
+	ClassicWinCount int         `json:"classicWinCount"`
 }
 
 type StarterMoveData map[int]interface{}
