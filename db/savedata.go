@@ -87,7 +87,7 @@ func StoreSessionSaveData(uuid []byte, data defs.SessionSaveData, slot int) erro
 		return err
 	}
 
-	_, err = handle.Exec("INSERT INTO sessionSaveData (uuid, data, slot, timestamp) VALUES (?, ?, ?, UTC_TIMESTAMP()) ON DUPLICATE KEY UPDATE data = VALUES(data), timestamp = VALUES(timestamp)", uuid, buf.Bytes(), slot)
+	_, err = handle.Exec("REPLACE INTO sessionSaveData (uuid, slot, data, timestamp) VALUES (?, ?, ?, UTC_TIMESTAMP())", uuid, slot, buf.Bytes())
 
 	return err
 }
