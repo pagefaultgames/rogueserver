@@ -22,7 +22,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/pagefaultgames/rogueserver/api/savedata"
 	"log"
 	"os"
 )
@@ -71,7 +70,7 @@ func Init(username, password, protocol, address, database string) error {
 		}
 
 		// store new system data
-		systemData, err := savedata.LegacyReadSystemSaveData(uuid)
+		systemData, err := LegacyReadSystemSaveData(uuid)
 		if err != nil {
 			log.Printf("failed to read system save data for %v: %s", uuidString, err)
 			continue
@@ -90,7 +89,7 @@ func Init(username, password, protocol, address, database string) error {
 		}
 
 		for i := 0; i < 5; i++ {
-			sessionData, err := savedata.LegacyReadSessionSaveData(uuid, i)
+			sessionData, err := LegacyReadSessionSaveData(uuid, i)
 			if err != nil {
 				log.Printf("failed to read session save data %v for %v: %s", i, uuidString, err)
 				continue
