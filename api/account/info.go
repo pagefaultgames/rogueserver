@@ -31,12 +31,20 @@ type InfoResponse struct {
 func Info(username string, uuid []byte) (InfoResponse, error) {
 	response := InfoResponse{Username: username, LastSessionSlot: -1}
 
-	slot, err := db.GetLatestSessionSaveDataSlot(uuid)
-	if err != nil {
-		response.LastSessionSlot = -1
+	highest := -1
+	for i := 0; i < defs.SessionSlotCount; i++ {
+		data, err := db.ReadSessionSaveData(uuid, i)
+		if err != nil {
+			continue
+		}
+
+		if data.Timestamp > highest {
+			highest = data.Timestamp
+			response.LastSessionSlot = i
+		}
 	}
 
-	if slot >= defs.SessionSlotCount {
+	if response.LastSessionSlot < 0 || response.LastSessionSlot >= defs.SessionSlotCount {
 		response.LastSessionSlot = -1
 	}
 
