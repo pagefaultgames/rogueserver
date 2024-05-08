@@ -24,6 +24,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/pagefaultgames/rogueserver/api"
 	"github.com/pagefaultgames/rogueserver/db"
@@ -31,17 +32,19 @@ import (
 
 func main() {
 	// flag stuff
-	debug := os.Getenv("debug")
+	debug, errDebugBoolParse := strconv.ParseBool(os.Getenv("debug"))
+	if errDebugBoolParse != nil {
+		log.Fatalf("failed to parse debug value: %s", errDebugBoolParse)
+	}
+	proto := "tcp"
+	addr := "0.0.0.0:8001"
 
-	proto = "tcp"
-	addr = "0.0.0.0:8001"
 
-
-	dbuser = os.Getenv("dbuser")
-	dbpass = os.Getenv("dbpass")
-	dbproto = "tcp"
-	dbaddr = os.Getenv("dbaddr")
-	dbname = os.Getenv("dbname")
+	dbuser := os.Getenv("dbuser")
+	dbpass := os.Getenv("dbpass")
+	dbproto := "tcp"
+	dbaddr := os.Getenv("dbaddr")
+	dbname := os.Getenv("dbname")
 
 	flag.Parse()
 
@@ -50,13 +53,13 @@ func main() {
 	gob.Register(map[string]interface{}{})
 
 	// get database connection
-	err := db.Init(*dbuser, *dbpass, *dbproto, *dbaddr, *dbname)
+	err := db.Init(dbuser, dbpass, dbproto, dbaddr, dbname)
 	if err != nil {
 		log.Fatalf("failed to initialize database: %s", err)
 	}
 
 	// create listener
-	listener, err := createListener(*proto, *addr)
+	listener, err := createListener(proto, addr)
 	if err != nil {
 		log.Fatalf("failed to create net listener: %s", err)
 	}
@@ -67,7 +70,7 @@ func main() {
 	api.Init(mux)
 
 	// start web server
-	if *debug {
+	if debug == true {
 		err = http.Serve(listener, debugHandler(mux))
 	} else {
 		err = http.Serve(listener, mux)
