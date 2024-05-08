@@ -20,6 +20,7 @@ package db
 import (
 	"bytes"
 	"encoding/gob"
+
 	"github.com/pagefaultgames/rogueserver/defs"
 )
 
@@ -41,42 +42,61 @@ func TryAddDailyRunCompletion(uuid []byte, seed string, mode int) (bool, error) 
 }
 
 func ReadSystemSaveData(uuid []byte) (defs.SystemSaveData, error) {
+	var system defs.SystemSaveData
+
 	var data []byte
 	err := handle.QueryRow("SELECT data FROM systemSaveData WHERE uuid = ?", uuid).Scan(&data)
+	if err != nil {
+		return system, err
+	}
 
-	reader := bytes.NewReader(data)
-	system := defs.SystemSaveData{}
-	err = gob.NewDecoder(reader).Decode(&system)
-	return system, err
+	err = gob.NewDecoder(bytes.NewReader(data)).Decode(&system)
+	if err != nil {
+		return system, err
+	}
+
+	return system, nil
 }
 
 func StoreSystemSaveData(uuid []byte, data defs.SystemSaveData) error {
-
 	var buf bytes.Buffer
 	err := gob.NewEncoder(&buf).Encode(data)
 	if err != nil {
 		return err
 	}
 
-	_, err = handle.Exec("INSERT INTO systemSaveData (uuid, data, timestamp) VALUES (?, ?, UTC_TIMESTAMP()) ON DUPLICATE KEY UPDATE data = VALUES(data), timestamp = VALUES(timestamp)", uuid, buf.Bytes())
+	_, err = handle.Exec("REPLACE INTO systemSaveData (uuid, data, timestamp) VALUES (?, ?, UTC_TIMESTAMP())", uuid, buf.Bytes())
+	if err != nil {
+		return err
+	}
 
-	return err
+	return nil
 }
 
 func DeleteSystemSaveData(uuid []byte) error {
 	_, err := handle.Exec("DELETE FROM systemSaveData WHERE uuid = ?", uuid)
-	return err
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func ReadSessionSaveData(uuid []byte, slot int) (defs.SessionSaveData, error) {
+	var session defs.SessionSaveData
+
 	var data []byte
 	err := handle.QueryRow("SELECT data FROM sessionSaveData WHERE uuid = ? AND slot = ?", uuid, slot).Scan(&data)
+	if err != nil {
+		return session, err
+	}
 
-	reader := bytes.NewReader(data)
-	save := defs.SessionSaveData{}
-	err = gob.NewDecoder(reader).Decode(&save)
+	err = gob.NewDecoder(bytes.NewReader(data)).Decode(&session)
+	if err != nil {
+		return session, err
+	}
 
-	return save, err
+	return session, nil
 }
 
 func GetLatestSessionSaveDataSlot(uuid []byte) (int, error) {
@@ -90,7 +110,6 @@ func GetLatestSessionSaveDataSlot(uuid []byte) (int, error) {
 }
 
 func StoreSessionSaveData(uuid []byte, data defs.SessionSaveData, slot int) error {
-
 	var buf bytes.Buffer
 	err := gob.NewEncoder(&buf).Encode(data)
 	if err != nil {
@@ -98,11 +117,18 @@ func StoreSessionSaveData(uuid []byte, data defs.SessionSaveData, slot int) erro
 	}
 
 	_, err = handle.Exec("REPLACE INTO sessionSaveData (uuid, slot, data, timestamp) VALUES (?, ?, ?, UTC_TIMESTAMP())", uuid, slot, buf.Bytes())
+	if err != nil {
+		return err
+	}
 
-	return err
+	return nil
 }
 
 func DeleteSessionSaveData(uuid []byte, slot int) error {
 	_, err := handle.Exec("DELETE FROM sessionSaveData WHERE uuid = ? AND slot = ?", uuid, slot)
-	return err
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
