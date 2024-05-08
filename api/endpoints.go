@@ -144,10 +144,6 @@ func handleAccountLogout(w http.ResponseWriter, r *http.Request) {
 
 // game
 
-func handleGamePlayerCount(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte(strconv.Itoa(playerCount)))
-}
-
 func handleGameTitleStats(w http.ResponseWriter, r *http.Request) {
 	err := json.NewEncoder(w).Encode(defs.TitleStats{
 		PlayerCount: playerCount,
