@@ -33,15 +33,15 @@ func main() {
 	// flag stuff
 	debug := os.Getenv("debug")
 
-	proto := "tcp"
-	addr := "0.0.0.0:8001"
+	proto = "tcp"
+	addr = "0.0.0.0:8001"
 
 
-	dbuser := os.Getenv("dbuser")
-	dbpass := os.Getenv("dbpass")
-	dbproto := "tcp"
-	dbaddr := os.Getenv("dbaddr")
-	dbname := os.Getenv("dbname")
+	dbuser = os.Getenv("dbuser")
+	dbpass = os.Getenv("dbpass")
+	dbproto = "tcp"
+	dbaddr = os.Getenv("dbaddr")
+	dbname = os.Getenv("dbname")
 
 	flag.Parse()
 
