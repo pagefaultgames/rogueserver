@@ -1,8 +1,14 @@
 
 # no extension on linux, .exe on windows
 rogueserver*
-userdata/*
+!/rogueserver/*
+/userdata/*
 secret.key
+
+
+# local testing
+/.data/
+
 
 # Jetbrains IDEs
 /.idea/
