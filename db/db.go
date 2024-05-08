@@ -50,6 +50,16 @@ func Init(username, password, protocol, address, database string) error {
 	}
 
 	// TODO temp code
+	_, err = os.Stat("userdata")
+	if err != nil {
+		if os.IsNotExist(err) { // not found, do not migrate
+			return nil
+		} else {
+			log.Fatalf("failed to stat userdata directory: %s", err)
+			return err
+		}
+	}
+
 	entries, err := os.ReadDir("userdata")
 	if err != nil {
 		log.Fatalln(err)
