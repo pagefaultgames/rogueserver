@@ -31,16 +31,17 @@ import (
 
 func main() {
 	// flag stuff
-	debug := flag.Bool("debug", false, "use debug mode")
+	debug := os.Getenv("debug")
 
-	proto := flag.String("proto", "tcp", "protocol for api to use (tcp, unix)")
-	addr := flag.String("addr", "0.0.0.0:8001", "network address for api to listen on")
+	proto := "tcp"
+	addr := "0.0.0.0:8001"
 
-	dbuser := flag.String("dbuser", "pokerogue", "database username")
-	dbpass := flag.String("dbpass", "pokerogue", "database password")
-	dbproto := flag.String("dbproto", "tcp", "protocol for database connection")
-	dbaddr := flag.String("dbaddr", "localhost", "database address")
-	dbname := flag.String("dbname", "pokeroguedb", "database name")
+
+	dbuser := os.Getenv("dbuser")
+	dbpass := os.Getenv("dbpass")
+	dbproto := "tcp"
+	dbaddr := os.Getenv("dbaddr")
+	dbname := os.Getenv("dbname")
 
 	flag.Parse()
 
