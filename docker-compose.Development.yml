@@ -1,0 +1,14 @@
+services:
+  db:
+    image: mariadb:11
+    container_name: pokerogue-db-local
+    restart: on-failure
+    environment:
+      MYSQL_ROOT_PASSWORD: admin
+      MYSQL_DATABASE: pokeroguedb
+      MYSQL_USER: pokerogue
+      MYSQL_PASSWORD: pokerogue
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./.data/db:/var/lib/mysql
