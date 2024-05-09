@@ -18,6 +18,7 @@
 package api
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -280,6 +281,10 @@ func handleSaveData(w http.ResponseWriter, r *http.Request) {
 	switch r.URL.Path {
 	case "/savedata/get":
 		save, err = savedata.Get(uuid, datatype, slot)
+		if err == sql.ErrNoRows {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
 	case "/savedata/update":
 		err = savedata.Update(uuid, slot, save)
 	case "/savedata/delete":
