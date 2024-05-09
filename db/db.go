@@ -73,6 +73,12 @@ func Init(username, password, protocol, address, database string) error {
 			continue
 		}
 
+		var count int
+		err = handle.QueryRow("SELECT COUNT(*) FROM systemSaveData WHERE uuid = ?", uuid).Scan(&count)
+		if err != nil || count != 0 {
+			continue
+		}
+
 		// store new system data
 		systemData, err := LegacyReadSystemSaveData(uuid)
 		if err != nil {
