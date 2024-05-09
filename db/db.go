@@ -37,15 +37,16 @@ func Init(username, password, protocol, address, database string) error {
 	if err != nil {
 		return fmt.Errorf("failed to open database connection: %s", err)
 	}
-
-	if protocol == "unix" {
-		handle.SetMaxOpenConns(1000)
-	} else {
-		handle.SetMaxOpenConns(200)
+	
+	conns := 1024
+	if protocol != "unix" {
+		conns = 256
 	}
 
-	handle.SetConnMaxIdleTime(time.Second * 30)
-	handle.SetConnMaxLifetime(time.Minute)
+	handle.SetMaxOpenConns(conns)
+	handle.SetMaxIdleConns(conns/4)
+
+	handle.SetConnMaxIdleTime(time.Second * 10)
 
 	tx, err := handle.Begin()
 	if err != nil {
