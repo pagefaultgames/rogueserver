@@ -47,6 +47,13 @@ func Init(username, password, protocol, address, database string) error {
 	if err != nil {
 		panic(err)
 	}
+	tx.Exec("CREATE TABLE IF NOT EXISTS accounts (uuid BINARY(16) NOT NULL, username VARCHAR(16) NOT NULL, hash BINARY(32) NOT NULL, salt BINARY(16) NOT NULL, registered TIMESTAMP NOT NULL, lastLoggedIn TIMESTAMP null DEFAULT null, lastActivity TIMESTAMP null DEFAULT null, banned INT(1) NOT NULL DEFAULT 0, trainerId INT(5) unsigned DEFAULT 0, secretId INT(5) unsigned DEFAULT 0, PRIMARY KEY (uuid), UNIQUE KEY (username))")
+	tx.Exec("CREATE TABLE IF NOT EXISTS accountStats (uuid BINARY(16) NOT NULL, playTime INT(11) NOT NULL DEFAULT 0, battles INT(11) NOT NULL DEFAULT 0, classicSessionsPlayed INT(11) NOT NULL DEFAULT 0, sessionsWon INT(11) NOT NULL DEFAULT 0, highestEndlessWave INT(11) NOT NULL DEFAULT 0, highestLevel INT(11) NOT NULL DEFAULT 0, pokemonSeen INT(11) NOT NULL DEFAULT 0, pokemonDefeated INT(11) NOT NULL DEFAULT 0, pokemonCaught INT(11) NOT NULL DEFAULT 0, pokemonHatched INT(11) NOT NULL DEFAULT 0, eggsPulled INT(11) NOT NULL DEFAULT 0, regularVouchers INT(11) NOT NULL DEFAULT 0, plusVouchers INT(11) NOT NULL DEFAULT 0, premiumVouchers INT(11) NOT NULL DEFAULT 0, goldenVouchers INT(11) NOT NULL DEFAULT 0, PRIMARY KEY (uuid), KEY uuid (uuid), FOREIGN KEY (uuid) REFERENCES accounts(uuid))")
+	tx.Exec("CREATE TABLE IF NOT EXISTS accountCompensations (id INT(11) NOT NULL auto_increment, uuid BINARY(16) NOT NULL, voucherType INT(11) NOT NULL, count INT(11) NOT NULL, claimed BIT(1) NOT NULL DEFAULT b'0', PRIMARY KEY (ID), KEY uuid (uuid), FOREIGN KEY (uuid) REFERENCES accounts(uuid))")
+	tx.Exec("CREATE TABLE IF NOT EXISTS dailyRuns (date DATE NOT NULL, seed CHAR(24) CHARACTER SET ascii COLLATE ascii_bin NOT NULL, PRIMARY KEY (date))")
+	tx.Exec("CREATE TABLE IF NOT EXISTS accountDailyRuns (uuid BINARY(16) NOT NULL, date DATE NOT NULL, timestamp TIMESTAMP NOT NULL, score INT(11) NOT NULL DEFAULT 0, wave INT(11) NOT NULL, PRIMARY KEY (uuid, date), KEY uuid (uuid), KEY date (date), FOREIGN KEY (uuid) REFERENCES accounts(uuid), FOREIGN KEY (date) REFERENCES dailyRuns(date))")
+	tx.Exec("CREATE TABLE IF NOT EXISTS dailyRunCompletions (uuid BINARY(16) NOT NULL, seed CHAR(24) CHARACTER SET ascii COLLATE ascii_bin NOT NULL, mode INT(11) NOT NULL DEFAULT 0, timestamp TIMESTAMP NOT NULL, score INT(11) NOT NULL DEFAULT 0, PRIMARY KEY (uuid, seed), KEY uuid (uuid), FOREIGN KEY (uuid) REFERENCES accounts(uuid))")
+	tx.Exec("CREATE TABLE IF NOT EXISTS sessions (token BINARY(32) NOT NULL, uuid BINARY(16) NOT NULL, expire TIMESTAMP NULL DEFAULT NULL, active INT(1) NOT NULL DEFAULT 0, PRIMARY KEY (token), KEY uuid (uuid), FOREIGN KEY (uuid) REFERENCES accounts(uuid))")
 	tx.Exec("CREATE TABLE IF NOT EXISTS systemSaveData (uuid BINARY(16) PRIMARY KEY, data LONGBLOB, timestamp TIMESTAMP)")
 	tx.Exec("CREATE TABLE IF NOT EXISTS sessionSaveData (uuid BINARY(16), slot TINYINT, data LONGBLOB, timestamp TIMESTAMP, PRIMARY KEY (uuid, slot))")
 	err = tx.Commit()
@@ -55,6 +62,8 @@ func Init(username, password, protocol, address, database string) error {
 	}
 
 	// TODO temp code
+	// create the directory so that it doesn't fail on systems that do not yet have this directory
+	os.MkdirAll("userdata", os.ModePerm)
 	entries, err := os.ReadDir("userdata")
 	if err != nil {
 		log.Fatalln(err)
