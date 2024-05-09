@@ -60,13 +60,13 @@ You will need to allow the port youre running the API (8001) on and port 8000 to
 # If you are on Linux
 In whatever shell you prefer, run the following:
 ```
-cd C:\api\server\location\
+cd /api/server/location/
 go run . &
-cd C:\rogue\server\location\
-npm run start
+cd /rogue/server/location/
+npm run start &
 ```
-
-You will need to allow the ports youre running the API (8001) and port 8000 to accept inbound connections if your firewall is block it. you can run the following to allow incoming connections using UFW
+If you have a firewall running such as ufw on your linux machine, make sure to allow inbound connections on the ports youre running the API and the pokerogue server (8000,8001).
+An example to allow incoming connections using UFW:
 ```
 sudo ufw allow 8000,8001/tcp
 ```
