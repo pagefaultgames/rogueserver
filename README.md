@@ -7,7 +7,7 @@ There is a sample docker-compose file for setting up a docker container to setup
 # Self Hosting outside of Docker:
 ## Windows:
 Recommended Tools:
-Chocolatey (https://chocolatey.org/install)
+[Chocolatey](https://chocolatey.org/install)
 
 ## Required Tools:
 - Golang
