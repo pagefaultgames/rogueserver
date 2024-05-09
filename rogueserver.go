@@ -34,7 +34,7 @@ func main() {
 	debug := flag.Bool("debug", false, "use debug mode")
 
 	proto := flag.String("proto", "tcp", "protocol for api to use (tcp, unix)")
-	addr := flag.String("addr", "0.0.0.0", "network address for api to listen on")
+	addr := flag.String("addr", "0.0.0.0:8001", "network address for api to listen on")
 
 	dbuser := flag.String("dbuser", "pokerogue", "database username")
 	dbpass := flag.String("dbpass", "", "database password")
