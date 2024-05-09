@@ -16,17 +16,6 @@ If using Windows: [Chocolatey](https://chocolatey.org/install)
 ## Installation:
 The docker compose file should automatically implement a container with mariadb with an empty database and the default user and password combo of pokerogue:pokerogue
 
-Edit the following files:
-### rogueserver.go:34 
-Change the 'false' after "debug" to 'true'. This will resolve CORS issues that many users have been having while trying to spin up their own servers. 
-
-### rogueserver.go:37
-Change the default port if you need to, I set it to 8001. As of another pull request, this should _NOT_ be necessary.
-
-### rogueserver.go:41-43
-You can choose to specify a different dbaddr, dbproto, or dbname if you so choose, instead of passing a flag during execution.
-It is advised that you do not store hardcoded credential sets, but rather pass them in as flags during execution like in the commands below. 
-
 ### src/utils.ts:224-225 (in pokerogue)
 Replace both URLs (one on each line) with the local API server address from rogueserver.go (0.0.0.0:8001) (or whatever port you picked)
 
@@ -36,13 +25,15 @@ Now that all of the files are configured: start up powershell as administrator:
 ```
 powershell -ep bypass
 cd C:\api\server\location\
-go run . -dbuser [usernamehere] -dbpass [passhere]
+go build .
+.\rogueserver.exe --debug --dbuser yourusername --dbpass yourpassword 
 ```
+The other available flags are located in rogueserver.go:34-43.
 
 Then in another run this the first time then run `npm run start` from the rogueserver location from then on:
 ```
 powershell -ep bypass
-cd C:\rogue\server\location\
+cd C:\server\location\
 npm install
 npm run start
 ```
@@ -52,10 +43,13 @@ You will need to allow the port youre running the API (8001) on and port 8000 to
 In whatever shell you prefer, run the following:
 ```
 cd /api/server/location/
-go run . -dbuser [usernamehere] -dbpass [passhere] &
-cd /rogue/server/location/
+go build .
+./rogueserver --debug --dbuser yourusername --dbpass yourpassword &
+
+cd /server/location/
 npm run start &
 ```
+
 If you have a firewall running such as ufw on your linux machine, make sure to allow inbound connections on the ports youre running the API and the pokerogue server (8000,8001).
 An example to allow incoming connections using UFW:
 ```
