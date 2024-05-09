@@ -21,9 +21,11 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"fmt"
-	_ "github.com/go-sql-driver/mysql"
 	"log"
 	"os"
+	"time"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
 var handle *sql.DB
@@ -36,7 +38,10 @@ func Init(username, password, protocol, address, database string) error {
 		return fmt.Errorf("failed to open database connection: %s", err)
 	}
 
-	handle.SetMaxOpenConns(1000)
+	handle.SetMaxIdleConns(256)
+	handle.SetMaxOpenConns(256)
+	handle.SetConnMaxIdleTime(time.Second * 30)
+	handle.SetConnMaxLifetime(time.Minute)
 
 	tx, err := handle.Begin()
 	if err != nil {
