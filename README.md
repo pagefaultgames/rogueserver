@@ -14,16 +14,7 @@ If using Windows: [Chocolatey](https://chocolatey.org/install)
 - npm: [how to install](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm)
 
 ## Installation:
-
-Once you have all the prerequisites you will need to setup a database. 
-There are tons of database services you can choose from:
-- mysql - [getting started](https://dev.mysql.com/doc/mysql-getting-started/en/)
-- mariadb - [getting started](https://mariadb.com/get-started-with-mariadb/)
-- etc
-
-I went with MySQL. Once the database is setup, make sure that you can authenticate to the database.
-After being able to login to the database, create a database/schema called pokeroguedb.
-Select it as the default database and then run the sql queries from sqlqueries.sql. You should now be able to see all of the empty tables. 
+The docker compose file should automatically implement a container with mariadb with an empty database and the default user and password combo of pokerogue:pokerogue
 
 Edit the following files:
 ### rogueserver.go:34 
