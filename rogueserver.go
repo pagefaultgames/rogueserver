@@ -101,6 +101,21 @@ func createListener(proto, addr string) (net.Listener, error) {
 	return listener, nil
 }
 
+func prodHandler(router *http.ServeMux) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
+		w.Header().Set("Access-Control-Allow-Methods", "OPTIONS, GET, POST")
+		w.Header().Set("Access-Control-Allow-Origin", "https://pokerogue.net")
+
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		router.ServeHTTP(w, r)
+	})
+}
+
 func debugHandler(router *http.ServeMux) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Headers", "*")
@@ -116,18 +131,3 @@ func debugHandler(router *http.ServeMux) http.Handler {
 	})
 }
 
-
-func prodHandler(router *http.ServeMux) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
-		w.Header().Set("Access-Control-Allow-Methods", "OPTIONS, GET, POST")
-		w.Header().Set("Access-Control-Allow-Origin", "https://pokerogue.net")
-
-		if r.Method == "OPTIONS" {
-			w.WriteHeader(http.StatusOK)
-			return
-		}
-
-		router.ServeHTTP(w, r)
-	})
-}
