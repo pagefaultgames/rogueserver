@@ -1,0 +1,27 @@
+services:
+  server:
+    image: ghcr.io/pagefaultgames/pokerogue:latest
+    command: --debug --dbaddr db:3306 --dbuser pokerogue --dbpass pokerogue --dbname pokeroguedb
+    restart: unless-stopped
+    depends_on:
+      - db
+    networks:
+      - internal
+    ports:
+      - "8001:8001"
+  db:
+    image: mariadb:11
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: admin
+      MYSQL_DATABASE: pokeroguedb
+      MYSQL_USER: pokerogue
+      MYSQL_PASSWORD: pokerogue
+    volumes:
+      - database:/var/lib/mysql
+
+volumes:
+  database:
+
+networks:
+  internal:

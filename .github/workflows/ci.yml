@@ -1,0 +1,46 @@
+name: Build
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    name: Build (${{ matrix.os_name }})
+    env:
+      GO_VERSION: 1.22
+      GOOS: ${{ matrix.os_name }}
+      GOARCH: ${{ matrix.arch }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            os_name: linux
+            arch: amd64
+          - os: windows-latest
+            os_name: windows
+            arch: amd64
+# TODO macos needs universal binary!
+#          - os: macos-latest
+#            os_name: macos
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Go ${{ env.GO_VERSION }}
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: Install dependencies
+        run: go mod download
+      - name: Test
+        run: go test -v
+      - name: Build
+        run: go build -v
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rogueserver-${{ matrix.os_name }}-${{ matrix.arch }}-${{ github.sha }}
+          path: |
+            rogueserver*
+            !rogueserver.go
