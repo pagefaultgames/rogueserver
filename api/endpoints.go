@@ -296,20 +296,15 @@ func handleSaveData(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 
-		s, ok := save.(defs.SessionSaveData)
-		if !ok {
-			err = fmt.Errorf("save data is not type SessionSaveData")
-			break
-		}
-
-		// doesn't return a save, but it works
 		var seed string
 		seed, err = db.GetDailyRunSeed()
 		if err != nil {
 			httpError(w, r, err, http.StatusInternalServerError)
 			return
 		}
-		save, err = savedata.Clear(uuid, slot, seed, s)
+
+		// doesn't return a save, but it works
+		save, err = savedata.Clear(uuid, slot, seed, save.(defs.SessionSaveData))
 	}
 	if err != nil {
 		httpError(w, r, err, http.StatusInternalServerError)
