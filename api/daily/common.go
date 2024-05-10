@@ -61,21 +61,26 @@ func Init() error {
 		secret = newSecret
 	}
 
-	err = recordNewDaily()
+	seed, err := recordNewDaily()
 	if err != nil {
 		log.Print(err)
 	}
 
-	log.Printf("Daily Run Seed: %s", Seed())
+	log.Printf("Daily Run Seed: %s", seed)
 
-	scheduler.AddFunc("@daily", func() {
+	_, err = scheduler.AddFunc("@daily", func() {
 		time.Sleep(time.Second)
 
-		err := recordNewDaily()
+		seed, err = recordNewDaily()
+		log.Printf("Daily Run Seed: %s", seed)
 		if err != nil {
 			log.Printf("error while recording new daily: %s", err)
 		}
 	})
+
+	if err != nil {
+		return err
+	}
 
 	scheduler.Start()
 
@@ -95,11 +100,6 @@ func deriveSeed(seedTime time.Time) []byte {
 	return hashedSeed[:]
 }
 
-func recordNewDaily() error {
-	err := db.TryAddDailyRun(Seed())
-	if err != nil {
-		return err
-	}
-
-	return nil
+func recordNewDaily() (string, error) {
+	return db.TryAddDailyRun(Seed())
 }

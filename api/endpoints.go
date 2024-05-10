@@ -19,6 +19,7 @@ package api
 
 import (
 	"database/sql"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -303,7 +304,13 @@ func handleSaveData(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// doesn't return a save, but it works
-		save, err = savedata.Clear(uuid, slot, daily.Seed(), s)
+		var seed string
+		seed, err = db.GetDailyRunSeed()
+		if err != nil {
+			httpError(w, r, err, http.StatusInternalServerError)
+			return
+		}
+		save, err = savedata.Clear(uuid, slot, seed, s)
 	}
 	if err != nil {
 		httpError(w, r, err, http.StatusInternalServerError)
@@ -327,7 +334,21 @@ func handleSaveData(w http.ResponseWriter, r *http.Request) {
 // daily
 
 func handleDailySeed(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte(daily.Seed()))
+	seed, err := db.GetDailyRunSeed()
+	if err != nil {
+		httpError(w, r, err, http.StatusInternalServerError)
+		return
+	}
+	bytes, err := base64.StdEncoding.DecodeString(seed)
+	if err != nil {
+		httpError(w, r, err, http.StatusInternalServerError)
+		return
+	}
+	_, err = w.Write(bytes)
+	if err != nil {
+		httpError(w, r, err, http.StatusInternalServerError)
+		return
+	}
 }
 
 func handleDailyRankings(w http.ResponseWriter, r *http.Request) {
