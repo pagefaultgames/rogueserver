@@ -18,7 +18,7 @@
 package api
 
 import (
-	"encoding/base64"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -144,10 +144,6 @@ func handleAccountLogout(w http.ResponseWriter, r *http.Request) {
 }
 
 // game
-
-func handleGamePlayerCount(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte(strconv.Itoa(playerCount)))
-}
 
 func handleGameTitleStats(w http.ResponseWriter, r *http.Request) {
 	err := json.NewEncoder(w).Encode(defs.TitleStats{
@@ -285,6 +281,10 @@ func handleSaveData(w http.ResponseWriter, r *http.Request) {
 	switch r.URL.Path {
 	case "/savedata/get":
 		save, err = savedata.Get(uuid, datatype, slot)
+		if err == sql.ErrNoRows {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
 	case "/savedata/update":
 		err = savedata.Update(uuid, slot, save)
 	case "/savedata/delete":
@@ -338,16 +338,8 @@ func handleDailySeed(w http.ResponseWriter, r *http.Request) {
 		httpError(w, r, err, http.StatusInternalServerError)
 		return
 	}
-	bytes, err := base64.StdEncoding.DecodeString(seed)
-	if err != nil {
-		httpError(w, r, err, http.StatusInternalServerError)
-		return
-	}
-	_, err = w.Write(bytes)
-	if err != nil {
-		httpError(w, r, err, http.StatusInternalServerError)
-		return
-	}
+
+	w.Write([]byte(seed))
 }
 
 func handleDailyRankings(w http.ResponseWriter, r *http.Request) {

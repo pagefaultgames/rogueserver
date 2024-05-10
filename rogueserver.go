@@ -42,6 +42,9 @@ func main() {
 	dbaddr := flag.String("dbaddr", "localhost", "database address")
 	dbname := flag.String("dbname", "pokeroguedb", "database name")
 
+	tlscert := flag.String("tlscert", "", "tls certificate path")
+	tlskey := flag.String("tlskey", "",  "tls key path")
+
 	flag.Parse()
 
 	// register gob types
@@ -66,10 +69,15 @@ func main() {
 	api.Init(mux)
 
 	// start web server
+	handler := prodHandler(mux)
 	if *debug {
-		err = http.Serve(listener, debugHandler(mux))
+		handler = debugHandler(mux)
+	}
+
+	if *tlscert == "" {
+		err = http.Serve(listener, handler)
 	} else {
-		err = http.Serve(listener, mux)
+		err = http.ServeTLS(listener, handler, *tlscert, *tlskey)
 	}
 	if err != nil {
 		log.Fatalf("failed to create http server or server errored: %s", err)
@@ -93,6 +101,21 @@ func createListener(proto, addr string) (net.Listener, error) {
 	return listener, nil
 }
 
+func prodHandler(router *http.ServeMux) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
+		w.Header().Set("Access-Control-Allow-Methods", "OPTIONS, GET, POST")
+		w.Header().Set("Access-Control-Allow-Origin", "https://pokerogue.net")
+
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		router.ServeHTTP(w, r)
+	})
+}
+
 func debugHandler(router *http.ServeMux) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Headers", "*")
@@ -107,3 +130,4 @@ func debugHandler(router *http.ServeMux) http.Handler {
 		router.ServeHTTP(w, r)
 	})
 }
+
