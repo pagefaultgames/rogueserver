@@ -35,15 +35,14 @@ func main() {
 
 	proto := flag.String("proto", "tcp", "protocol for api to use (tcp, unix)")
 	addr := flag.String("addr", "0.0.0.0:8001", "network address for api to listen on")
+	tlscert := flag.String("tlscert", "", "tls certificate path")
+	tlskey := flag.String("tlskey", "", "tls key path")
 
 	dbuser := flag.String("dbuser", "pokerogue", "database username")
 	dbpass := flag.String("dbpass", "pokerogue", "database password")
 	dbproto := flag.String("dbproto", "tcp", "protocol for database connection")
 	dbaddr := flag.String("dbaddr", "localhost", "database address")
 	dbname := flag.String("dbname", "pokeroguedb", "database name")
-
-	tlscert := flag.String("tlscert", "", "tls certificate path")
-	tlskey := flag.String("tlskey", "", "tls key path")
 
 	flag.Parse()
 
