@@ -339,16 +339,14 @@ func handleDailySeed(w http.ResponseWriter, r *http.Request) {
 		httpError(w, r, err, http.StatusInternalServerError)
 		return
 	}
+
 	bytes, err := base64.StdEncoding.DecodeString(seed)
 	if err != nil {
 		httpError(w, r, err, http.StatusInternalServerError)
 		return
 	}
-	_, err = w.Write(bytes)
-	if err != nil {
-		httpError(w, r, err, http.StatusInternalServerError)
-		return
-	}
+
+	w.Write(bytes)
 }
 
 func handleDailyRankings(w http.ResponseWriter, r *http.Request) {
