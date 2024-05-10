@@ -19,7 +19,6 @@ package api
 
 import (
 	"database/sql"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -340,13 +339,7 @@ func handleDailySeed(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	bytes, err := base64.StdEncoding.DecodeString(seed)
-	if err != nil {
-		httpError(w, r, err, http.StatusInternalServerError)
-		return
-	}
-
-	w.Write(bytes)
+	w.Write([]byte(seed))
 }
 
 func handleDailyRankings(w http.ResponseWriter, r *http.Request) {
