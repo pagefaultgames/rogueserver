@@ -43,7 +43,7 @@ func main() {
 	dbname := flag.String("dbname", "pokeroguedb", "database name")
 
 	tlscert := flag.String("tlscert", "", "tls certificate path")
-	tlskey := flag.String("tlskey", "",  "tls key path")
+	tlskey := flag.String("tlskey", "", "tls key path")
 
 	flag.Parse()
 
@@ -130,4 +130,3 @@ func debugHandler(router *http.ServeMux) http.Handler {
 		router.ServeHTTP(w, r)
 	})
 }
-
