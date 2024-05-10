@@ -24,7 +24,7 @@ import (
 	"github.com/pagefaultgames/rogueserver/defs"
 )
 
-func TryAddDailyRunCompletion(uuid []byte, seed string, mode int) (bool, error) {
+func TryAddSeedCompletion(uuid []byte, seed string, mode int) (bool, error) {
 	var count int
 	err := handle.QueryRow("SELECT COUNT(*) FROM dailyRunCompletions WHERE uuid = ? AND seed = ?", uuid, seed).Scan(&count)
 	if err != nil {
@@ -39,6 +39,16 @@ func TryAddDailyRunCompletion(uuid []byte, seed string, mode int) (bool, error) 
 	}
 
 	return true, nil
+}
+
+func ReadSeedCompleted(uuid []byte, seed string) (bool, error) {
+	var count int
+	err := handle.QueryRow("SELECT COUNT(*) FROM dailyRunCompletions WHERE uuid = ? AND seed = ?", uuid, seed).Scan(&count)
+	if err != nil {
+		return false, err
+	}
+
+	return count > 0, nil
 }
 
 func ReadSystemSaveData(uuid []byte) (defs.SystemSaveData, error) {

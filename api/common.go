@@ -48,6 +48,7 @@ func Init(mux *http.ServeMux) {
 	mux.HandleFunc("POST /savedata/update", handleSaveData)
 	mux.HandleFunc("GET /savedata/delete", handleSaveData)
 	mux.HandleFunc("POST /savedata/clear", handleSaveData)
+	mux.HandleFunc("GET /savedata/newclear", handleNewClear)
 
 	// daily
 	mux.HandleFunc("GET /daily/seed", handleDailySeed)

@@ -325,6 +325,37 @@ func handleSaveData(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 }
 
+func handleNewClear(w http.ResponseWriter, r *http.Request) {
+	uuid, err := uuidFromRequest(r)
+	if err != nil {
+		httpError(w, r, err, http.StatusBadRequest)
+		return
+	}
+
+	var slot int
+	if r.URL.Query().Has("slot") {
+		slot, err = strconv.Atoi(r.URL.Query().Get("slot"))
+		if err != nil {
+			httpError(w, r, err, http.StatusBadRequest)
+			return
+		}
+	}
+
+	newClear, err := savedata.NewClear(uuid, slot)
+	if err != nil {
+		httpError(w, r, fmt.Errorf("failed to read new clear: %s", err), http.StatusInternalServerError)
+		return
+	}
+
+	err = json.NewEncoder(w).Encode(newClear)
+	if err != nil {
+		httpError(w, r, fmt.Errorf("failed to encode response json: %s", err), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+}
+
 // daily
 
 func handleDailySeed(w http.ResponseWriter, r *http.Request) {
