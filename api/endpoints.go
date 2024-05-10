@@ -18,8 +18,8 @@
 package api
 
 import (
-  "encoding/base64"
 	"database/sql"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
