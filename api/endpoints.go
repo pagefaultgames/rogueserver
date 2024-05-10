@@ -18,7 +18,8 @@
 package api
 
 import (
-	"encoding/base64"
+  "encoding/base64"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -144,10 +145,6 @@ func handleAccountLogout(w http.ResponseWriter, r *http.Request) {
 }
 
 // game
-
-func handleGamePlayerCount(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte(strconv.Itoa(playerCount)))
-}
 
 func handleGameTitleStats(w http.ResponseWriter, r *http.Request) {
 	err := json.NewEncoder(w).Encode(defs.TitleStats{
@@ -285,6 +282,10 @@ func handleSaveData(w http.ResponseWriter, r *http.Request) {
 	switch r.URL.Path {
 	case "/savedata/get":
 		save, err = savedata.Get(uuid, datatype, slot)
+		if err == sql.ErrNoRows {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
 	case "/savedata/update":
 		err = savedata.Update(uuid, slot, save)
 	case "/savedata/delete":

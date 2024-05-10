@@ -40,7 +40,6 @@ func Init(mux *http.ServeMux) {
 	mux.HandleFunc("GET /account/logout", handleAccountLogout)
 
 	// game
-	mux.HandleFunc("GET /game/playercount", handleGamePlayerCount)
 	mux.HandleFunc("GET /game/titlestats", handleGameTitleStats)
 	mux.HandleFunc("GET /game/classicsessioncount", handleGameClassicSessionCount)
 

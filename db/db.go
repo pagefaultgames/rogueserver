@@ -21,9 +21,11 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"fmt"
-	_ "github.com/go-sql-driver/mysql"
 	"log"
 	"os"
+	"time"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
 var handle *sql.DB
@@ -35,8 +37,16 @@ func Init(username, password, protocol, address, database string) error {
 	if err != nil {
 		return fmt.Errorf("failed to open database connection: %s", err)
 	}
+	
+	conns := 1024
+	if protocol != "unix" {
+		conns = 256
+	}
 
-	handle.SetMaxOpenConns(1000)
+	handle.SetMaxOpenConns(conns)
+	handle.SetMaxIdleConns(conns/4)
+
+	handle.SetConnMaxIdleTime(time.Second * 10)
 
 	tx, err := handle.Begin()
 	if err != nil {
@@ -102,6 +112,12 @@ func Init(username, password, protocol, address, database string) error {
 		uuid, err := hex.DecodeString(uuidString)
 		if err != nil {
 			log.Printf("failed to decode uuid: %s", err)
+			continue
+		}
+
+		var count int
+		err = handle.QueryRow("SELECT COUNT(*) FROM systemSaveData WHERE uuid = ?", uuid).Scan(&count)
+		if err != nil || count != 0 {
 			continue
 		}
 
