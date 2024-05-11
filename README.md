@@ -20,7 +20,6 @@ Replace both URLs (one on each line) with the local API server address from rogu
 
 Now that all of the files are configured: start up powershell as administrator:
 ```
-powershell -ep bypass
 cd C:\api\server\location\
 go build .
 .\rogueserver.exe --debug --dbuser yourusername --dbpass yourpassword 
