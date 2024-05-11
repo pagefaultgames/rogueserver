@@ -50,7 +50,7 @@ func Init(username, password, protocol, address, database string) error {
 
 	tx, err := handle.Begin()
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	// accounts
@@ -83,7 +83,7 @@ func Init(username, password, protocol, address, database string) error {
 
 	err = tx.Commit()
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	// TODO temp code
@@ -99,7 +99,7 @@ func Init(username, password, protocol, address, database string) error {
 
 	entries, err := os.ReadDir("userdata")
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatal(err)
 		return nil
 	}
 
