@@ -159,7 +159,7 @@ func handleGameTitleStats(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleGameClassicSessionCount(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte(strconv.Itoa(classicSessionCount)))
+	_, _ = w.Write([]byte(strconv.Itoa(classicSessionCount)))
 }
 
 func handleSaveData(w http.ResponseWriter, r *http.Request) {
@@ -274,7 +274,10 @@ func handleSaveData(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		} else {
-			db.UpdateTrainerIds(trainerId, secretId, uuid)
+			if err := db.UpdateTrainerIds(trainerId, secretId, uuid); err != nil {
+				httpError(w, r, err, http.StatusInternalServerError)
+				return
+			}
 		}
 	}
 
@@ -365,7 +368,7 @@ func handleDailySeed(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Write([]byte(seed))
+	_, _ = w.Write([]byte(seed))
 }
 
 func handleDailyRankings(w http.ResponseWriter, r *http.Request) {
@@ -420,5 +423,5 @@ func handleDailyRankingPageCount(w http.ResponseWriter, r *http.Request) {
 		httpError(w, r, err, http.StatusInternalServerError)
 	}
 
-	w.Write([]byte(strconv.Itoa(count)))
+	_, _ = w.Write([]byte(strconv.Itoa(count)))
 }
