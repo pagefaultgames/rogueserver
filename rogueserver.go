@@ -65,7 +65,9 @@ func main() {
 	mux := http.NewServeMux()
 
 	// init api
-	api.Init(mux)
+	if err := api.Init(mux); err != nil {
+		log.Fatal(err)
+	}
 
 	// start web server
 	handler := prodHandler(mux)
@@ -94,7 +96,10 @@ func createListener(proto, addr string) (net.Listener, error) {
 	}
 
 	if proto == "unix" {
-		os.Chmod(addr, 0777)
+		if err := os.Chmod(addr, 0777); err != nil {
+			listener.Close()
+			return nil, err
+		}
 	}
 
 	return listener, nil
