@@ -5,9 +5,6 @@ It is advised that you host this in a docker container as it will be much easier
 There is a sample docker-compose file for setting up a docker container to setup this server.
 
 # Self Hosting outside of Docker:
-Recommended Tools:
-If using Windows: [Chocolatey](https://chocolatey.org/install)
-
 ## Required Tools:
 - Golang
 - Node: **18.3.0**
@@ -47,7 +44,7 @@ go build .
 ./rogueserver --debug --dbuser yourusername --dbpass yourpassword &
 
 cd /server/location/
-npm run start &
+npm run start
 ```
 
 If you have a firewall running such as ufw on your linux machine, make sure to allow inbound connections on the ports youre running the API and the pokerogue server (8000,8001).
