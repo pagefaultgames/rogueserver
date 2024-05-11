@@ -51,7 +51,7 @@ func AddAccountSession(username string, token []byte) error {
 }
 
 func UpdateAccountPassword(uuid, key, salt []byte) error {
-	_, err := handle.Exec("UPDATE accounts SET (hash, salt) VALUES (?, ?) WHERE uuid = ?", key, salt, uuid)
+	_, err := handle.Exec("UPDATE accounts SET hash = ?, salt= ? WHERE uuid = ?", key, salt, uuid)
 	if err != nil {
 		return err
 	}
