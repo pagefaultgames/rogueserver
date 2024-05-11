@@ -89,18 +89,16 @@ func Init(username, password, protocol, address, database string) error {
 	// TODO temp code
 	_, err = os.Stat("userdata")
 	if err != nil {
-		if os.IsNotExist(err) { // not found, do not migrate
-			return nil
-		} else {
+		if !os.IsNotExist(err) { // not found, do not migrate
 			log.Fatalf("failed to stat userdata directory: %s", err)
-			return err
 		}
+		
+		return nil
 	}
 
 	entries, err := os.ReadDir("userdata")
 	if err != nil {
 		log.Fatal(err)
-		return nil
 	}
 
 	for _, entry := range entries {
@@ -131,7 +129,6 @@ func Init(username, password, protocol, address, database string) error {
 		err = StoreSystemSaveData(uuid, systemData)
 		if err != nil {
 			log.Fatalf("failed to store system save data for %v: %s\n", uuidString, err)
-			continue
 		}
 
 		// delete old system data
