@@ -146,7 +146,7 @@ func handleGameClassicSessionCount(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write([]byte(strconv.Itoa(classicSessionCount)))
 }
 
-func getSaveData(w http.ResponseWriter, r *http.Request) {
+func handleGetSaveData(w http.ResponseWriter, r *http.Request) {
 	token, uuid, err := tokenAndUuidFromRequest(r)
 	if err != nil {
 		httpError(w, r, err, http.StatusBadRequest)
@@ -192,6 +192,175 @@ func getSaveData(w http.ResponseWriter, r *http.Request) {
 	}
 
 	jsonResponse(w, r, save)
+}
+
+// FIXME UNFINISHED!!!
+func clearSessionData(w http.ResponseWriter, r *http.Request) {
+	token, uuid, err := tokenAndUuidFromRequest(r)
+	if err != nil {
+		httpError(w, r, err, http.StatusBadRequest)
+		return
+	}
+
+	var slot int
+	if r.URL.Query().Has("slot") {
+		slot, err = strconv.Atoi(r.URL.Query().Get("slot"))
+		if err != nil {
+			httpError(w, r, err, http.StatusBadRequest)
+			return
+		}
+	}
+
+	var save any
+	var session defs.SessionSaveData
+	err = json.NewDecoder(r.Body).Decode(&session)
+	if err != nil {
+		httpError(w, r, fmt.Errorf("failed to decode request body: %s", err), http.StatusBadRequest)
+		return
+	}
+
+	save = session
+
+	var active bool
+	active, err = db.IsActiveSession(token)
+	if err != nil {
+		httpError(w, r, fmt.Errorf("failed to check active session: %s", err), http.StatusBadRequest)
+		return
+	}
+
+	var trainerId, secretId int
+	if r.URL.Query().Has("trainerId") && r.URL.Query().Has("secretId") {
+		trainerId, err = strconv.Atoi(r.URL.Query().Get("trainerId"))
+		if err != nil {
+			httpError(w, r, err, http.StatusBadRequest)
+			return
+		}
+
+		secretId, err = strconv.Atoi(r.URL.Query().Get("secretId"))
+		if err != nil {
+			httpError(w, r, err, http.StatusBadRequest)
+			return
+		}
+	}
+
+	storedTrainerId, storedSecretId, err := db.FetchTrainerIds(uuid)
+	if err != nil {
+		httpError(w, r, err, http.StatusInternalServerError)
+		return
+	}
+
+	if storedTrainerId > 0 || storedSecretId > 0 {
+		if trainerId != storedTrainerId || secretId != storedSecretId {
+			httpError(w, r, fmt.Errorf("session out of date"), http.StatusBadRequest)
+			return
+		}
+	} else {
+		err = db.UpdateTrainerIds(trainerId, secretId, uuid)
+		if err != nil {
+			httpError(w, r, fmt.Errorf("unable to update traienr ID: %s", err), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	if !active {
+		save = savedata.ClearResponse{Error: "session out of date"}
+	}
+
+	var seed string
+	seed, err = db.GetDailyRunSeed()
+	if err != nil {
+		httpError(w, r, err, http.StatusInternalServerError)
+		return
+	}
+
+	response, err := savedata.Clear(uuid, slot, seed, save.(defs.SessionSaveData))
+	if err != nil {
+		httpError(w, r, err, http.StatusInternalServerError)
+		return
+	}
+
+	jsonResponse(w, r, response)
+}
+
+// FIXME UNFINISHED!!!
+func deleteSystemSave(w http.ResponseWriter, r *http.Request) {
+	token, uuid, err := tokenAndUuidFromRequest(r)
+	if err != nil {
+		httpError(w, r, err, http.StatusBadRequest)
+		return
+	}
+
+	datatype := 0
+	if r.URL.Query().Has("datatype") {
+		datatype, err = strconv.Atoi(r.URL.Query().Get("datatype"))
+		if err != nil {
+			httpError(w, r, err, http.StatusBadRequest)
+			return
+		}
+	}
+
+	var slot int
+	if r.URL.Query().Has("slot") {
+		slot, err = strconv.Atoi(r.URL.Query().Get("slot"))
+		if err != nil {
+			httpError(w, r, err, http.StatusBadRequest)
+			return
+		}
+	}
+
+	var active bool
+	active, err = db.IsActiveSession(token)
+	if err != nil {
+		httpError(w, r, fmt.Errorf("failed to check active session: %s", err), http.StatusInternalServerError)
+		return
+	}
+
+	if !active {
+		httpError(w, r, fmt.Errorf("session out of date"), http.StatusBadRequest)
+		return
+	}
+
+	var trainerId, secretId int
+
+	if r.URL.Query().Has("trainerId") && r.URL.Query().Has("secretId") {
+		trainerId, err = strconv.Atoi(r.URL.Query().Get("trainerId"))
+		if err != nil {
+			httpError(w, r, err, http.StatusBadRequest)
+			return
+		}
+
+		secretId, err = strconv.Atoi(r.URL.Query().Get("secretId"))
+		if err != nil {
+			httpError(w, r, err, http.StatusBadRequest)
+			return
+		}
+	}
+
+	storedTrainerId, storedSecretId, err := db.FetchTrainerIds(uuid)
+	if err != nil {
+		httpError(w, r, err, http.StatusInternalServerError)
+		return
+	}
+
+	if storedTrainerId > 0 || storedSecretId > 0 {
+		if trainerId != storedTrainerId || secretId != storedSecretId {
+			httpError(w, r, fmt.Errorf("session out of date"), http.StatusBadRequest)
+			return
+		}
+	} else {
+		if err := db.UpdateTrainerIds(trainerId, secretId, uuid); err != nil {
+			httpError(w, r, err, http.StatusInternalServerError)
+			return
+		}
+	}
+
+	err = savedata.Delete(uuid, datatype, slot)
+	if err != nil {
+		httpError(w, r, err, http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 func handleSaveData(w http.ResponseWriter, r *http.Request) {
@@ -354,7 +523,7 @@ type CombinedSaveData struct {
 }
 
 // TODO wrap this in a transaction
-func handleSaveData2(w http.ResponseWriter, r *http.Request) {
+func handleUpdateAll(w http.ResponseWriter, r *http.Request) {
 	var token []byte
 	token, uuid, err := tokenAndUuidFromRequest(r)
 	if err != nil {
@@ -449,7 +618,10 @@ func handleDailySeed(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, _ = w.Write([]byte(seed))
+	_, err = w.Write([]byte(seed))
+	if err != nil {
+		httpError(w, r, fmt.Errorf("failed to write seed: %s", err), http.StatusInternalServerError)
+	}
 }
 
 func handleDailyRankings(w http.ResponseWriter, r *http.Request) {

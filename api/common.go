@@ -49,14 +49,14 @@ func Init(mux *http.ServeMux) error {
 	mux.HandleFunc("GET /game/classicsessioncount", handleGameClassicSessionCount)
 
 	// savedata
-	mux.HandleFunc("GET /savedata/get", getSaveData)
+	mux.HandleFunc("GET /savedata/get", handleGetSaveData)
 	mux.HandleFunc("POST /savedata/update", handleSaveData)
-	mux.HandleFunc("GET /savedata/delete", handleSaveData)
-	mux.HandleFunc("POST /savedata/clear", handleSaveData)
+	mux.HandleFunc("GET /savedata/delete", handleSaveData) // TODO use deleteSystemSave
+	mux.HandleFunc("POST /savedata/clear", handleSaveData) // TODO use clearSessionData
 	mux.HandleFunc("GET /savedata/newclear", handleNewClear)
 
 	// new session
-	mux.HandleFunc("POST /savedata/updateall", handleSaveData2)
+	mux.HandleFunc("POST /savedata/updateall", handleUpdateAll)
 
 	// daily
 	mux.HandleFunc("GET /daily/seed", handleDailySeed)
