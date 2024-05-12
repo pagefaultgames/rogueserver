@@ -166,6 +166,11 @@ func RetrieveAccountEggs(uuid []byte) ([]defs.EggData, error) {
 }
 
 func UpdateAccountEggs(uuid []byte, eggs []defs.EggData) error {
+	tx, err := handle.Begin()
+	if err != nil {
+		return err
+	}
+
 	for _, egg := range eggs {
 		// TODO: find a fix to enforce encoding from body to EggData only if
 		// it respects the EggData struct so we can get rid of the test 
@@ -173,13 +178,18 @@ func UpdateAccountEggs(uuid []byte, eggs []defs.EggData) error {
 			continue
 		}
 
-		_, err = handle.Exec(`INSERT INTO eggs (uuid, owner, gachaType, hatchWaves, timestamp) 
+		_, err = tx.Exec(`INSERT INTO eggs (uuid, owner, gachaType, hatchWaves, timestamp) 
 							  VALUES (?, ?, ?, ?, ?) 
 							  ON DUPLICATE KEY UPDATE hatchWaves = ?`, 
 							  egg.Id, uuid, egg.GachaType, egg.HatchWaves, egg.Timestamp, egg.HatchWaves)
 		if err != nil {
 			return err
 		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return err
 	}
 
 	return nil
