@@ -54,6 +54,9 @@ func Init(mux *http.ServeMux) error {
 	mux.HandleFunc("GET /savedata/delete", handleSaveData) // TODO use deleteSystemSave
 	mux.HandleFunc("POST /savedata/clear", handleSaveData) // TODO use clearSessionData
 	mux.HandleFunc("GET /savedata/newclear", handleNewClear)
+	mux.HandleFunc("GET /savedata/eggs", handleRetrieveEggs)
+	mux.HandleFunc("POST /savedata/eggs", handleUpdateEggs)
+	mux.HandleFunc("POST /savedata/deleteeggs", handleDeleteEgg)
 
 	// new session
 	mux.HandleFunc("POST /savedata/updateall", handleUpdateAll)

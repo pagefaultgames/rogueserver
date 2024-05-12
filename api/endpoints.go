@@ -146,6 +146,7 @@ func handleGameClassicSessionCount(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write([]byte(strconv.Itoa(classicSessionCount)))
 }
 
+// savedata
 func handleGetSaveData(w http.ResponseWriter, r *http.Request) {
 	token, uuid, err := tokenAndUuidFromRequest(r)
 	if err != nil {
@@ -607,6 +608,75 @@ func handleNewClear(w http.ResponseWriter, r *http.Request) {
 	}
 
 	jsonResponse(w, r, newClear)
+}
+
+func handleRetrieveEggs(w http.ResponseWriter, r *http.Request) {
+	uuid, err := uuidFromRequest(r)
+	if err != nil {
+		httpError(w, r, err, http.StatusBadRequest)
+		return
+	}
+
+	eggs, err := db.RetrieveAccountEggs(uuid)
+	if err != nil {
+		httpError(w, r, err, http.StatusInternalServerError)
+		return
+	}
+
+	jsonResponse(w, r, eggs)
+	w.Header().Set("Content-Type", "application/json")
+}
+
+func handleUpdateEggs(w http.ResponseWriter, r *http.Request) {
+	uuid, err := uuidFromRequest(r)
+	if err != nil {
+		httpError(w, r, err, http.StatusBadRequest)
+		return
+	}
+
+	var newEggsInfo []defs.EggData
+	err = json.NewDecoder(r.Body).Decode(&newEggsInfo)
+	if err != nil {
+		httpError(w, r, fmt.Errorf("failed to decode request body: %s", err), http.StatusBadRequest)
+		return
+	}
+
+	err = db.UpdateAccountEggs(uuid, newEggsInfo)
+	if err != nil {
+		httpError(w, r, err, http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+type DeleteEggId struct {
+	Id int `json:"id"`
+}
+
+func handleDeleteEgg(w http.ResponseWriter, r *http.Request) {
+	uuid, err := uuidFromRequest(r)
+	if err != nil {
+		httpError(w, r, err, http.StatusBadRequest)
+		return
+	}
+
+	var eggsId []DeleteEggId
+	err = json.NewDecoder(r.Body).Decode(&eggsId)
+	if err != nil {
+		httpError(w, r, fmt.Errorf("failed to decode request body: %s", err), http.StatusBadRequest)
+		return
+	}
+
+	for _, egg := range eggsId {
+		err = db.RemoveAccountEgg(uuid, egg.Id)
+		if err != nil {
+			httpError(w, r, fmt.Errorf("failed to decode request body: %s", err), http.StatusBadRequest)
+			return
+		}
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 // daily

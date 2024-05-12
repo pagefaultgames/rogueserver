@@ -142,3 +142,60 @@ func DeleteSessionSaveData(uuid []byte, slot int) error {
 
 	return nil
 }
+
+func RetrieveAccountEggs(uuid []byte) ([]defs.EggData, error) {
+	var accountEggs []defs.EggData
+
+	rows, err := handle.Query("SELECT uuid, gachaType, hatchWaves, timestamp FROM eggs WHERE owner = ?", uuid)
+	if err != nil {
+		return accountEggs, err
+	}
+
+	// For each row, we parse the raw data into an EggData and add it to the result
+	for rows.Next() {
+		var egg defs.EggData
+		err = rows.Scan(&egg.Id, &egg.GachaType, &egg.HatchWaves, &egg.Timestamp)
+		if err != nil {
+			return accountEggs, err
+		}
+
+		accountEggs = append(accountEggs, egg)
+	}
+
+	return accountEggs, nil
+}
+
+func UpdateAccountEggs(uuid []byte, eggs []defs.EggData) error {
+	for _, egg := range eggs {
+		// TODO: find a fix to enforce encoding from body to EggData only if
+		// it respects the EggData struct so we can get rid of the test 
+		if egg.Id == 0 {
+			continue
+		}
+
+		var buf bytes.Buffer
+		err := gob.NewEncoder(&buf).Encode(egg)
+		if err != nil {
+			return err
+		}
+
+		_, err = handle.Exec(`INSERT INTO eggs (uuid, owner, gachaType, hatchWaves, timestamp) 
+							  VALUES (?, ?, ?, ?, ?) 
+							  ON DUPLICATE KEY UPDATE hatchWaves = ?`, 
+							  egg.Id, uuid, egg.GachaType, egg.HatchWaves, egg.Timestamp, egg.HatchWaves)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func RemoveAccountEgg(uuid []byte, eggId int) error {
+	_, err := handle.Exec("DELETE FROM eggs WHERE owner = ? AND uuid = ?", uuid, eggId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
