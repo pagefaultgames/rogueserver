@@ -20,6 +20,7 @@ package api
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -58,13 +59,7 @@ func handleAccountInfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = json.NewEncoder(w).Encode(response)
-	if err != nil {
-		httpError(w, r, fmt.Errorf("failed to encode response json: %s", err), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
+	jsonResponse(w, r, response)
 }
 
 func handleAccountRegister(w http.ResponseWriter, r *http.Request) {
@@ -96,13 +91,7 @@ func handleAccountLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = json.NewEncoder(w).Encode(response)
-	if err != nil {
-		httpError(w, r, fmt.Errorf("failed to encode response json: %s", err), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
+	jsonResponse(w, r, response)
 }
 
 func handleAccountChangePW(w http.ResponseWriter, r *http.Request) {
@@ -144,22 +133,65 @@ func handleAccountLogout(w http.ResponseWriter, r *http.Request) {
 }
 
 // game
-
 func handleGameTitleStats(w http.ResponseWriter, r *http.Request) {
-	err := json.NewEncoder(w).Encode(defs.TitleStats{
+	stats := defs.TitleStats{
 		PlayerCount: playerCount,
 		BattleCount: battleCount,
-	})
-	if err != nil {
-		httpError(w, r, fmt.Errorf("failed to encode response json: %s", err), http.StatusInternalServerError)
-		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	jsonResponse(w, r, stats)
 }
 
 func handleGameClassicSessionCount(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write([]byte(strconv.Itoa(classicSessionCount)))
+}
+
+func getSaveData(w http.ResponseWriter, r *http.Request) {
+	token, uuid, err := tokenAndUuidFromRequest(r)
+	if err != nil {
+		httpError(w, r, err, http.StatusBadRequest)
+		return
+	}
+
+	datatype := -1
+	if r.URL.Query().Has("datatype") {
+		datatype, err = strconv.Atoi(r.URL.Query().Get("datatype"))
+		if err != nil {
+			httpError(w, r, err, http.StatusBadRequest)
+			return
+		}
+	}
+
+	var slot int
+	if r.URL.Query().Has("slot") {
+		slot, err = strconv.Atoi(r.URL.Query().Get("slot"))
+		if err != nil {
+			httpError(w, r, err, http.StatusBadRequest)
+			return
+		}
+	}
+
+	var save any
+	if datatype == 0 {
+		err = db.UpdateActiveSession(uuid, token)
+		if err != nil {
+			httpError(w, r, fmt.Errorf("failed to update active session: %s", err), http.StatusBadRequest)
+			return
+		}
+	}
+
+	save, err = savedata.Get(uuid, datatype, slot)
+	if errors.Is(err, sql.ErrNoRows) {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	if err != nil {
+		httpError(w, r, err, http.StatusInternalServerError)
+		return
+	}
+
+	jsonResponse(w, r, save)
 }
 
 func handleSaveData(w http.ResponseWriter, r *http.Request) {
@@ -312,13 +344,7 @@ func handleSaveData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = json.NewEncoder(w).Encode(save)
-	if err != nil {
-		httpError(w, r, fmt.Errorf("failed to encode response json: %s", err), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
+	jsonResponse(w, r, save)
 }
 
 type CombinedSaveData struct {
@@ -411,13 +437,7 @@ func handleNewClear(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = json.NewEncoder(w).Encode(newClear)
-	if err != nil {
-		httpError(w, r, fmt.Errorf("failed to encode response json: %s", err), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
+	jsonResponse(w, r, newClear)
 }
 
 // daily
@@ -459,13 +479,7 @@ func handleDailyRankings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = json.NewEncoder(w).Encode(rankings)
-	if err != nil {
-		httpError(w, r, fmt.Errorf("failed to encode response json: %s", err), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
+	jsonResponse(w, r, rankings)
 }
 
 func handleDailyRankingPageCount(w http.ResponseWriter, r *http.Request) {
