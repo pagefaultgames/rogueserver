@@ -400,7 +400,6 @@ func handleSaveData2(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusOK)
-	return
 }
 
 func handleNewClear(w http.ResponseWriter, r *http.Request) {
