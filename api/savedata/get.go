@@ -57,6 +57,11 @@ func Get(uuid []byte, datatype, slot int) (any, error) {
 			if err != nil {
 				return nil, fmt.Errorf("failed to update system save data: %s", err)
 			}
+
+			err = db.UpdateAccountStats(uuid, system.GameStats, system.VoucherCounts)
+			if err != nil {
+				return nil, fmt.Errorf("failed to update account stats: %s", err)
+			}
 		}
 
 		return system, nil
