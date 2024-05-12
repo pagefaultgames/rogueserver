@@ -334,6 +334,7 @@ type CombinedSaveData struct {
 	SessionSlotId int                  `json:"sessionSlotId"`
 }
 
+// TODO wrap this in a transaction
 func handleSaveData2(w http.ResponseWriter, r *http.Request) {
 	var token []byte
 	token, err := tokenFromRequest(r)
