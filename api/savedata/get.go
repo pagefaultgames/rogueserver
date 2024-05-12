@@ -38,13 +38,25 @@ func Get(uuid []byte, datatype, slot int) (any, error) {
 			return nil, err
 		}
 
+		// TODO this should be a transaction
 		compensations, err := db.FetchAndClaimAccountCompensations(uuid)
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch compensations: %s", err)
 		}
 
+		needsUpdate := false
 		for compensationType, amount := range compensations {
 			system.VoucherCounts[strconv.Itoa(compensationType)] += amount
+			if amount > 0 {
+				needsUpdate = true
+			}
+		}
+
+		if needsUpdate {
+			err = db.StoreSystemSaveData(uuid, system)
+			if err != nil {
+				return nil, fmt.Errorf("failed to update system save data: %s", err)
+			}
 		}
 
 		return system, nil
