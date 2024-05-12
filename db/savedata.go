@@ -173,12 +173,6 @@ func UpdateAccountEggs(uuid []byte, eggs []defs.EggData) error {
 			continue
 		}
 
-		var buf bytes.Buffer
-		err := gob.NewEncoder(&buf).Encode(egg)
-		if err != nil {
-			return err
-		}
-
 		_, err = handle.Exec(`INSERT INTO eggs (uuid, owner, gachaType, hatchWaves, timestamp) 
 							  VALUES (?, ?, ?, ?, ?) 
 							  ON DUPLICATE KEY UPDATE hatchWaves = ?`, 
