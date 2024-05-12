@@ -3,16 +3,18 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"github.com/pagefaultgames/rogueserver/api/account"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"io"
 	"net"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"runtime"
 	"strings"
 	"testing"
+
+	"github.com/pagefaultgames/rogueserver/api/account"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/pagefaultgames/rogueserver/api"
 	"github.com/pagefaultgames/rogueserver/db"
@@ -20,9 +22,20 @@ import (
 	"github.com/testcontainers/testcontainers-go/modules/mariadb"
 )
 
+const (
+	dbImage    = "mariadb:11"
+	dbName     = "pokeroguedb"
+	dbUsername = "pokerogue"
+	dbPassword = "pokerogue"
+)
+
 func TestRogueServer(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping test in short mode")
+	}
+
+	if runtime.GOOS == "windows" {
+		t.Skip("testcontainers-go does not support windows")
 	}
 
 	setupDB(t)
@@ -35,43 +48,42 @@ func TestRogueServer(t *testing.T) {
 		t.Run("/account/register", func(t *testing.T) {
 			t.Run("invalid username", func(t *testing.T) {
 				resp := postHttpForm(t, apiURL, "/account/register", nil, url.Values{"username": {""}, "password": {"password"}})
-				resp.assertStringResponse(t, http.StatusInternalServerError, "invalid username\n")
+				resp.assertStringResponse(t, http.StatusBadRequest, "invalid username\n")
 			})
 
 			t.Run("invalid password", func(t *testing.T) {
 				resp := postHttpForm(t, apiURL, "/account/register", nil, url.Values{"username": {"username"}, "password": {"1"}})
-				resp.assertStringResponse(t, http.StatusInternalServerError, "invalid password\n")
+				resp.assertStringResponse(t, http.StatusBadRequest, "invalid password\n")
 			})
 			t.Run("register", func(t *testing.T) {
 				resp := postHttpForm(t, apiURL, "/account/register", nil, url.Values{"username": {username}, "password": {oldPassword}})
-				resp.assertStringResponse(t, http.StatusOK, "")
+				resp.assertStringResponse(t, http.StatusCreated, "")
 			})
 			t.Run("fail when register called for already registered user", func(t *testing.T) {
 				resp := postHttpForm(t, apiURL, "/account/register", nil, url.Values{"username": {username}, "password": {oldPassword}})
-				resp.assertStringResponse(t, http.StatusInternalServerError, "failed to add account record: Error 1062 (23000): Duplicate entry 'user1234' for key 'username'\n")
+				resp.assertStringResponse(t, http.StatusConflict, "username \"user1234\" already taken\n")
 			})
-
 		})
 
 		var token string
 		t.Run("/account/login", func(t *testing.T) {
 			t.Run("invalid username", func(t *testing.T) {
 				resp := postHttpForm(t, apiURL, "/account/login", nil, url.Values{"username": {""}, "password": {"password"}})
-				resp.assertStringResponse(t, http.StatusInternalServerError, "invalid username\n")
+				resp.assertStringResponse(t, http.StatusBadRequest, "invalid username\n")
 			})
 			t.Run("invalid password", func(t *testing.T) {
 				resp := postHttpForm(t, apiURL, "/account/login", nil, url.Values{"username": {"username"}, "password": {"1"}})
-				resp.assertStringResponse(t, http.StatusInternalServerError, "invalid password\n")
+				resp.assertStringResponse(t, http.StatusBadRequest, "invalid password\n")
 			})
 
 			t.Run("user do not exist", func(t *testing.T) {
 				resp := postHttpForm(t, apiURL, "/account/login", nil, url.Values{"username": {"notexist"}, "password": {"123456"}})
-				resp.assertStringResponse(t, http.StatusInternalServerError, "account doesn't exist\n")
+				resp.assertStringResponse(t, http.StatusNotFound, "account doesn't exist\n")
 			})
 
 			t.Run("bad password", func(t *testing.T) {
 				resp := postHttpForm(t, apiURL, "/account/login", nil, url.Values{"username": {username}, "password": {"badpassword"}})
-				resp.assertStringResponse(t, http.StatusInternalServerError, "password doesn't match\n")
+				resp.assertStringResponse(t, http.StatusUnauthorized, "password doesn't match\n")
 			})
 
 			t.Run("login successfully", func(t *testing.T) {
@@ -92,7 +104,7 @@ func TestRogueServer(t *testing.T) {
 
 			t.Run("bad token", func(t *testing.T) {
 				resp := getHTTP(t, apiURL, "/account/info", authHeader("foo"))
-				resp.assertStringResponse(t, http.StatusBadRequest, "failed to decode token: illegal base64 data at input byte 0\n")
+				resp.assertStringResponse(t, http.StatusBadRequest, "failed to decode token\n")
 			})
 
 			t.Run("success", func(t *testing.T) {
@@ -109,16 +121,16 @@ func TestRogueServer(t *testing.T) {
 
 			t.Run("bad token", func(t *testing.T) {
 				resp := getHTTP(t, apiURL, "/account/logout", authHeader("foo"))
-				resp.assertStringResponse(t, http.StatusBadRequest, "failed to decode token: illegal base64 data at input byte 0\n")
+				resp.assertStringResponse(t, http.StatusBadRequest, "failed to decode token\n")
 			})
 			t.Run("success", func(t *testing.T) {
 				resp := getHTTP(t, apiURL, "/account/logout", authHeader(token))
-				resp.assertStatusCode(t, http.StatusOK)
+				resp.assertStatusCode(t, http.StatusNoContent)
 			})
 
 			t.Run("do nothing on second logout", func(t *testing.T) {
 				resp := getHTTP(t, apiURL, "/account/logout", authHeader(token))
-				resp.assertStatusCode(t, http.StatusOK)
+				resp.assertStatusCode(t, http.StatusNoContent)
 			})
 		})
 
@@ -130,12 +142,12 @@ func TestRogueServer(t *testing.T) {
 
 			t.Run("bad token", func(t *testing.T) {
 				resp := postHttpForm(t, apiURL, "/account/changepw", authHeader("foo"), url.Values{"password": {newPassword}})
-				resp.assertStringResponse(t, http.StatusBadRequest, "failed to decode token: illegal base64 data at input byte 0\n")
+				resp.assertStringResponse(t, http.StatusBadRequest, "failed to decode token\n")
 			})
 
 			t.Run("fail on unlogged token", func(t *testing.T) {
 				resp := postHttpForm(t, apiURL, "/account/changepw", authHeader(token), url.Values{"password": {newPassword}})
-				resp.assertStringResponse(t, http.StatusBadRequest, "failed to validate token: sql: no rows in result set\n")
+				resp.assertStringResponse(t, http.StatusUnauthorized, "bad token\n")
 			})
 
 			t.Run("login successfully once again", func(t *testing.T) {
@@ -149,12 +161,12 @@ func TestRogueServer(t *testing.T) {
 
 			t.Run("bad password", func(t *testing.T) {
 				resp := postHttpForm(t, apiURL, "/account/changepw", authHeader(token), url.Values{"password": {"123"}})
-				resp.assertStringResponse(t, http.StatusInternalServerError, "invalid password\n")
+				resp.assertStringResponse(t, http.StatusBadRequest, "invalid password\n")
 			})
 
 			t.Run("success", func(t *testing.T) {
 				resp := postHttpForm(t, apiURL, "/account/changepw", authHeader(token), url.Values{"password": {newPassword}})
-				resp.assertStatusCode(t, http.StatusOK)
+				resp.assertStatusCode(t, http.StatusNoContent)
 			})
 		})
 	})
@@ -259,15 +271,11 @@ func setupDB(t *testing.T) {
 	t.Helper()
 	ctx := context.Background()
 
-	const dbName = "pokeroguedb"
-	const username = "pokerogue"
-	const password = "pokerogue"
-
 	c, err := mariadb.RunContainer(ctx,
-		testcontainers.WithImage("mariadb:11"),
+		testcontainers.WithImage(dbImage),
 		mariadb.WithDatabase(dbName),
-		mariadb.WithUsername(username),
-		mariadb.WithPassword(password),
+		mariadb.WithUsername(dbUsername),
+		mariadb.WithPassword(dbPassword),
 	)
 	require.NoError(t, err)
 
@@ -280,6 +288,8 @@ func setupDB(t *testing.T) {
 	host, err := c.Host(ctx)
 	require.NoError(t, err)
 
-	err = db.Init(username, password, "tcp", net.JoinHostPort(host, port.Port()), dbName)
+	err = db.Init(dbUsername, dbPassword, "tcp", net.JoinHostPort(host, port.Port()), dbName)
 	require.NoError(t, err)
+
+	t.Logf("connection string to db for debugging (valid until tests are running): %s", c.MustConnectionString(ctx))
 }
