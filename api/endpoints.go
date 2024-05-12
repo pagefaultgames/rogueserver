@@ -623,8 +623,8 @@ func handleRetrieveEggs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jsonResponse(w, r, eggs)
 	w.WriteHeader(http.StatusOK)
+	jsonResponse(w, r, eggs)
 }
 
 func handleUpdateEggs(w http.ResponseWriter, r *http.Request) {
