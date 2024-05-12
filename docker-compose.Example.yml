@@ -1,10 +1,11 @@
 services:
   server:
-    image: ghcr.io/pagefaultgames/pokerogue:latest
-    command: --debug --dbaddr db:3306 --dbuser pokerogue --dbpass pokerogue --dbname pokeroguedb
+    command: --debug --dbaddr db --dbuser pokerogue --dbpass pokerogue --dbname pokeroguedb
+    image: ghcr.io/pagefaultgames/rogueserver:master
     restart: unless-stopped
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     networks:
       - internal
     ports:
@@ -12,6 +13,13 @@ services:
   db:
     image: mariadb:11
     restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "healthcheck.sh", "--su-mysql", "--connect", "--innodb_initialized" ]
+      start_period: 10s
+      start_interval: 10s
+      interval: 1m
+      timeout: 5s
+      retries: 3
     environment:
       MYSQL_ROOT_PASSWORD: admin
       MYSQL_DATABASE: pokeroguedb
@@ -19,6 +27,8 @@ services:
       MYSQL_PASSWORD: pokerogue
     volumes:
       - database:/var/lib/mysql
+    networks:
+      - internal
 
 volumes:
   database:
