@@ -163,7 +163,7 @@ func handleGameClassicSessionCount(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleSaveData(w http.ResponseWriter, r *http.Request) {
-	uuid, err := uuidFromRequest(r)
+	token, uuid, err := tokenAndUuidFromRequest(r)
 	if err != nil {
 		httpError(w, r, err, http.StatusBadRequest)
 		return
@@ -210,13 +210,6 @@ func handleSaveData(w http.ResponseWriter, r *http.Request) {
 
 			save = session
 		}
-	}
-
-	var token []byte
-	token, err = tokenFromRequest(r)
-	if err != nil {
-		httpError(w, r, err, http.StatusBadRequest)
-		return
 	}
 
 	var active bool
@@ -337,13 +330,7 @@ type CombinedSaveData struct {
 // TODO wrap this in a transaction
 func handleSaveData2(w http.ResponseWriter, r *http.Request) {
 	var token []byte
-	token, err := tokenFromRequest(r)
-	if err != nil {
-		httpError(w, r, err, http.StatusBadRequest)
-		return
-	}
-
-	uuid, err := uuidFromRequest(r)
+	token, uuid, err := tokenAndUuidFromRequest(r)
 	if err != nil {
 		httpError(w, r, err, http.StatusBadRequest)
 		return

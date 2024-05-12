@@ -82,17 +82,22 @@ func tokenFromRequest(r *http.Request) ([]byte, error) {
 }
 
 func uuidFromRequest(r *http.Request) ([]byte, error) {
+	_, uuid, err := tokenAndUuidFromRequest(r)
+	return uuid, err
+}
+
+func tokenAndUuidFromRequest(r *http.Request) ([]byte, []byte, error) {
 	token, err := tokenFromRequest(r)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	uuid, err := db.FetchUUIDFromToken(token)
 	if err != nil {
-		return nil, fmt.Errorf("failed to validate token: %s", err)
+		return nil, nil, fmt.Errorf("failed to validate token: %s", err)
 	}
 
-	return uuid, nil
+	return token, uuid, nil
 }
 
 func httpError(w http.ResponseWriter, r *http.Request, err error, code int) {
