@@ -54,6 +54,9 @@ func Init(mux *http.ServeMux) error {
 	mux.HandleFunc("POST /savedata/clear", handleSaveData)
 	mux.HandleFunc("GET /savedata/newclear", handleNewClear)
 
+	// new session
+	mux.HandleFunc("POST /savedata/update2", handleSaveData2)
+
 	// daily
 	mux.HandleFunc("GET /daily/seed", handleDailySeed)
 	mux.HandleFunc("GET /daily/rankings", handleDailyRankings)

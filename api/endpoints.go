@@ -328,6 +328,80 @@ func handleSaveData(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 }
 
+type CombinedSaveData struct {
+	System        defs.SystemSaveData  `json:"system"`
+	Session       defs.SessionSaveData `json:"session"`
+	SessionSlotId int                  `json:"sessionSlotId"`
+}
+
+func handleSaveData2(w http.ResponseWriter, r *http.Request) {
+	var token []byte
+	token, err := tokenFromRequest(r)
+	if err != nil {
+		httpError(w, r, err, http.StatusBadRequest)
+		return
+	}
+
+	uuid, err := uuidFromRequest(r)
+	if err != nil {
+		httpError(w, r, err, http.StatusBadRequest)
+		return
+	}
+
+	var data CombinedSaveData
+	err = json.NewDecoder(r.Body).Decode(&data)
+	if err != nil {
+		httpError(w, r, fmt.Errorf("failed to decode request body: %s", err), http.StatusBadRequest)
+		return
+	}
+
+	var active bool
+	active, err = db.IsActiveSession(token)
+	if err != nil {
+		httpError(w, r, fmt.Errorf("failed to check active session: %s", err), http.StatusBadRequest)
+		return
+	}
+
+	if !active {
+		httpError(w, r, fmt.Errorf("session out of date"), http.StatusBadRequest)
+		return
+	}
+
+	trainerId := data.System.TrainerId
+	secretId := data.System.SecretId
+
+	storedTrainerId, storedSecretId, err := db.FetchTrainerIds(uuid)
+	if err != nil {
+		httpError(w, r, err, http.StatusInternalServerError)
+		return
+	}
+
+	if storedTrainerId > 0 || storedSecretId > 0 {
+		if trainerId != storedTrainerId || secretId != storedSecretId {
+			httpError(w, r, fmt.Errorf("session out of date"), http.StatusBadRequest)
+			return
+		}
+	} else {
+		if err := db.UpdateTrainerIds(trainerId, secretId, uuid); err != nil {
+			httpError(w, r, err, http.StatusInternalServerError)
+			return
+		}
+	}
+
+	err = savedata.Update(uuid, data.SessionSlotId, data.Session)
+	if err != nil {
+		httpError(w, r, err, http.StatusInternalServerError)
+		return
+	}
+	err = savedata.Update(uuid, 0, data.System)
+	if err != nil {
+		httpError(w, r, err, http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	return
+}
+
 func handleNewClear(w http.ResponseWriter, r *http.Request) {
 	uuid, err := uuidFromRequest(r)
 	if err != nil {
