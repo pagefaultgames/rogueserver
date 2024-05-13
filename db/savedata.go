@@ -170,7 +170,9 @@ func UpdateAccountEggs(uuid []byte, eggs []defs.EggData) error {
 	if err != nil {
 		return err
 	}
-defer tx.Rollback()
+
+	defer tx.Rollback()
+	
 	for _, egg := range eggs {
 		// TODO: find a fix to enforce encoding from body to EggData only if
 		// it respects the EggData struct so we can get rid of the test 
