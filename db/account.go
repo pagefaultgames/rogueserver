@@ -18,6 +18,8 @@
 package db
 
 import (
+	"database/sql"
+	"errors"
 	"fmt"
 	"slices"
 
@@ -208,14 +210,17 @@ func UpdateTrainerIds(trainerId, secretId int, uuid []byte) error {
 	return nil
 }
 
-func IsActiveSession(token []byte, clientSessionId string) (bool, error) {
+func IsActiveSession(uuid []byte, clientSessionId string) (bool, error) {
 	var storedId string
-	err := handle.QueryRow("SELECT `clientSessionId` FROM sessions WHERE token = ?", token).Scan(&storedId)
+	err := handle.QueryRow("SELECT clientSessionId FROM activeClientSessions WHERE sessions.uuid = ?", uuid).Scan(&storedId)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return false, nil
+		}
 		return false, err
 	}
 	if storedId == "" {
-		err = UpdateActiveSession(token, clientSessionId)
+		err = UpdateActiveSession(uuid, clientSessionId)
 		if err != nil {
 			return false, err
 		}
@@ -225,8 +230,8 @@ func IsActiveSession(token []byte, clientSessionId string) (bool, error) {
 	return storedId == clientSessionId, nil
 }
 
-func UpdateActiveSession(token []byte, clientSessionId string) error {
-	_, err := handle.Exec("UPDATE sessions SET clientSessionId = ? WHERE token = ?", clientSessionId, token)
+func UpdateActiveSession(uuid []byte, clientSessionId string) error {
+	_, err := handle.Exec("REPLACE INTO activeClientSessions VALUES (?, ?)", uuid, clientSessionId)
 	if err != nil {
 		return err
 	}

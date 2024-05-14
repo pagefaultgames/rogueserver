@@ -175,7 +175,7 @@ func setupDb(tx *sql.Tx) error {
 		// MIGRATION 001
 
 		`ALTER TABLE sessions DROP COLUMN IF EXISTS active`,
-		`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS clientSessionId VARCHAR(32)`,
+		`CREATE TABLE IF NOT EXISTS activeClientSessions (uuid BINARY(16) NOT NULL PRIMARY KEY, clientSessionId VARCHAR(32) NOT NULL)`,
 	}
 
 	for _, q := range queries {
