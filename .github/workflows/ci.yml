@@ -36,7 +36,6 @@ jobs:
       - name: Lint Codebase
         uses: golangci/golangci-lint-action@v6
         with:
-          args: --timeout=10m
           version: latest
       - name: Test
         run: go test -v
