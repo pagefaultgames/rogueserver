@@ -145,6 +145,8 @@ func Init(username, password, protocol, address, database string) error {
 
 func setupDb(tx *sql.Tx) error {
 	queries := []string{
+		// MIGRATION 000
+
 		`CREATE TABLE IF NOT EXISTS accounts (uuid BINARY(16) NOT NULL PRIMARY KEY, username VARCHAR(16) UNIQUE NOT NULL, hash BINARY(32) NOT NULL, salt BINARY(16) NOT NULL, registered TIMESTAMP NOT NULL, lastLoggedIn TIMESTAMP DEFAULT NULL, lastActivity TIMESTAMP DEFAULT NULL, banned TINYINT(1) NOT NULL DEFAULT 0, trainerId SMALLINT(5) UNSIGNED DEFAULT 0, secretId SMALLINT(5) UNSIGNED DEFAULT 0)`,
 		`CREATE INDEX IF NOT EXISTS accountsByActivity ON accounts (lastActivity)`,
 
@@ -168,6 +170,12 @@ func setupDb(tx *sql.Tx) error {
 		`CREATE TABLE IF NOT EXISTS systemSaveData (uuid BINARY(16) PRIMARY KEY, data LONGBLOB, timestamp TIMESTAMP)`,
 
 		`CREATE TABLE IF NOT EXISTS sessionSaveData (uuid BINARY(16), slot TINYINT, data LONGBLOB, timestamp TIMESTAMP, PRIMARY KEY (uuid, slot))`,
+
+		// ----------------------------------
+		// MIGRATION 001
+
+		`ALTER TABLE sessions DROP COLUMN IF EXISTS active`,
+		`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS clientSessionId VARCHAR(32)`,
 	}
 
 	for _, q := range queries {
