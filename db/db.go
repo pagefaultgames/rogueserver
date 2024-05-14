@@ -175,7 +175,7 @@ func setupDb(tx *sql.Tx) error {
 		// MIGRATION 001
 
 		`ALTER TABLE sessions DROP COLUMN IF EXISTS active`,
-		`CREATE TABLE IF NOT EXISTS activeClientSessions (uuid BINARY(16) NOT NULL PRIMARY KEY, clientSessionId VARCHAR(32) NOT NULL)`,
+		`CREATE TABLE IF NOT EXISTS activeClientSessions (uuid BINARY(16) NOT NULL PRIMARY KEY, clientSessionId VARCHAR(32) NOT NULL, FOREIGN KEY (uuid) REFERENCES accounts (uuid) ON DELETE CASCADE ON UPDATE CASCADE)`,
 	}
 
 	for _, q := range queries {
