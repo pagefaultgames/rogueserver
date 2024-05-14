@@ -72,11 +72,10 @@ func main() {
 
 	// start web server
 
-	handler := prodHandler(mux)
-	if debug {
-		handler = debugHandler(mux)
+	if debug == true {
+		err = http.Serve(listener, debugHandler(mux))
 	} else {
-		err = http.Serve(listener, handler)
+		err = http.Serve(listener, mux)
 	}
 	if err != nil {
 		log.Fatalf("failed to create http server or server errored: %s", err)
@@ -87,19 +86,13 @@ func createListener(proto, addr string) (net.Listener, error) {
 	if proto == "unix" {
 		os.Remove(addr)
 	}
-
 	listener, err := net.Listen(proto, addr)
 	if err != nil {
 		return nil, err
 	}
-
 	if proto == "unix" {
-		if err := os.Chmod(addr, 0777); err != nil {
-			listener.Close()
-			return nil, err
-		}
+		os.Chmod(addr, 0777)
 	}
-
 	return listener, nil
 }
 
