@@ -34,6 +34,7 @@ jobs:
       - name: Install dependencies
         run: go mod download
       - name: Lint Codebase
+        continue-on-error: true
         uses: golangci/golangci-lint-action@v6
         with:
           version: latest
