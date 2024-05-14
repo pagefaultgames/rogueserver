@@ -47,11 +47,6 @@ func Update(uuid []byte, slot int, save any) error {
 			return fmt.Errorf("failed to update account stats: %s", err)
 		}
 
-		err = db.DeleteClaimedAccountCompensations(uuid)
-		if err != nil {
-			return fmt.Errorf("failed to delete claimed compensations: %s", err)
-		}
-
 		return db.StoreSystemSaveData(uuid, save)
 
 	case defs.SessionSaveData: // Session
