@@ -212,7 +212,7 @@ func UpdateTrainerIds(trainerId, secretId int, uuid []byte) error {
 
 func IsActiveSession(uuid []byte, clientSessionId string) (bool, error) {
 	var storedId string
-	err := handle.QueryRow("SELECT clientSessionId FROM activeClientSessions WHERE sessions.uuid = ?", uuid).Scan(&storedId)
+	err := handle.QueryRow("SELECT clientSessionId FROM activeClientSessions WHERE uuid = ?", uuid).Scan(&storedId)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return false, nil
