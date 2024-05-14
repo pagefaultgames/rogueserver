@@ -627,7 +627,7 @@ func handleUpdateAll(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else {
-		if err := db.UpdateTrainerIds(trainerId, secretId, uuid); err != nil {
+		if err = db.UpdateTrainerIds(trainerId, secretId, uuid); err != nil {
 			httpError(w, r, err, http.StatusInternalServerError)
 			return
 		}
@@ -646,24 +646,23 @@ func handleUpdateAll(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-type SessionVerifyResponse struct {
-	Valid       bool                  `json:"valid"`
-	SessionData *defs.SessionSaveData `json:"sessionData"`
+type SystemVerifyResponse struct {
+	Valid      bool                 `json:"valid"`
+	SystemData *defs.SystemSaveData `json:"systemData"`
 }
 
-type SessionVerifyRequest struct {
+type SystemVerifyRequest struct {
 	ClientSessionId string `json:"clientSessionId"`
-	Slot            int    `json:"slot"`
 }
 
-func handleSessionVerify(w http.ResponseWriter, r *http.Request) {
+func handleSystemVerify(w http.ResponseWriter, r *http.Request) {
 	uuid, err := uuidFromRequest(r)
 	if err != nil {
 		httpError(w, r, err, http.StatusBadRequest)
 		return
 	}
 
-	var input SessionVerifyRequest
+	var input SystemVerifyRequest
 	err = json.NewDecoder(r.Body).Decode(&input)
 	if err != nil {
 		httpError(w, r, fmt.Errorf("failed to decode request body: %s", err), http.StatusBadRequest)
@@ -677,7 +676,7 @@ func handleSessionVerify(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := SessionVerifyResponse{
+	response := SystemVerifyResponse{
 		Valid: active,
 	}
 
@@ -689,14 +688,14 @@ func handleSessionVerify(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		var storedSaveData defs.SessionSaveData
-		storedSaveData, err = db.ReadSessionSaveData(uuid, input.Slot)
+		var storedSaveData defs.SystemSaveData
+		storedSaveData, err = db.ReadSystemSaveData(uuid)
 		if err != nil {
 			httpError(w, r, fmt.Errorf("failed to read session save data: %s", err), http.StatusInternalServerError)
 			return
 		}
 
-		response.SessionData = &storedSaveData
+		response.SystemData = &storedSaveData
 	}
 
 	jsonResponse(w, r, response)
@@ -733,6 +732,7 @@ func handleGetSystemData(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
+	//TODO apply vouchers
 
 	jsonResponse(w, r, save)
 }

@@ -56,7 +56,7 @@ func Init(mux *http.ServeMux) error {
 
 	// new session
 	mux.HandleFunc("POST /savedata/updateall", handleUpdateAll)
-	mux.HandleFunc("POST /savedata/verify", handleSessionVerify)
+	mux.HandleFunc("POST /savedata/system/verify", handleSystemVerify)
 	mux.HandleFunc("GET /savedata/system", handleGetSystemData)
 	mux.HandleFunc("GET /savedata/session", handleGetSessionData)
 
