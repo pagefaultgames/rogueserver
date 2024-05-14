@@ -1,0 +1,6 @@
+severity:
+  default-severity: error
+  rules:
+    - linters:
+        - unused
+      severity: warning
