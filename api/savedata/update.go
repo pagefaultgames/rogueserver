@@ -20,14 +20,10 @@ package savedata
 import (
 	"fmt"
 	"log"
-	"strconv"
 
-	"github.com/klauspost/compress/zstd"
 	"github.com/pagefaultgames/rogueserver/db"
 	"github.com/pagefaultgames/rogueserver/defs"
 )
-
-var zstdEncoder, _ = zstd.NewWriter(nil)
 
 // /savedata/update - update save data
 func Update(uuid []byte, slot int, save any) error {
@@ -62,12 +58,6 @@ func Update(uuid []byte, slot int, save any) error {
 		if slot < 0 || slot >= defs.SessionSlotCount {
 			return fmt.Errorf("slot id %d out of range", slot)
 		}
-
-		filename := "session"
-		if slot != 0 {
-			filename += strconv.Itoa(slot)
-		}
-
 		return db.StoreSessionSaveData(uuid, save, slot)
 
 	default:

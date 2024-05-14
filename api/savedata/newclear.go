@@ -15,54 +15,30 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package api
+package savedata
 
 import (
-	"log"
-	"time"
+	"fmt"
 
 	"github.com/pagefaultgames/rogueserver/db"
-	"github.com/robfig/cron/v3"
+	"github.com/pagefaultgames/rogueserver/defs"
 )
 
-var (
-	scheduler           = cron.New(cron.WithLocation(time.UTC))
-	playerCount         int
-	battleCount         int
-	classicSessionCount int
-)
-
-func scheduleStatRefresh() error {
-	_, err := scheduler.AddFunc("@every 30s", func() {
-		err := updateStats()
-		if err != nil {
-			log.Printf("failed to update stats: %s", err)
-		}
-	})
-	if err != nil {
-		return err
+// /savedata/newclear - return whether a session is a new clear for its seed
+func NewClear(uuid []byte, slot int) (bool, error) {
+	if slot < 0 || slot >= defs.SessionSlotCount {
+		return false, fmt.Errorf("slot id %d out of range", slot)
 	}
 
-	scheduler.Start()
-	return nil
-}
-
-func updateStats() error {
-	var err error
-	playerCount, err = db.FetchPlayerCount()
+	session, err := db.ReadSessionSaveData(uuid, slot)
 	if err != nil {
-		return err
+		return false, err
 	}
 
-	battleCount, err = db.FetchBattleCount()
+	completed, err := db.ReadSeedCompleted(uuid, session.Seed)
 	if err != nil {
-		return err
+		return false, fmt.Errorf("failed to read seed completed: %s", err)
 	}
 
-	classicSessionCount, err = db.FetchClassicSessionCount()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return !completed, nil
 }

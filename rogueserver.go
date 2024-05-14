@@ -39,12 +39,12 @@ func main() {
 	proto := "tcp"
 	addr := "0.0.0.0:8001"
 
-
 	dbuser := os.Getenv("dbuser")
 	dbpass := os.Getenv("dbpass")
 	dbproto := "tcp"
 	dbaddr := os.Getenv("dbaddr")
 	dbname := os.Getenv("dbname")
+
 
 	flag.Parse()
 
@@ -67,13 +67,20 @@ func main() {
 	mux := http.NewServeMux()
 
 	// init api
-	api.Init(mux)
+	if err := api.Init(mux); err != nil {
+		log.Fatal(err)
+	}
 
 	// start web server
-	if debug == true {
-		err = http.Serve(listener, debugHandler(mux))
+
+	handler := prodHandler(mux)
+	if debug {
+		handler = debugHandler(mux)
+	}
+
+
 	} else {
-		err = http.Serve(listener, mux)
+		err = http.ServeTLS(listener, handler, *tlscert, *tlskey)
 	}
 	if err != nil {
 		log.Fatalf("failed to create http server or server errored: %s", err)
@@ -91,10 +98,28 @@ func createListener(proto, addr string) (net.Listener, error) {
 	}
 
 	if proto == "unix" {
-		os.Chmod(addr, 0777)
+		if err := os.Chmod(addr, 0777); err != nil {
+			listener.Close()
+			return nil, err
+		}
 	}
 
 	return listener, nil
+}
+
+func prodHandler(router *http.ServeMux) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
+		w.Header().Set("Access-Control-Allow-Methods", "OPTIONS, GET, POST")
+		w.Header().Set("Access-Control-Allow-Origin", "https://pokerogue.net")
+
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		router.ServeHTTP(w, r)
+	})
 }
 
 func debugHandler(router *http.ServeMux) http.Handler {

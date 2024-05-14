@@ -72,11 +72,16 @@ func Init() error {
 		time.Sleep(time.Second)
 
 		seed, err = recordNewDaily()
-		log.Printf("Daily Run Seed: %s", seed)
+
 		if err != nil {
 			log.Printf("error while recording new daily: %s", err)
+		} else {
+			log.Printf("Daily Run Seed: %s", seed)
 		}
 	})
+	if err != nil {
+		return err
+	}
 
 	if err != nil {
 		return err

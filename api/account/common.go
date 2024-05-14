@@ -19,6 +19,7 @@ package account
 
 import (
 	"regexp"
+	"runtime"
 
 	"golang.org/x/crypto/argon2"
 )
@@ -34,13 +35,13 @@ const (
 	ArgonKeySize  = 32
 	ArgonSaltSize = 16
 
-	ArgonMaxInstances = 16
-
 	UUIDSize  = 16
 	TokenSize = 32
 )
 
 var (
+	ArgonMaxInstances = runtime.NumCPU()
+
 	isValidUsername = regexp.MustCompile(`^\w{1,16}$`).MatchString
 	semaphore       = make(chan bool, ArgonMaxInstances)
 )

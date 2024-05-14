@@ -1,0 +1,10 @@
+/.github/
+
+Dockerfile*
+docker-compose*.yml
+
+/.data/
+/secret.key
+
+/rogueserver*
+!/rogueserver.go

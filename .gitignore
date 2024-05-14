@@ -5,13 +5,12 @@ rogueserver*
 /userdata/*
 secret.key
 
-
 # local testing
 /.data/
-
 
 # Jetbrains IDEs
 /.idea/
 *.iml
 *.ipr
 *.iws
+.vscode/launch.json

@@ -24,7 +24,7 @@ import (
 	"github.com/pagefaultgames/rogueserver/defs"
 )
 
-func TryAddDailyRunCompletion(uuid []byte, seed string, mode int) (bool, error) {
+func TryAddSeedCompletion(uuid []byte, seed string, mode int) (bool, error) {
 	var count int
 	err := handle.QueryRow("SELECT COUNT(*) FROM dailyRunCompletions WHERE uuid = ? AND seed = ?", uuid, seed).Scan(&count)
 	if err != nil {
@@ -39,6 +39,16 @@ func TryAddDailyRunCompletion(uuid []byte, seed string, mode int) (bool, error) 
 	}
 
 	return true, nil
+}
+
+func ReadSeedCompleted(uuid []byte, seed string) (bool, error) {
+	var count int
+	err := handle.QueryRow("SELECT COUNT(*) FROM dailyRunCompletions WHERE uuid = ? AND seed = ?", uuid, seed).Scan(&count)
+	if err != nil {
+		return false, err
+	}
+
+	return count > 0, nil
 }
 
 func ReadSystemSaveData(uuid []byte) (defs.SystemSaveData, error) {
@@ -65,7 +75,7 @@ func StoreSystemSaveData(uuid []byte, data defs.SystemSaveData) error {
 		return err
 	}
 
-	_, err = handle.Exec("REPLACE INTO systemSaveData (uuid, data, timestamp) VALUES (?, ?, UTC_TIMESTAMP())", uuid, buf.Bytes())
+	_, err = handle.Exec("INSERT INTO systemSaveData (uuid, data, timestamp) VALUES (?, ?, UTC_TIMESTAMP()) ON DUPLICATE KEY UPDATE data = ?, timestamp = UTC_TIMESTAMP()", uuid, buf.Bytes(), buf.Bytes())
 	if err != nil {
 		return err
 	}
@@ -116,7 +126,7 @@ func StoreSessionSaveData(uuid []byte, data defs.SessionSaveData, slot int) erro
 		return err
 	}
 
-	_, err = handle.Exec("REPLACE INTO sessionSaveData (uuid, slot, data, timestamp) VALUES (?, ?, ?, UTC_TIMESTAMP())", uuid, slot, buf.Bytes())
+	_, err = handle.Exec("INSERT INTO sessionSaveData (uuid, slot, data, timestamp) VALUES (?, ?, ?, UTC_TIMESTAMP()) ON DUPLICATE KEY UPDATE data = ?, timestamp = UTC_TIMESTAMP()", uuid, slot, buf.Bytes(), buf.Bytes())
 	if err != nil {
 		return err
 	}

@@ -27,7 +27,7 @@ func TryAddDailyRun(seed string) (string, error) {
 	var actualSeed string
 	err := handle.QueryRow("INSERT INTO dailyRuns (seed, date) VALUES (?, UTC_DATE()) ON DUPLICATE KEY UPDATE date = date RETURNING seed", seed).Scan(&actualSeed)
 	if err != nil {
-		return "INVALID", err
+		return "", err
 	}
 
 	return actualSeed, nil
@@ -37,7 +37,7 @@ func GetDailyRunSeed() (string, error) {
 	var seed string
 	err := handle.QueryRow("SELECT seed FROM dailyRuns WHERE date = UTC_DATE()").Scan(&seed)
 	if err != nil {
-		return "INVALID", err
+		return "", err
 	}
 
 	return seed, nil
