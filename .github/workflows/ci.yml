@@ -37,6 +37,7 @@ jobs:
         uses: golangci/golangci-lint-action@v6
         with:
           version: latest
+          args: --config .golangci.yml
       - name: Test
         run: go test -v
       - name: Build
