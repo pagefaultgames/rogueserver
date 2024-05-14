@@ -45,7 +45,6 @@ func main() {
 	dbaddr := os.Getenv("dbaddr")
 	dbname := os.Getenv("dbname")
 
-
 	flag.Parse()
 
 	// register gob types
@@ -76,11 +75,8 @@ func main() {
 	handler := prodHandler(mux)
 	if debug {
 		handler = debugHandler(mux)
-	}
-
-
 	} else {
-		err = http.ServeTLS(listener, handler, *tlscert, *tlskey)
+		err = http.Serve(listener, handler)
 	}
 	if err != nil {
 		log.Fatalf("failed to create http server or server errored: %s", err)
