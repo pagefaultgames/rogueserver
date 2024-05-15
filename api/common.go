@@ -20,12 +20,15 @@ package api
 import (
 	"encoding/base64"
 	"encoding/json"
+	stderrors "errors"
 	"fmt"
+	"log"
+	"net/http"
+
 	"github.com/pagefaultgames/rogueserver/api/account"
 	"github.com/pagefaultgames/rogueserver/api/daily"
 	"github.com/pagefaultgames/rogueserver/db"
-	"log"
-	"net/http"
+	"github.com/pagefaultgames/rogueserver/errors"
 )
 
 func Init(mux *http.ServeMux) error {
@@ -69,16 +72,16 @@ func Init(mux *http.ServeMux) error {
 
 func tokenFromRequest(r *http.Request) ([]byte, error) {
 	if r.Header.Get("Authorization") == "" {
-		return nil, fmt.Errorf("missing token")
+		return nil, errors.NewHttpError(http.StatusBadRequest, "missing token")
 	}
 
 	token, err := base64.StdEncoding.DecodeString(r.Header.Get("Authorization"))
 	if err != nil {
-		return nil, fmt.Errorf("failed to decode token: %s", err)
+		return nil, errors.NewHttpError(http.StatusBadRequest, "failed to decode token")
 	}
 
 	if len(token) != account.TokenSize {
-		return nil, fmt.Errorf("invalid token length: got %d, expected %d", len(token), account.TokenSize)
+		return nil, errors.NewHttpError(http.StatusBadRequest, "invalid token length")
 	}
 
 	return token, nil
@@ -97,14 +100,17 @@ func tokenAndUuidFromRequest(r *http.Request) ([]byte, []byte, error) {
 
 	uuid, err := db.FetchUUIDFromToken(token)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to validate token: %s", err)
+		if stderrors.Is(err, db.ErrTokenNotFound) {
+			return nil, nil, errors.NewHttpError(http.StatusUnauthorized, "bad token")
+		}
+		return nil, nil, fmt.Errorf("failed to fetch uuid from db: %w", err)
 	}
 
 	return token, uuid, nil
 }
 
 func httpError(w http.ResponseWriter, r *http.Request, err error, code int) {
-	log.Printf("%s: %s\n", r.URL.Path, err)
+	log.Printf("%s: %s\n", r.URL.Path, err.Error())
 	http.Error(w, err.Error(), code)
 }
 
@@ -115,4 +121,14 @@ func jsonResponse(w http.ResponseWriter, r *http.Request, data any) {
 		httpError(w, r, fmt.Errorf("failed to encode response json: %s", err), http.StatusInternalServerError)
 		return
 	}
+}
+
+func statusCodeFromError(err error) int {
+	var httpErr *errors.HttpError
+
+	if stderrors.As(err, &httpErr) {
+		return httpErr.Code
+	}
+
+	return http.StatusInternalServerError
 }

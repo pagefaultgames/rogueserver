@@ -23,13 +23,17 @@ import (
 	"fmt"
 	"slices"
 
-	_ "github.com/go-sql-driver/mysql"
+	"github.com/go-sql-driver/mysql"
 	"github.com/pagefaultgames/rogueserver/defs"
 )
 
 func AddAccountRecord(uuid []byte, username string, key, salt []byte) error {
 	_, err := handle.Exec("INSERT INTO accounts (uuid, username, hash, salt, registered) VALUES (?, ?, ?, ?, UTC_TIMESTAMP())", uuid, username, key, salt)
 	if err != nil {
+		var mysqlErr *mysql.MySQLError
+		if errors.As(err, &mysqlErr) && mysqlErr.Number == 1062 {
+			return ErrAccountAlreadyExists
+		}
 		return err
 	}
 
@@ -240,6 +244,9 @@ func FetchUUIDFromToken(token []byte) ([]byte, error) {
 	var uuid []byte
 	err := handle.QueryRow("SELECT uuid FROM sessions WHERE token = ?", token).Scan(&uuid)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrTokenNotFound
+		}
 		return nil, err
 	}
 

@@ -19,18 +19,18 @@ package account
 
 import (
 	"crypto/rand"
+	stderrors "errors"
 	"fmt"
+	"net/http"
+
 	"github.com/pagefaultgames/rogueserver/db"
+	"github.com/pagefaultgames/rogueserver/errors"
 )
 
 // /account/register - register account
 func Register(username, password string) error {
-	if !isValidUsername(username) {
-		return fmt.Errorf("invalid username")
-	}
-
-	if len(password) < 6 {
-		return fmt.Errorf("invalid password")
+	if err := validateUsernamePassword(username, password); err != nil {
+		return err
 	}
 
 	uuid := make([]byte, UUIDSize)
@@ -47,6 +47,9 @@ func Register(username, password string) error {
 
 	err = db.AddAccountRecord(uuid, username, deriveArgon2IDKey([]byte(password), salt), salt)
 	if err != nil {
+		if stderrors.Is(err, db.ErrAccountAlreadyExists) {
+			return errors.NewHttpError(http.StatusConflict, fmt.Sprintf(`username "%s" already taken`, username))
+		}
 		return fmt.Errorf("failed to add account record: %s", err)
 	}
 

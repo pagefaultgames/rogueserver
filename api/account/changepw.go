@@ -25,8 +25,8 @@ import (
 )
 
 func ChangePW(uuid []byte, password string) error {
-	if len(password) < 6 {
-		return fmt.Errorf("invalid password")
+	if err := validatePassword(password); err != nil {
+		return err
 	}
 
 	salt := make([]byte, ArgonSaltSize)

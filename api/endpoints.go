@@ -43,7 +43,7 @@ import (
 func handleAccountInfo(w http.ResponseWriter, r *http.Request) {
 	uuid, err := uuidFromRequest(r)
 	if err != nil {
-		httpError(w, r, err, http.StatusBadRequest)
+		httpError(w, r, err, statusCodeFromError(err))
 		return
 	}
 
@@ -71,11 +71,11 @@ func handleAccountRegister(w http.ResponseWriter, r *http.Request) {
 
 	err = account.Register(r.Form.Get("username"), r.Form.Get("password"))
 	if err != nil {
-		httpError(w, r, err, http.StatusInternalServerError)
+		httpError(w, r, err, statusCodeFromError(err))
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusCreated)
 }
 
 func handleAccountLogin(w http.ResponseWriter, r *http.Request) {
@@ -87,7 +87,7 @@ func handleAccountLogin(w http.ResponseWriter, r *http.Request) {
 
 	response, err := account.Login(r.Form.Get("username"), r.Form.Get("password"))
 	if err != nil {
-		httpError(w, r, err, http.StatusInternalServerError)
+		httpError(w, r, err, statusCodeFromError(err))
 		return
 	}
 
@@ -103,17 +103,17 @@ func handleAccountChangePW(w http.ResponseWriter, r *http.Request) {
 
 	uuid, err := uuidFromRequest(r)
 	if err != nil {
-		httpError(w, r, err, http.StatusBadRequest)
+		httpError(w, r, err, statusCodeFromError(err))
 		return
 	}
 
 	err = account.ChangePW(uuid, r.Form.Get("password"))
 	if err != nil {
-		httpError(w, r, err, http.StatusInternalServerError)
+		httpError(w, r, err, statusCodeFromError(err))
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func handleAccountLogout(w http.ResponseWriter, r *http.Request) {
@@ -129,7 +129,7 @@ func handleAccountLogout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // game
@@ -149,7 +149,7 @@ func handleGameClassicSessionCount(w http.ResponseWriter, r *http.Request) {
 func handleGetSessionData(w http.ResponseWriter, r *http.Request) {
 	uuid, err := uuidFromRequest(r)
 	if err != nil {
-		httpError(w, r, err, http.StatusBadRequest)
+		httpError(w, r, err, statusCodeFromError(err))
 		return
 	}
 
@@ -195,7 +195,7 @@ const legacyClientSessionId = "LEGACY_CLIENT"
 func legacyHandleGetSaveData(w http.ResponseWriter, r *http.Request) {
 	uuid, err := uuidFromRequest(r)
 	if err != nil {
-		httpError(w, r, err, http.StatusBadRequest)
+		httpError(w, r, err, statusCodeFromError(err))
 		return
 	}
 
@@ -244,7 +244,7 @@ func legacyHandleGetSaveData(w http.ResponseWriter, r *http.Request) {
 func clearSessionData(w http.ResponseWriter, r *http.Request) {
 	uuid, err := uuidFromRequest(r)
 	if err != nil {
-		httpError(w, r, err, http.StatusBadRequest)
+		httpError(w, r, err, statusCodeFromError(err))
 		return
 	}
 
@@ -332,7 +332,7 @@ func clearSessionData(w http.ResponseWriter, r *http.Request) {
 func deleteSystemSave(w http.ResponseWriter, r *http.Request) {
 	uuid, err := uuidFromRequest(r)
 	if err != nil {
-		httpError(w, r, err, http.StatusBadRequest)
+		httpError(w, r, err, statusCodeFromError(err))
 		return
 	}
 
@@ -412,7 +412,7 @@ func deleteSystemSave(w http.ResponseWriter, r *http.Request) {
 func legacyHandleSaveData(w http.ResponseWriter, r *http.Request) {
 	uuid, err := uuidFromRequest(r)
 	if err != nil {
-		httpError(w, r, err, http.StatusBadRequest)
+		httpError(w, r, err, statusCodeFromError(err))
 		return
 	}
 
@@ -581,7 +581,7 @@ type CombinedSaveData struct {
 func handleUpdateAll(w http.ResponseWriter, r *http.Request) {
 	uuid, err := uuidFromRequest(r)
 	if err != nil {
-		httpError(w, r, err, http.StatusBadRequest)
+		httpError(w, r, err, statusCodeFromError(err))
 		return
 	}
 
@@ -653,7 +653,7 @@ type SystemVerifyRequest struct {
 func handleSystemVerify(w http.ResponseWriter, r *http.Request) {
 	uuid, err := uuidFromRequest(r)
 	if err != nil {
-		httpError(w, r, err, http.StatusBadRequest)
+		httpError(w, r, err, statusCodeFromError(err))
 		return
 	}
 
@@ -705,7 +705,7 @@ func handleSystemVerify(w http.ResponseWriter, r *http.Request) {
 func handleGetSystemData(w http.ResponseWriter, r *http.Request) {
 	uuid, err := uuidFromRequest(r)
 	if err != nil {
-		httpError(w, r, err, http.StatusBadRequest)
+		httpError(w, r, err, statusCodeFromError(err))
 		return
 	}
 
@@ -741,7 +741,7 @@ func handleGetSystemData(w http.ResponseWriter, r *http.Request) {
 func legacyHandleNewClear(w http.ResponseWriter, r *http.Request) {
 	uuid, err := uuidFromRequest(r)
 	if err != nil {
-		httpError(w, r, err, http.StatusBadRequest)
+		httpError(w, r, err, statusCodeFromError(err))
 		return
 	}
 
