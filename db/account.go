@@ -215,16 +215,13 @@ func IsActiveSession(uuid []byte, clientSessionId string) (bool, error) {
 	err := handle.QueryRow("SELECT clientSessionId FROM activeClientSessions WHERE uuid = ?", uuid).Scan(&storedId)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return false, nil
+			err = UpdateActiveSession(uuid, clientSessionId)
+			if err != nil {
+				return false, err
+			}
+			return true, nil
 		}
 		return false, err
-	}
-	if storedId == "" {
-		err = UpdateActiveSession(uuid, clientSessionId)
-		if err != nil {
-			return false, err
-		}
-		return true, nil
 	}
 
 	return storedId == clientSessionId, nil
