@@ -693,6 +693,12 @@ func handleSystemVerify(w http.ResponseWriter, r *http.Request) {
 		response.SystemData = &storedSaveData
 	}
 
+	err = db.UpdateAccountLastActivity(uuid)
+	if err != nil {
+		httpError(w, r, fmt.Errorf("failed to update account last activity: %s", err), http.StatusInternalServerError)
+		return
+	}
+
 	jsonResponse(w, r, response)
 }
 
