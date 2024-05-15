@@ -585,14 +585,6 @@ func handleUpdateAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var clientSessionId string
-	if r.URL.Query().Has("clientSessionId") {
-		clientSessionId = r.URL.Query().Get("clientSessionId")
-	}
-	if clientSessionId == "" {
-		clientSessionId = legacyClientSessionId
-	}
-
 	var data CombinedSaveData
 	err = json.NewDecoder(r.Body).Decode(&data)
 	if err != nil {
@@ -601,7 +593,7 @@ func handleUpdateAll(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var active bool
-	active, err = db.IsActiveSession(uuid, clientSessionId)
+	active, err = db.IsActiveSession(uuid, data.ClientSessionId)
 	if err != nil {
 		httpError(w, r, fmt.Errorf("failed to check active session: %s", err), http.StatusBadRequest)
 		return
