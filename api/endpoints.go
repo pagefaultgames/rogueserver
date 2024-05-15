@@ -591,6 +591,9 @@ func handleUpdateAll(w http.ResponseWriter, r *http.Request) {
 		httpError(w, r, fmt.Errorf("failed to decode request body: %s", err), http.StatusBadRequest)
 		return
 	}
+	if data.ClientSessionId == "" {
+		data.ClientSessionId = legacyClientSessionId
+	}
 
 	var active bool
 	active, err = db.IsActiveSession(uuid, data.ClientSessionId)
