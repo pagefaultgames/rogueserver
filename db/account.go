@@ -224,7 +224,7 @@ func IsActiveSession(uuid []byte, clientSessionId string) (bool, error) {
 		return false, err
 	}
 
-	return storedId == clientSessionId, nil
+	return storedId == "" || storedId == clientSessionId, nil
 }
 
 func UpdateActiveSession(uuid []byte, clientSessionId string) error {
