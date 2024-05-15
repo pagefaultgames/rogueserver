@@ -297,19 +297,19 @@ func clearSessionData(w http.ResponseWriter, r *http.Request) {
 
 	if storedTrainerId > 0 || storedSecretId > 0 {
 		if trainerId != storedTrainerId || secretId != storedSecretId {
-			httpError(w, r, fmt.Errorf("session out of date"), http.StatusBadRequest)
+			httpError(w, r, fmt.Errorf("session out of date: stored trainer or secret ID does not match"), http.StatusBadRequest)
 			return
 		}
 	} else {
 		err = db.UpdateTrainerIds(trainerId, secretId, uuid)
 		if err != nil {
-			httpError(w, r, fmt.Errorf("unable to update traienr ID: %s", err), http.StatusInternalServerError)
+			httpError(w, r, fmt.Errorf("unable to update trainer ID: %s", err), http.StatusInternalServerError)
 			return
 		}
 	}
 
 	if !active {
-		save = savedata.ClearResponse{Error: "session out of date"}
+		save = savedata.ClearResponse{Error: "session out of date: not active"}
 	}
 
 	var seed string
@@ -362,7 +362,7 @@ func deleteSystemSave(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !active {
-		httpError(w, r, fmt.Errorf("session out of date"), http.StatusBadRequest)
+		httpError(w, r, fmt.Errorf("session out of date: not active"), http.StatusBadRequest)
 		return
 	}
 
@@ -390,7 +390,7 @@ func deleteSystemSave(w http.ResponseWriter, r *http.Request) {
 
 	if storedTrainerId > 0 || storedSecretId > 0 {
 		if trainerId != storedTrainerId || secretId != storedSecretId {
-			httpError(w, r, fmt.Errorf("session out of date"), http.StatusBadRequest)
+			httpError(w, r, fmt.Errorf("session out of date: stored trainer or secret ID does not match"), http.StatusBadRequest)
 			return
 		}
 	} else {
@@ -485,7 +485,7 @@ func legacyHandleSaveData(w http.ResponseWriter, r *http.Request) {
 
 		// TODO: make this not suck
 		if !active && r.URL.Path != "/savedata/clear" {
-			httpError(w, r, fmt.Errorf("session out of date"), http.StatusBadRequest)
+			httpError(w, r, fmt.Errorf("session out of date: not active"), http.StatusBadRequest)
 			return
 		}
 
@@ -518,7 +518,7 @@ func legacyHandleSaveData(w http.ResponseWriter, r *http.Request) {
 
 		if storedTrainerId > 0 || storedSecretId > 0 {
 			if trainerId != storedTrainerId || secretId != storedSecretId {
-				httpError(w, r, fmt.Errorf("session out of date"), http.StatusBadRequest)
+				httpError(w, r, fmt.Errorf("session out of date: stored trainer or secret ID does not match"), http.StatusBadRequest)
 				return
 			}
 		} else {
@@ -543,7 +543,7 @@ func legacyHandleSaveData(w http.ResponseWriter, r *http.Request) {
 	case "/savedata/clear":
 		if !active {
 			// TODO: make this not suck
-			save = savedata.ClearResponse{Error: "session out of date"}
+			save = savedata.ClearResponse{Error: "session out of date: not active"}
 			break
 		}
 
@@ -603,7 +603,7 @@ func handleUpdateAll(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !active {
-		httpError(w, r, fmt.Errorf("session out of date"), http.StatusBadRequest)
+		httpError(w, r, fmt.Errorf("session out of date: not active"), http.StatusBadRequest)
 		return
 	}
 
@@ -618,7 +618,7 @@ func handleUpdateAll(w http.ResponseWriter, r *http.Request) {
 
 	if storedTrainerId > 0 || storedSecretId > 0 {
 		if trainerId != storedTrainerId || secretId != storedSecretId {
-			httpError(w, r, fmt.Errorf("session out of date"), http.StatusBadRequest)
+			httpError(w, r, fmt.Errorf("session out of date: stored trainer or secret ID does not match"), http.StatusBadRequest)
 			return
 		}
 	} else {
