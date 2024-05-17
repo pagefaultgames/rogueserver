@@ -176,6 +176,15 @@ func setupDb(tx *sql.Tx) error {
 
 		`ALTER TABLE sessions DROP COLUMN IF EXISTS active`,
 		`CREATE TABLE IF NOT EXISTS activeClientSessions (uuid BINARY(16) NOT NULL PRIMARY KEY, clientSessionId VARCHAR(32) NOT NULL, FOREIGN KEY (uuid) REFERENCES accounts (uuid) ON DELETE CASCADE ON UPDATE CASCADE)`,
+	
+		`CREATE TABLE IF NOT EXISTS friends (
+			relationId INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+			user VARCHAR(16) NOT NULL,
+			friend VARCHAR(16) NOT NULL,
+			since DATE NOT NULL,
+			FOREIGN KEY (user) REFERENCES accounts (username) ON DELETE CASCADE ON UPDATE CASCADE,
+			FOREIGN KEY (friend) REFERENCES accounts (username) ON DELETE CASCADE ON UPDATE CASCADE
+		)`,
 	}
 
 	for _, q := range queries {
