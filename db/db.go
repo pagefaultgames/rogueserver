@@ -185,6 +185,7 @@ func setupDb(tx *sql.Tx) error {
 			FOREIGN KEY (user) REFERENCES accounts (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
 			FOREIGN KEY (friend) REFERENCES accounts (uuid) ON DELETE CASCADE ON UPDATE CASCADE
 		)`,
+		`CREATE INDEX IF NOT EXISTS allUserFriends ON friends (user)`,
 	}
 
 	for _, q := range queries {
