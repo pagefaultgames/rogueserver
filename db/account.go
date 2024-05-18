@@ -276,15 +276,16 @@ func isFriendWith(sourceUsername string, friendUsername string) (bool, error) {
 }
 
 func AddFriend(uuid []byte, friendUsername string) (bool, error) {
+	// We are making db errors more generic as error is used in the response data to the client.
 	username, err := FetchUsernameFromUUID(uuid);
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("An error occured, are you connected ?")
 	}
 
 	var doesUserExist int
 	err = handle.QueryRow("SELECT COUNT(*) FROM accounts WHERE username = ?", friendUsername).Scan(&doesUserExist)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("An error occured, if this persist, please contact an administrators.")
 	}
 
 	if doesUserExist == 0 {

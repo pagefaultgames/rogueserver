@@ -145,10 +145,15 @@ func handleAddFriend(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response, err := db.AddFriend(uuid, r.Form.Get("username"))
-	if err != nil {
-		httpError(w, r, err, http.StatusInternalServerError)
-		return
+	success, err := db.AddFriend(uuid, r.Form.Get("username"))
+	message := "Success"
+	if !success {
+		message = err.Error()
+	}
+
+	response := defs.GenericResponse{
+		Success: success,
+		Message: message,
 	}
 
 	jsonResponse(w, r, response)
