@@ -25,8 +25,8 @@ import (
 )
 
 // /daily/rankings - fetch daily rankings
-func Rankings(category, page int) ([]defs.DailyRanking, error) {
-	rankings, err := db.FetchRankings(category, page)
+func Rankings(category, page int, uuid []byte) ([]defs.DailyRanking, error) {
+	rankings, err := db.FetchRankings(category, page, uuid)
 	if err != nil {
 		log.Print("failed to retrieve rankings")
 	}

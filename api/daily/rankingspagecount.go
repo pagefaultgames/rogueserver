@@ -24,8 +24,8 @@ import (
 )
 
 // /daily/rankingpagecount - fetch daily ranking page count
-func RankingPageCount(category int) (int, error) {
-	pageCount, err := db.FetchRankingPageCount(category)
+func RankingPageCount(category int, uuid []byte) (int, error) {
+	pageCount, err := db.FetchRankingPageCount(category, uuid)
 	if err != nil {
 		log.Print("failed to retrieve ranking page count")
 	}

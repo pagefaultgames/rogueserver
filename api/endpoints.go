@@ -860,7 +860,11 @@ func handleDailySeed(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleDailyRankings(w http.ResponseWriter, r *http.Request) {
-	var err error
+	uuid, err := uuidFromRequest(r)
+	if err != nil {
+		httpError(w, r, err, http.StatusBadRequest)
+		return
+	}
 
 	var category int
 	if r.URL.Query().Has("category") {
@@ -880,7 +884,7 @@ func handleDailyRankings(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	rankings, err := daily.Rankings(category, page)
+	rankings, err := daily.Rankings(category, page, uuid)
 	if err != nil {
 		httpError(w, r, err, http.StatusInternalServerError)
 		return
@@ -890,6 +894,12 @@ func handleDailyRankings(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleDailyRankingPageCount(w http.ResponseWriter, r *http.Request) {
+	uuid, err := uuidFromRequest(r)
+	if err != nil {
+		httpError(w, r, err, http.StatusBadRequest)
+		return
+	}
+
 	var category int
 	if r.URL.Query().Has("category") {
 		var err error
@@ -900,7 +910,7 @@ func handleDailyRankingPageCount(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	count, err := daily.RankingPageCount(category)
+	count, err := daily.RankingPageCount(category, uuid)
 	if err != nil {
 		httpError(w, r, err, http.StatusInternalServerError)
 	}
