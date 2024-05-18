@@ -265,9 +265,19 @@ func FetchUsernameFromUUID(uuid []byte) (string, error) {
 	return username, nil
 }
 
-func isFriendWith(sourceUsername string, friendUsername string) (bool, error) {
+func FetchUUIDFromUsername(username string) ([]byte, error) {
+	var uuid []byte
+	err := handle.QueryRow("SELECT uuid FROM accounts WHERE username = ?", username).Scan(&uuid)
+	if err != nil {
+		return nil, err
+	}
+
+	return uuid, nil
+}
+
+func IsFriendWith(sourceUuid []byte, friendUuid []byte) (bool, error) {
 	var result int
-	err := handle.QueryRow("SELECT COUNT(*) FROM friends WHERE user = ? AND friend = ?", sourceUsername, friendUsername).Scan(&result)
+	err := handle.QueryRow("SELECT COUNT(*) FROM friends WHERE user = ? AND friend = ?", sourceUuid, friendUuid).Scan(&result)
 	if err != nil {
 		return false, err
 	}
@@ -277,27 +287,21 @@ func isFriendWith(sourceUsername string, friendUsername string) (bool, error) {
 
 func AddFriend(uuid []byte, friendUsername string) (bool, error) {
 	// We are making db errors more generic as error is used in the response data to the client.
-	username, err := FetchUsernameFromUUID(uuid);
-	if err != nil {
-		return false, fmt.Errorf("An error occured, are you connected ?")
-	}
-
-	var doesUserExist int
-	err = handle.QueryRow("SELECT COUNT(*) FROM accounts WHERE username = ?", friendUsername).Scan(&doesUserExist)
+	friendUuid, err := FetchUUIDFromUsername(friendUsername)
 	if err != nil {
 		return false, fmt.Errorf("An error occured, if this persist, please contact an administrator.")
 	}
 
-	if doesUserExist == 0 {
+	if len(friendUuid) == 0 {
 		return false, fmt.Errorf("User does not exist")
 	}
 
-	alreadyFriends, _ := isFriendWith(username, friendUsername)
+	alreadyFriends, _ := IsFriendWith(uuid, friendUuid)
 	if alreadyFriends {
 		return false, fmt.Errorf("Already friend with this user")
 	}
 
-	_, err = handle.Exec("INSERT INTO friends (user, friend, since) VALUES (?, ?, UTC_TIMESTAMP())", username, friendUsername)
+	_, err = handle.Exec("INSERT INTO friends (user, friend, since) VALUES (?, ?, UTC_TIMESTAMP())", uuid, friendUuid)
 	if err != nil {
 		return false, fmt.Errorf("An error occured, if this persist, please contact an administrator.")
 	}
@@ -307,17 +311,21 @@ func AddFriend(uuid []byte, friendUsername string) (bool, error) {
 
 func RemoveFriend(uuid []byte, friendUsername string) (bool, error) {
 	// We are making db errors more generic as error is used in the response data to the client.
-	username, err := FetchUsernameFromUUID(uuid);
+	friendUuid, err := FetchUUIDFromUsername(friendUsername)
 	if err != nil {
-		return false, fmt.Errorf("An error occured, are you connected ?")
+		return false, fmt.Errorf("An error occured, if this persist, please contact an administrator.")
 	}
 
-	alreadyFriends, _ := isFriendWith(username, friendUsername)
+	if len(friendUuid) == 0 {
+		return false, fmt.Errorf("User does not exist")
+	}
+
+	alreadyFriends, _ := IsFriendWith(uuid, friendUuid)
 	if !alreadyFriends {
 		return false, fmt.Errorf("You are not friend with this user")
 	}
 
-	_, err = handle.Exec("DELETE FROM friends WHERE user = ? AND friend = ?", username, friendUsername)
+	_, err = handle.Exec("DELETE FROM friends WHERE user = ? AND friend = ?", uuid, friendUuid)
 	if err != nil {
 		return false, err
 	}
@@ -326,13 +334,8 @@ func RemoveFriend(uuid []byte, friendUsername string) (bool, error) {
 }
 
 func FriendCount(uuid []byte) (int, error) {
-	username, err := FetchUsernameFromUUID(uuid);
-	if err != nil {
-		return -1, err
-	}
-
 	var count int
-	err = handle.QueryRow("SELECT COUNT(*) FROM friends WHERE user = ?", username).Scan(&count)
+	err := handle.QueryRow("SELECT COUNT(*) FROM friends WHERE user = ?", uuid).Scan(&count)
 	if err != nil {
 		return -1, err
 	}
@@ -341,19 +344,14 @@ func FriendCount(uuid []byte) (int, error) {
 }
 
 func FriendOnlineCount(uuid []byte) (int, error) {
-	username, err := FetchUsernameFromUUID(uuid);
-	if err != nil {
-		return -1, err
-	}
-	    
 	query := `SELECT COUNT(*) FROM accounts a
   			  JOIN friends f
-  			  ON a.username = f.friend
+  			  ON a.uuid = f.friend
 			  WHERE a.lastActivity > DATE_SUB(UTC_TIMESTAMP(), INTERVAL 5 MINUTE)
 			  AND f.user = ?;`
 
 	var count int
-	err = handle.QueryRow(query, username).Scan(&count)
+	err := handle.QueryRow(query, uuid).Scan(&count)
 	if err != nil {
 		return -1, err
 	}

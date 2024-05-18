@@ -57,11 +57,6 @@ func AddOrUpdateAccountDailyRun(uuid []byte, score int, wave int) error {
 func FetchRankings(category int, page int, uuid []byte) ([]defs.DailyRanking, error) {
 	var rankings []defs.DailyRanking
 
-	username, err := FetchUsernameFromUUID(uuid);
-	if err != nil {
-		return rankings, err
-	}
-
 	offset := (page - 1) * 10
 
 	var query string
@@ -78,7 +73,7 @@ func FetchRankings(category int, page int, uuid []byte) ([]defs.DailyRanking, er
 					FROM accountDailyRuns adr
 					JOIN dailyRuns dr ON dr.date = adr.date
 					JOIN accounts a ON adr.uuid = a.uuid
-					JOIN friends f ON a.username = f.friend
+					JOIN friends f ON a.uuid = f.friend
 					WHERE dr.date = UTC_DATE()
 					AND a.banned = 0
 					AND f.user = ?
@@ -89,13 +84,14 @@ func FetchRankings(category int, page int, uuid []byte) ([]defs.DailyRanking, er
 					JOIN accounts a ON adr.uuid = a.uuid
 					WHERE dr.date = UTC_DATE()
 					AND a.banned = 0
-					AND a.username = ?
+					AND a.uuid = ?
 				) AS combined LIMIT 10 OFFSET ?;`
 	}
 
 	var results *sql.Rows
+	var err error
 	if category == 2 {
-		results, err = handle.Query(query, username, username, offset)
+		results, err = handle.Query(query, uuid, uuid, offset)
 	} else {
 		results, err = handle.Query(query, offset)
 	}
@@ -120,11 +116,6 @@ func FetchRankings(category int, page int, uuid []byte) ([]defs.DailyRanking, er
 }
 
 func FetchRankingPageCount(category int, uuid []byte) (int, error) {
-	username, err := FetchUsernameFromUUID(uuid);
-	if err != nil {
-		return 0, err
-	}
-
 	var query string
 	switch category {
 	case 0:
@@ -136,20 +127,24 @@ func FetchRankingPageCount(category int, uuid []byte) (int, error) {
 				 FROM accountDailyRuns adr
 				 JOIN dailyRuns dr ON dr.date = adr.date
 				 JOIN accounts a ON adr.uuid = a.uuid
-				 JOIN friends f ON a.username = f.friend
+				 JOIN friends f ON a.uuid = f.friend
 				 WHERE dr.date = UTC_DATE()
-				 AND f.user = ?
-				 OR a.username = ?`
+				 AND f.user = ?`
 	}
 
 	var recordCount int
+	var err error
 	if category == 2 {	
-		err = handle.QueryRow(query, username, username).Scan(&recordCount)
+		err = handle.QueryRow(query, uuid).Scan(&recordCount)
 		// We only fetch friends of the account, not the account itself so adding +1 here.
 		// this way, we don't have to do the big union query like in FetchRankings
 		recordCount += 1 
 	} else {
 		err = handle.QueryRow(query).Scan(&recordCount)
+	}
+
+	if err != nil {
+		return 0, err
 	}
 
 	return int(math.Ceil(float64(recordCount) / 10)), nil
