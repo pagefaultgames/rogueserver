@@ -159,6 +159,33 @@ func handleAddFriend(w http.ResponseWriter, r *http.Request) {
 	jsonResponse(w, r, response)
 }
 
+func handleRemoveFriend(w http.ResponseWriter, r *http.Request) {
+	formErr := r.ParseForm()
+	if formErr != nil {
+		httpError(w, r, fmt.Errorf("failed to parse request form: %s", formErr), http.StatusBadRequest)
+		return
+	}
+
+	uuid, err := uuidFromRequest(r)
+	if err != nil {
+		httpError(w, r, err, http.StatusBadRequest)
+		return
+	}
+
+	success, err := db.RemoveFriend(uuid, r.Form.Get("username"))
+	message := "Success"
+	if !success {
+		message = err.Error()
+	}
+
+	response := defs.GenericResponse{
+		Success: success,
+		Message: message,
+	}
+
+	jsonResponse(w, r, response)
+}
+
 // game
 func handleGameTitleStats(w http.ResponseWriter, r *http.Request) {
 	stats := defs.TitleStats{

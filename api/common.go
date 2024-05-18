@@ -43,6 +43,7 @@ func Init(mux *http.ServeMux) error {
 	mux.HandleFunc("POST /account/changepw", handleAccountChangePW)
 	mux.HandleFunc("GET /account/logout", handleAccountLogout)
 	mux.HandleFunc("POST /account/addfriend", handleAddFriend)
+	mux.HandleFunc("POST /account/removefriend", handleRemoveFriend)
 
 	// game
 	mux.HandleFunc("GET /game/titlestats", handleGameTitleStats)

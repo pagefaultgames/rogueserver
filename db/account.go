@@ -285,7 +285,7 @@ func AddFriend(uuid []byte, friendUsername string) (bool, error) {
 	var doesUserExist int
 	err = handle.QueryRow("SELECT COUNT(*) FROM accounts WHERE username = ?", friendUsername).Scan(&doesUserExist)
 	if err != nil {
-		return false, fmt.Errorf("An error occured, if this persist, please contact an administrators.")
+		return false, fmt.Errorf("An error occured, if this persist, please contact an administrator.")
 	}
 
 	if doesUserExist == 0 {
@@ -298,6 +298,26 @@ func AddFriend(uuid []byte, friendUsername string) (bool, error) {
 	}
 
 	_, err = handle.Exec("INSERT INTO friends (user, friend, since) VALUES (?, ?, UTC_TIMESTAMP())", username, friendUsername)
+	if err != nil {
+		return false, fmt.Errorf("An error occured, if this persist, please contact an administrator.")
+	}
+
+	return true, nil
+}
+
+func RemoveFriend(uuid []byte, friendUsername string) (bool, error) {
+	// We are making db errors more generic as error is used in the response data to the client.
+	username, err := FetchUsernameFromUUID(uuid);
+	if err != nil {
+		return false, fmt.Errorf("An error occured, are you connected ?")
+	}
+
+	alreadyFriends, _ := isFriendWith(username, friendUsername)
+	if !alreadyFriends {
+		return false, fmt.Errorf("You are not friend with this user")
+	}
+
+	_, err = handle.Exec("DELETE FROM friends WHERE user = ? AND friend = ?", username, friendUsername)
 	if err != nil {
 		return false, err
 	}
