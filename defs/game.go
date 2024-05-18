@@ -21,3 +21,8 @@ type TitleStats struct {
 	PlayerCount int `json:"playerCount"`
 	BattleCount int `json:"battleCount"`
 }
+
+type FriendsOnlineStats struct {
+	FriendsOnline int `json:"friendsOnline"`
+	FriendsAmount int `json:"friendsAmount"`
+}

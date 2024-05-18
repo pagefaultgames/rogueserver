@@ -324,3 +324,39 @@ func RemoveFriend(uuid []byte, friendUsername string) (bool, error) {
 
 	return true, nil
 }
+
+func FriendCount(uuid []byte) (int, error) {
+	username, err := FetchUsernameFromUUID(uuid);
+	if err != nil {
+		return -1, err
+	}
+
+	var count int
+	err = handle.QueryRow("SELECT COUNT(*) FROM friends WHERE user = ?", username).Scan(&count)
+	if err != nil {
+		return -1, err
+	}
+
+	return count, nil
+}
+
+func FriendOnlineCount(uuid []byte) (int, error) {
+	username, err := FetchUsernameFromUUID(uuid);
+	if err != nil {
+		return -1, err
+	}
+	    
+	query := `SELECT COUNT(*) FROM accounts a
+  			  JOIN friends f
+  			  ON a.username = f.friend
+			  WHERE a.lastActivity > DATE_SUB(UTC_TIMESTAMP(), INTERVAL 5 MINUTE)
+			  AND f.user = ?;`
+
+	var count int
+	err = handle.QueryRow(query, username).Scan(&count)
+	if err != nil {
+		return -1, err
+	}
+
+	return count, nil
+}

@@ -186,6 +186,34 @@ func handleRemoveFriend(w http.ResponseWriter, r *http.Request) {
 	jsonResponse(w, r, response)
 }
 
+func handleFriendsOnlineStat(w http.ResponseWriter, r *http.Request) {
+	uuid, err := uuidFromRequest(r)
+	if err != nil {
+		httpError(w, r, err, http.StatusBadRequest)
+		return
+	}
+
+	friendsAmount, countErr := db.FriendCount(uuid)
+	if countErr != nil {
+		httpError(w, r, countErr, http.StatusInternalServerError)
+		return
+	}
+
+	friendsOnline, onlineErr := db.FriendOnlineCount(uuid)
+	if onlineErr != nil {
+		httpError(w, r, onlineErr, http.StatusInternalServerError)
+		return
+	}
+
+	stats := defs.FriendsOnlineStats{
+		FriendsOnline: friendsOnline,
+		FriendsAmount: friendsAmount,
+	}
+
+	jsonResponse(w, r, stats)
+}
+
+
 // game
 func handleGameTitleStats(w http.ResponseWriter, r *http.Request) {
 	stats := defs.TitleStats{
