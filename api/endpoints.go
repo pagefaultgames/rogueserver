@@ -132,6 +132,28 @@ func handleAccountLogout(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+func handleAddFriend(w http.ResponseWriter, r *http.Request) {
+	formErr := r.ParseForm()
+	if formErr != nil {
+		httpError(w, r, fmt.Errorf("failed to parse request form: %s", formErr), http.StatusBadRequest)
+		return
+	}
+
+	uuid, err := uuidFromRequest(r)
+	if err != nil {
+		httpError(w, r, err, http.StatusBadRequest)
+		return
+	}
+
+	response, err := db.AddFriend(uuid, r.Form.Get("username"))
+	if err != nil {
+		httpError(w, r, err, http.StatusInternalServerError)
+		return
+	}
+
+	jsonResponse(w, r, response)
+}
+
 // game
 func handleGameTitleStats(w http.ResponseWriter, r *http.Request) {
 	stats := defs.TitleStats{

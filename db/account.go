@@ -264,3 +264,42 @@ func FetchUsernameFromUUID(uuid []byte) (string, error) {
 
 	return username, nil
 }
+
+func isFriendWith(sourceUsername string, friendUsername string) (bool, error) {
+	var result int
+	err := handle.QueryRow("SELECT COUNT(*) FROM friends WHERE user = ? AND friend = ?", sourceUsername, friendUsername).Scan(&result)
+	if err != nil {
+		return false, err
+	}
+
+	return result == 1, nil
+}
+
+func AddFriend(uuid []byte, friendUsername string) (bool, error) {
+	username, err := FetchUsernameFromUUID(uuid);
+	if err != nil {
+		return false, err
+	}
+
+	var doesUserExist int
+	err = handle.QueryRow("SELECT COUNT(*) FROM accounts WHERE username = ?", friendUsername).Scan(&doesUserExist)
+	if err != nil {
+		return false, err
+	}
+
+	if doesUserExist == 0 {
+		return false, fmt.Errorf("User does not exist")
+	}
+
+	alreadyFriends, _ := isFriendWith(username, friendUsername)
+	if alreadyFriends {
+		return false, fmt.Errorf("Already friend with this user")
+	}
+
+	_, err = handle.Exec("INSERT INTO friends (user, friend, since) VALUES (?, ?, UTC_TIMESTAMP())", username, friendUsername)
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
