@@ -269,6 +269,11 @@ func FetchUUIDFromUsername(username string) ([]byte, error) {
 	var uuid []byte
 	err := handle.QueryRow("SELECT uuid FROM accounts WHERE username = ?", username).Scan(&uuid)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			// No rows is not an error in this context, it signifies that the user does not exists
+			// we reserve err for db errors.
+			return uuid, nil
+		}
 		return nil, err
 	}
 
