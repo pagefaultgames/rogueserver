@@ -183,7 +183,8 @@ func setupDb(tx *sql.Tx) error {
 			friend BINARY(16) NOT NULL,
 			since DATE NOT NULL,
 			FOREIGN KEY (user) REFERENCES accounts (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
-			FOREIGN KEY (friend) REFERENCES accounts (uuid) ON DELETE CASCADE ON UPDATE CASCADE
+			FOREIGN KEY (friend) REFERENCES accounts (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
+			UNIQUE (user, friend)
 		)`,
 		`CREATE INDEX IF NOT EXISTS allUserFriends ON friends (user)`,
 	}

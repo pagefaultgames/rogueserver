@@ -23,7 +23,7 @@ import (
 	"fmt"
 	"slices"
 
-	_ "github.com/go-sql-driver/mysql"
+	"github.com/go-sql-driver/mysql"
 	"github.com/pagefaultgames/rogueserver/defs"
 )
 
@@ -280,16 +280,6 @@ func FetchUUIDFromUsername(username string) ([]byte, error) {
 	return uuid, nil
 }
 
-func IsFriendWith(sourceUuid []byte, friendUuid []byte) (bool, error) {
-	var result int
-	err := handle.QueryRow("SELECT COUNT(*) FROM friends WHERE user = ? AND friend = ?", sourceUuid, friendUuid).Scan(&result)
-	if err != nil {
-		return false, err
-	}
-
-	return result == 1, nil
-}
-
 func AddFriend(uuid []byte, friendUsername string) (bool, error) {
 	// We are making db errors more generic as error is used in the response data to the client.
 	friendUuid, err := FetchUUIDFromUsername(friendUsername)
@@ -301,13 +291,12 @@ func AddFriend(uuid []byte, friendUsername string) (bool, error) {
 		return false, fmt.Errorf("User does not exist")
 	}
 
-	alreadyFriends, _ := IsFriendWith(uuid, friendUuid)
-	if alreadyFriends {
-		return false, fmt.Errorf("Already friend with this user")
-	}
-
 	_, err = handle.Exec("INSERT INTO friends (user, friend, since) VALUES (?, ?, UTC_TIMESTAMP())", uuid, friendUuid)
 	if err != nil {
+		var mysqlErr *mysql.MySQLError
+		if errors.As(err, &mysqlErr) && mysqlErr.Number == 1062 {
+			return false, fmt.Errorf("Already friend with this user.")
+		}
 		return false, fmt.Errorf("An error occured, if this persist, please contact an administrator.")
 	}
 
@@ -325,14 +314,18 @@ func RemoveFriend(uuid []byte, friendUsername string) (bool, error) {
 		return false, fmt.Errorf("User does not exist")
 	}
 
-	alreadyFriends, _ := IsFriendWith(uuid, friendUuid)
-	if !alreadyFriends {
-		return false, fmt.Errorf("You are not friend with this user")
+	result, err := handle.Exec("DELETE FROM friends WHERE user = ? AND friend = ?", uuid, friendUuid)
+	if err != nil {
+		return false, fmt.Errorf("An error occured, if this persist, please contact an administrator.")
 	}
 
-	_, err = handle.Exec("DELETE FROM friends WHERE user = ? AND friend = ?", uuid, friendUuid)
+	affected, err := result.RowsAffected()
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("An error occured, if this persist, please contact an administrator.")
+	}
+
+	if affected == 0 {
+		return false, fmt.Errorf("You are not friend with this user.")
 	}
 
 	return true, nil
