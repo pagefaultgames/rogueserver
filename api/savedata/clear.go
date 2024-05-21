@@ -51,7 +51,7 @@ func Clear(uuid []byte, slot int, seed string, save defs.SessionSaveData) (Clear
 		}
 
 		if save.Score >= 20000 {
-			db.SetAccountLimited(uuid, true)
+			db.SetAccountBanned(uuid, true)
 		}
 
 		err = db.AddOrUpdateAccountDailyRun(uuid, save.Score, waveCompleted)
