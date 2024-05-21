@@ -18,9 +18,12 @@
 package account
 
 import (
+	"cmp"
+	"net/http"
 	"regexp"
 	"runtime"
 
+	"github.com/pagefaultgames/rogueserver/errors"
 	"golang.org/x/crypto/argon2"
 )
 
@@ -51,4 +54,23 @@ func deriveArgon2IDKey(password, salt []byte) []byte {
 	defer func() { <-semaphore }()
 
 	return argon2.IDKey(password, salt, ArgonTime, ArgonMemory, ArgonThreads, ArgonKeySize)
+}
+
+func validateUsernamePassword(username string, password string) error {
+	return cmp.Or(validateUsername(username), validatePassword(password))
+}
+
+func validateUsername(username string) error {
+	if !isValidUsername(username) {
+		return errors.NewHttpError(http.StatusBadRequest, "invalid username")
+	}
+	return nil
+}
+
+func validatePassword(password string) error {
+	if len(password) < 6 {
+		return errors.NewHttpError(http.StatusBadRequest, "invalid password")
+	}
+
+	return nil
 }

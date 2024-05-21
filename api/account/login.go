@@ -23,8 +23,10 @@ import (
 	"database/sql"
 	"encoding/base64"
 	"fmt"
+	"net/http"
 
 	"github.com/pagefaultgames/rogueserver/db"
+	"github.com/pagefaultgames/rogueserver/errors"
 )
 
 type LoginResponse GenericAuthResponse
@@ -33,25 +35,21 @@ type LoginResponse GenericAuthResponse
 func Login(username, password string) (LoginResponse, error) {
 	var response LoginResponse
 
-	if !isValidUsername(username) {
-		return response, fmt.Errorf("invalid username")
-	}
-
-	if len(password) < 6 {
-		return response, fmt.Errorf("invalid password")
+	if err := validateUsernamePassword(username, password); err != nil {
+		return response, err
 	}
 
 	key, salt, err := db.FetchAccountKeySaltFromUsername(username)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return response, fmt.Errorf("account doesn't exist")
+			return response, errors.NewHttpError(http.StatusNotFound, "account doesn't exist")
 		}
 
 		return response, err
 	}
 
 	if !bytes.Equal(key, deriveArgon2IDKey([]byte(password), salt)) {
-		return response, fmt.Errorf("password doesn't match")
+		return response, errors.NewHttpError(http.StatusUnauthorized, "password doesn't match")
 	}
 
 	token := make([]byte, TokenSize)
