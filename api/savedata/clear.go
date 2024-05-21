@@ -50,6 +50,10 @@ func Clear(uuid []byte, slot int, seed string, save defs.SessionSaveData) (Clear
 			waveCompleted--
 		}
 
+		if save.Score >= 20000 {
+			db.SetAccountLimited(uuid, true)
+		}
+
 		err = db.AddOrUpdateAccountDailyRun(uuid, save.Score, waveCompleted)
 		if err != nil {
 			log.Printf("failed to add or update daily run record: %s", err)
