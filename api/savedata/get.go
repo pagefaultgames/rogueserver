@@ -44,7 +44,7 @@ func Get(uuid []byte, datatype, slot int) (any, error) {
 			return nil, fmt.Errorf("failed to fetch compensations: %s", err)
 		}
 
-		needsUpdate := false
+		var needsUpdate bool
 		for compensationType, amount := range compensations {
 			system.VoucherCounts[strconv.Itoa(compensationType)] += amount
 			if amount > 0 {
