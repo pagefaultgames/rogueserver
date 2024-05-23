@@ -59,7 +59,7 @@ func handleAccountInfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jsonResponse(w, r, response)
+	writeJSON(w, r, response)
 }
 
 func handleAccountRegister(w http.ResponseWriter, r *http.Request) {
@@ -91,7 +91,7 @@ func handleAccountLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jsonResponse(w, r, response)
+	writeJSON(w, r, response)
 }
 
 func handleAccountChangePW(w http.ResponseWriter, r *http.Request) {
@@ -139,7 +139,7 @@ func handleGameTitleStats(w http.ResponseWriter, r *http.Request) {
 		BattleCount: battleCount,
 	}
 
-	jsonResponse(w, r, stats)
+	writeJSON(w, r, stats)
 }
 
 func handleGameClassicSessionCount(w http.ResponseWriter, r *http.Request) {
@@ -187,7 +187,7 @@ func handleGetSessionData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jsonResponse(w, r, save)
+	writeJSON(w, r, save)
 }
 
 const legacyClientSessionId = "LEGACY_CLIENT"
@@ -237,11 +237,11 @@ func legacyHandleGetSaveData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jsonResponse(w, r, save)
+	writeJSON(w, r, save)
 }
 
 // FIXME UNFINISHED!!!
-func clearSessionData(w http.ResponseWriter, r *http.Request) {
+/*func clearSessionData(w http.ResponseWriter, r *http.Request) {
 	uuid, err := uuidFromRequest(r)
 	if err != nil {
 		httpError(w, r, err, http.StatusBadRequest)
@@ -407,7 +407,7 @@ func deleteSystemSave(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-}
+}*/
 
 func legacyHandleSaveData(w http.ResponseWriter, r *http.Request) {
 	uuid, err := uuidFromRequest(r)
@@ -567,7 +567,7 @@ func legacyHandleSaveData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jsonResponse(w, r, save)
+	writeJSON(w, r, save)
 }
 
 type CombinedSaveData struct {
@@ -699,7 +699,7 @@ func handleSystemVerify(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jsonResponse(w, r, response)
+	writeJSON(w, r, response)
 }
 
 func handleGetSystemData(w http.ResponseWriter, r *http.Request) {
@@ -735,7 +735,7 @@ func handleGetSystemData(w http.ResponseWriter, r *http.Request) {
 	}
 	//TODO apply vouchers
 
-	jsonResponse(w, r, save)
+	writeJSON(w, r, save)
 }
 
 func legacyHandleNewClear(w http.ResponseWriter, r *http.Request) {
@@ -760,7 +760,7 @@ func legacyHandleNewClear(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jsonResponse(w, r, newClear)
+	writeJSON(w, r, newClear)
 }
 
 // daily
@@ -804,7 +804,7 @@ func handleDailyRankings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jsonResponse(w, r, rankings)
+	writeJSON(w, r, rankings)
 }
 
 func handleDailyRankingPageCount(w http.ResponseWriter, r *http.Request) {

@@ -21,11 +21,12 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"log"
+	"net/http"
+
 	"github.com/pagefaultgames/rogueserver/api/account"
 	"github.com/pagefaultgames/rogueserver/api/daily"
 	"github.com/pagefaultgames/rogueserver/db"
-	"log"
-	"net/http"
 )
 
 func Init(mux *http.ServeMux) error {
@@ -86,7 +87,11 @@ func tokenFromRequest(r *http.Request) ([]byte, error) {
 
 func uuidFromRequest(r *http.Request) ([]byte, error) {
 	_, uuid, err := tokenAndUuidFromRequest(r)
-	return uuid, err
+	if err != nil {
+		return nil, err
+	}
+
+	return uuid, nil
 }
 
 func tokenAndUuidFromRequest(r *http.Request) ([]byte, []byte, error) {
@@ -108,7 +113,7 @@ func httpError(w http.ResponseWriter, r *http.Request, err error, code int) {
 	http.Error(w, err.Error(), code)
 }
 
-func jsonResponse(w http.ResponseWriter, r *http.Request, data any) {
+func writeJSON(w http.ResponseWriter, r *http.Request, data any) {
 	w.Header().Set("Content-Type", "application/json")
 	err := json.NewEncoder(w).Encode(data)
 	if err != nil {
