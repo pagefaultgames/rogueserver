@@ -1,0 +1,24 @@
+services:
+    dev:
+        image: mcr.microsoft.com/devcontainers/go:1.22
+        container_name: pokerogue-devcontainer-code
+        volumes:
+            - ../..:/workspaces:cached
+        network_mode: service:db
+        command: sleep infinity
+        depends_on:
+            - db
+
+    db:
+        image: mariadb:11
+        container_name: pokerogue-devcontainer-db
+        restart: on-failure
+        environment:
+            MYSQL_ROOT_PASSWORD: admin
+            MYSQL_DATABASE: pokeroguedb
+            MYSQL_USER: pokerogue
+            MYSQL_PASSWORD: pokerogue
+        ports:
+            - '3306:3306'
+        volumes:
+            - ../.data/db:/var/lib/mysql
