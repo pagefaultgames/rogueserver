@@ -36,10 +36,7 @@ func Init(username, password, protocol, address, database string) error {
 		return fmt.Errorf("failed to open database connection: %s", err)
 	}
 
-	conns := 1024
-	if protocol != "unix" {
-		conns = 256
-	}
+	conns := 128
 
 	handle.SetMaxOpenConns(conns)
 	handle.SetMaxIdleConns(conns / 4)
