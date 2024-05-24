@@ -237,7 +237,7 @@ func IsActiveSession(uuid []byte, clientSessionId string) (bool, error) {
 }
 
 func UpdateActiveSession(uuid []byte, clientSessionId string) error {
-	_, err := handle.Exec("REPLACE INTO activeClientSessions VALUES (?, ?)", uuid, clientSessionId)
+	_, err := handle.Exec("INSERT INTO activeClientSessions (uuid, clientSessionId) VALUES (?, ?) ON DUPLICATE KEY UPDATE clientSessionId = ?", uuid, clientSessionId, clientSessionId)
 	if err != nil {
 		return err
 	}
