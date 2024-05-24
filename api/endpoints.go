@@ -532,7 +532,7 @@ func legacyHandleSaveData(w http.ResponseWriter, r *http.Request) {
 	switch r.URL.Path {
 	case "/savedata/get":
 		save, err = savedata.Get(uuid, datatype, slot)
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		}
