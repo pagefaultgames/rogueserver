@@ -21,7 +21,6 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -36,12 +35,10 @@ func Init(username, password, protocol, address, database string) error {
 		return fmt.Errorf("failed to open database connection: %s", err)
 	}
 
-	conns := 128
+	conns := 64
 
 	handle.SetMaxOpenConns(conns)
-	handle.SetMaxIdleConns(conns / 4)
-
-	handle.SetConnMaxIdleTime(time.Second * 10)
+	handle.SetMaxIdleConns(conns)
 
 	tx, err := handle.Begin()
 	if err != nil {
