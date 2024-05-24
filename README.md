@@ -85,3 +85,7 @@ If you are not aware of Devcontainer please see [here](https://code.visualstudio
 When you start up the container, a dev database is automatically created as well.
 To run your application you can simply use
 > go run rogueserver.go --debug --dbuser pokerogue --dbpass pokerogue
+
+## Connecting to the frontend devcontainer
+You can connect both devcontainer by using the host computer as a bridge.
+(Default host ip: 172.17.0.1 OR host.docker.internal on MacOS / Linux)
