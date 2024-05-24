@@ -80,4 +80,8 @@ Make sure that both 8000 and 8001 are portforwarded on your router.
 
 Test that the server's game and game authentication works from other machines both in and outside of the network. Once this is complete, enjoy!
 
-
+# Developing inside a Container:
+If you are not aware of Devcontainer please see [here](https://code.visualstudio.com/docs/devcontainers/containers)
+When you start up the container, a dev database is automatically created as well.
+To run your application you can simply use
+> go run rogueserver.go --debug --dbuser pokerogue --dbpass pokerogue
