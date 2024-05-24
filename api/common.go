@@ -30,10 +30,13 @@ import (
 )
 
 func Init(mux *http.ServeMux) error {
-	if err := scheduleStatRefresh(); err != nil {
+	err := scheduleStatRefresh()
+	if err != nil {
 		return err
 	}
-	if err := daily.Init(); err != nil {
+
+	err = daily.Init()
+	if err != nil {
 		return err
 	}
 
@@ -65,6 +68,7 @@ func Init(mux *http.ServeMux) error {
 	mux.HandleFunc("GET /daily/seed", handleDailySeed)
 	mux.HandleFunc("GET /daily/rankings", handleDailyRankings)
 	mux.HandleFunc("GET /daily/rankingpagecount", handleDailyRankingPageCount)
+
 	return nil
 }
 
