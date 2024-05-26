@@ -18,8 +18,6 @@
 package daily
 
 import (
-	"log"
-
 	"github.com/pagefaultgames/rogueserver/db"
 )
 
@@ -27,7 +25,7 @@ import (
 func RankingPageCount(category int) (int, error) {
 	pageCount, err := db.FetchRankingPageCount(category)
 	if err != nil {
-		log.Print("failed to retrieve ranking page count")
+		return pageCount, err
 	}
 
 	return pageCount, nil

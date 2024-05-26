@@ -22,6 +22,7 @@ import (
 	"crypto/rand"
 	"database/sql"
 	"encoding/base64"
+	"errors"
 	"fmt"
 
 	"github.com/pagefaultgames/rogueserver/db"
@@ -43,7 +44,7 @@ func Login(username, password string) (LoginResponse, error) {
 
 	key, salt, err := db.FetchAccountKeySaltFromUsername(username)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return response, fmt.Errorf("account doesn't exist")
 		}
 

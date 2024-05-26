@@ -19,11 +19,8 @@ package db
 
 import (
 	"database/sql"
-	"encoding/hex"
 	"fmt"
 	"log"
-	"os"
-	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -38,15 +35,10 @@ func Init(username, password, protocol, address, database string) error {
 		return fmt.Errorf("failed to open database connection: %s", err)
 	}
 
-	conns := 1024
-	if protocol != "unix" {
-		conns = 256
-	}
+	conns := 64
 
 	handle.SetMaxOpenConns(conns)
-	handle.SetMaxIdleConns(conns / 4)
-
-	handle.SetConnMaxIdleTime(time.Second * 10)
+	handle.SetMaxIdleConns(conns)
 
 	tx, err := handle.Begin()
 	if err != nil {
@@ -56,90 +48,13 @@ func Init(username, password, protocol, address, database string) error {
 
 	err = setupDb(tx)
 	if err != nil {
-		_ = tx.Rollback()
+		tx.Rollback()
 		log.Fatal(err)
 	}
 
 	err = tx.Commit()
 	if err != nil {
 		log.Fatal(err)
-	}
-
-	// TODO temp code
-	_, err = os.Stat("userdata")
-
-	if err != nil {
-		if !os.IsNotExist(err) { // not found, do not migrate
-			log.Fatalf("failed to stat userdata directory: %s", err)
-		}
-
-		return nil
-	}
-
-	entries, err := os.ReadDir("userdata")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	for _, entry := range entries {
-		if !entry.IsDir() {
-			continue
-		}
-
-		uuidString := entry.Name()
-		uuid, err := hex.DecodeString(uuidString)
-		if err != nil {
-			log.Printf("failed to decode uuid: %s", err)
-			continue
-		}
-
-		var count int
-		err = handle.QueryRow("SELECT COUNT(*) FROM systemSaveData WHERE uuid = ?", uuid).Scan(&count)
-		if err != nil || count != 0 {
-			continue
-		}
-
-		// store new system data
-		systemData, err := LegacyReadSystemSaveData(uuid)
-		if err != nil {
-			log.Printf("failed to read system save data for %v: %s", uuidString, err)
-			continue
-		}
-
-		err = StoreSystemSaveData(uuid, systemData)
-		if err != nil {
-			log.Fatalf("failed to store system save data for %v: %s\n", uuidString, err)
-		}
-
-		// delete old system data
-		err = os.Remove("userdata/" + uuidString + "/system.pzs")
-		if err != nil {
-			log.Fatalf("failed to remove legacy system save data for %v: %s", uuidString, err)
-		}
-
-		for i := 0; i < 5; i++ {
-			sessionData, err := LegacyReadSessionSaveData(uuid, i)
-			if err != nil {
-				log.Printf("failed to read session save data %v for %v: %s", i, uuidString, err)
-				continue
-			}
-
-			// store new session data
-			err = StoreSessionSaveData(uuid, sessionData, i)
-			if err != nil {
-				log.Fatalf("failed to store session save data for %v: %s\n", uuidString, err)
-			}
-
-			// delete old session data
-			filename := "session"
-			if i != 0 {
-				filename += fmt.Sprintf("%d", i)
-			}
-			err = os.Remove(fmt.Sprintf("userdata/%s/%s.pzs", uuidString, filename))
-			if err != nil {
-				log.Fatalf("failed to remove legacy session save data %v for %v: %s", i, uuidString, err)
-			}
-		}
 	}
 
 	return nil
@@ -169,9 +84,9 @@ func setupDb(tx *sql.Tx) error {
 		`CREATE TABLE IF NOT EXISTS accountDailyRuns (uuid BINARY(16) NOT NULL, date DATE NOT NULL, score INT(11) NOT NULL DEFAULT 0, wave INT(11) NOT NULL DEFAULT 0, timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (uuid, date), CONSTRAINT accountDailyRuns_ibfk_1 FOREIGN KEY (uuid) REFERENCES accounts (uuid) ON DELETE CASCADE ON UPDATE CASCADE, CONSTRAINT accountDailyRuns_ibfk_2 FOREIGN KEY (date) REFERENCES dailyRuns (date) ON DELETE NO ACTION ON UPDATE NO ACTION)`,
 		`CREATE INDEX IF NOT EXISTS accountDailyRunsByDate ON accountDailyRuns (date)`,
 
-		`CREATE TABLE IF NOT EXISTS systemSaveData (uuid BINARY(16) PRIMARY KEY, data LONGBLOB, timestamp TIMESTAMP)`,
+		`CREATE TABLE IF NOT EXISTS systemSaveData (uuid BINARY(16) PRIMARY KEY, data LONGBLOB, timestamp TIMESTAMP, FOREIGN KEY (uuid) REFERENCES accounts (uuid) ON DELETE CASCADE ON UPDATE CASCADE)`,
 
-		`CREATE TABLE IF NOT EXISTS sessionSaveData (uuid BINARY(16), slot TINYINT, data LONGBLOB, timestamp TIMESTAMP, PRIMARY KEY (uuid, slot))`,
+		`CREATE TABLE IF NOT EXISTS sessionSaveData (uuid BINARY(16), slot TINYINT, data LONGBLOB, timestamp TIMESTAMP, PRIMARY KEY (uuid, slot), FOREIGN KEY (uuid) REFERENCES accounts (uuid) ON DELETE CASCADE ON UPDATE CASCADE)`,
 
 		// ----------------------------------
 		// MIGRATION 001

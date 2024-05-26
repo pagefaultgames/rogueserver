@@ -42,6 +42,13 @@ func Update(uuid []byte, slot int, save any) error {
 			return fmt.Errorf("client version out of date")
 		}
 
+		if save.VoucherCounts["0"] > 300 ||
+		save.VoucherCounts["1"] > 150 ||
+		save.VoucherCounts["2"] > 100 ||
+		save.VoucherCounts["3"] > 10 {
+			db.SetAccountBanned(uuid, true)
+		}
+
 		err = db.UpdateAccountStats(uuid, save.GameStats, save.VoucherCounts)
 		if err != nil {
 			return fmt.Errorf("failed to update account stats: %s", err)

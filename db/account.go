@@ -145,6 +145,15 @@ func UpdateAccountStats(uuid []byte, stats defs.GameStats, voucherCounts map[str
 	return nil
 }
 
+func SetAccountBanned(uuid []byte, banned bool) error {
+	_, err := handle.Exec("UPDATE accounts SET banned = ? WHERE uuid = ?", banned, uuid)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func FetchAndClaimAccountCompensations(uuid []byte) (map[int]int, error) {
 	var compensations = make(map[int]int)
 
@@ -210,28 +219,27 @@ func UpdateTrainerIds(trainerId, secretId int, uuid []byte) error {
 	return nil
 }
 
-func IsActiveSession(uuid []byte, clientSessionId string) (bool, error) {
-	var storedId string
-	err := handle.QueryRow("SELECT clientSessionId FROM activeClientSessions WHERE sessions.uuid = ?", uuid).Scan(&storedId)
+func IsActiveSession(uuid []byte, sessionId string) (bool, error) {
+	var id string
+	err := handle.QueryRow("SELECT clientSessionId FROM activeClientSessions WHERE uuid = ?", uuid).Scan(&id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return false, nil
+			err = UpdateActiveSession(uuid, sessionId)
+			if err != nil {
+				return false, err
+			}
+
+			return true, nil
 		}
+
 		return false, err
 	}
-	if storedId == "" {
-		err = UpdateActiveSession(uuid, clientSessionId)
-		if err != nil {
-			return false, err
-		}
-		return true, nil
-	}
 
-	return storedId == clientSessionId, nil
+	return id == "" || id == sessionId, nil
 }
 
 func UpdateActiveSession(uuid []byte, clientSessionId string) error {
-	_, err := handle.Exec("REPLACE INTO activeClientSessions VALUES (?, ?)", uuid, clientSessionId)
+	_, err := handle.Exec("INSERT INTO activeClientSessions (uuid, clientSessionId) VALUES (?, ?) ON DUPLICATE KEY UPDATE clientSessionId = ?", uuid, clientSessionId, clientSessionId)
 	if err != nil {
 		return err
 	}

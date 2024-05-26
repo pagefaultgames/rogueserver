@@ -61,7 +61,7 @@ func handleAccountInfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jsonResponse(w, r, response)
+	writeJSON(w, r, response)
 }
 
 func handleAccountRegister(w http.ResponseWriter, r *http.Request) {
@@ -93,7 +93,7 @@ func handleAccountLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jsonResponse(w, r, response)
+	writeJSON(w, r, response)
 }
 
 func handleAccountChangePW(w http.ResponseWriter, r *http.Request) {
@@ -141,7 +141,7 @@ func handleGameTitleStats(w http.ResponseWriter, r *http.Request) {
 		BattleCount: battleCount,
 	}
 
-	jsonResponse(w, r, stats)
+	writeJSON(w, r, stats)
 }
 
 func handleGameClassicSessionCount(w http.ResponseWriter, r *http.Request) {
@@ -189,7 +189,7 @@ func handleGetSessionData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jsonResponse(w, r, save)
+	writeJSON(w, r, save)
 }
 
 const legacyClientSessionId = "LEGACY_CLIENT"
@@ -239,11 +239,11 @@ func legacyHandleGetSaveData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jsonResponse(w, r, save)
+	writeJSON(w, r, save)
 }
 
 // FIXME UNFINISHED!!!
-func clearSessionData(w http.ResponseWriter, r *http.Request) {
+/*func clearSessionData(w http.ResponseWriter, r *http.Request) {
 	uuid, err := uuidFromRequest(r)
 	if err != nil {
 		httpError(w, r, err, http.StatusBadRequest)
@@ -299,19 +299,19 @@ func clearSessionData(w http.ResponseWriter, r *http.Request) {
 
 	if storedTrainerId > 0 || storedSecretId > 0 {
 		if trainerId != storedTrainerId || secretId != storedSecretId {
-			httpError(w, r, fmt.Errorf("session out of date"), http.StatusBadRequest)
+			httpError(w, r, fmt.Errorf("session out of date: stored trainer or secret ID does not match"), http.StatusBadRequest)
 			return
 		}
 	} else {
 		err = db.UpdateTrainerIds(trainerId, secretId, uuid)
 		if err != nil {
-			httpError(w, r, fmt.Errorf("unable to update traienr ID: %s", err), http.StatusInternalServerError)
+			httpError(w, r, fmt.Errorf("unable to update trainer ID: %s", err), http.StatusInternalServerError)
 			return
 		}
 	}
 
 	if !active {
-		save = savedata.ClearResponse{Error: "session out of date"}
+		save = savedata.ClearResponse{Error: "session out of date: not active"}
 	}
 
 	var seed string
@@ -364,7 +364,7 @@ func deleteSystemSave(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !active {
-		httpError(w, r, fmt.Errorf("session out of date"), http.StatusBadRequest)
+		httpError(w, r, fmt.Errorf("session out of date: not active"), http.StatusBadRequest)
 		return
 	}
 
@@ -392,7 +392,7 @@ func deleteSystemSave(w http.ResponseWriter, r *http.Request) {
 
 	if storedTrainerId > 0 || storedSecretId > 0 {
 		if trainerId != storedTrainerId || secretId != storedSecretId {
-			httpError(w, r, fmt.Errorf("session out of date"), http.StatusBadRequest)
+			httpError(w, r, fmt.Errorf("session out of date: stored trainer or secret ID does not match"), http.StatusBadRequest)
 			return
 		}
 	} else {
@@ -409,7 +409,7 @@ func deleteSystemSave(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-}
+}*/
 
 func legacyHandleSaveData(w http.ResponseWriter, r *http.Request) {
 	uuid, err := uuidFromRequest(r)
@@ -487,7 +487,7 @@ func legacyHandleSaveData(w http.ResponseWriter, r *http.Request) {
 
 		// TODO: make this not suck
 		if !active && r.URL.Path != "/savedata/clear" {
-			httpError(w, r, fmt.Errorf("session out of date"), http.StatusBadRequest)
+			httpError(w, r, fmt.Errorf("session out of date: not active"), http.StatusBadRequest)
 			return
 		}
 
@@ -520,7 +520,7 @@ func legacyHandleSaveData(w http.ResponseWriter, r *http.Request) {
 
 		if storedTrainerId > 0 || storedSecretId > 0 {
 			if trainerId != storedTrainerId || secretId != storedSecretId {
-				httpError(w, r, fmt.Errorf("session out of date"), http.StatusBadRequest)
+				httpError(w, r, fmt.Errorf("session out of date: stored trainer or secret ID does not match"), http.StatusBadRequest)
 				return
 			}
 		} else {
@@ -534,7 +534,7 @@ func legacyHandleSaveData(w http.ResponseWriter, r *http.Request) {
 	switch r.URL.Path {
 	case "/savedata/get":
 		save, err = savedata.Get(uuid, datatype, slot)
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		}
@@ -545,7 +545,7 @@ func legacyHandleSaveData(w http.ResponseWriter, r *http.Request) {
 	case "/savedata/clear":
 		if !active {
 			// TODO: make this not suck
-			save = savedata.ClearResponse{Error: "session out of date"}
+			save = savedata.ClearResponse{Error: "session out of date: not active"}
 			break
 		}
 
@@ -570,7 +570,7 @@ func legacyHandleSaveData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jsonResponse(w, r, save)
+	writeJSON(w, r, save)
 }
 
 type CombinedSaveData struct {
@@ -588,30 +588,25 @@ func handleUpdateAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var clientSessionId string
-	if r.URL.Query().Has("clientSessionId") {
-		clientSessionId = r.URL.Query().Get("clientSessionId")
-	}
-	if clientSessionId == "" {
-		clientSessionId = legacyClientSessionId
-	}
-
 	var data CombinedSaveData
 	err = json.NewDecoder(r.Body).Decode(&data)
 	if err != nil {
 		httpError(w, r, fmt.Errorf("failed to decode request body: %s", err), http.StatusBadRequest)
 		return
 	}
+	if data.ClientSessionId == "" {
+		data.ClientSessionId = legacyClientSessionId
+	}
 
 	var active bool
-	active, err = db.IsActiveSession(uuid, clientSessionId)
+	active, err = db.IsActiveSession(uuid, data.ClientSessionId)
 	if err != nil {
 		httpError(w, r, fmt.Errorf("failed to check active session: %s", err), http.StatusBadRequest)
 		return
 	}
 
 	if !active {
-		httpError(w, r, fmt.Errorf("session out of date"), http.StatusBadRequest)
+		httpError(w, r, fmt.Errorf("session out of date: not active"), http.StatusBadRequest)
 		return
 	}
 
@@ -626,11 +621,11 @@ func handleUpdateAll(w http.ResponseWriter, r *http.Request) {
 
 	if storedTrainerId > 0 || storedSecretId > 0 {
 		if trainerId != storedTrainerId || secretId != storedSecretId {
-			httpError(w, r, fmt.Errorf("session out of date"), http.StatusBadRequest)
+			httpError(w, r, fmt.Errorf("session out of date: stored trainer or secret ID does not match"), http.StatusBadRequest)
 			return
 		}
 	} else {
-		if err := db.UpdateTrainerIds(trainerId, secretId, uuid); err != nil {
+		if err = db.UpdateTrainerIds(trainerId, secretId, uuid); err != nil {
 			httpError(w, r, err, http.StatusInternalServerError)
 			return
 		}
@@ -649,24 +644,23 @@ func handleUpdateAll(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-type SessionVerifyResponse struct {
-	Valid       bool                  `json:"valid"`
-	SessionData *defs.SessionSaveData `json:"sessionData"`
+type SystemVerifyResponse struct {
+	Valid      bool                 `json:"valid"`
+	SystemData *defs.SystemSaveData `json:"systemData"`
 }
 
-type SessionVerifyRequest struct {
+type SystemVerifyRequest struct {
 	ClientSessionId string `json:"clientSessionId"`
-	Slot            int    `json:"slot"`
 }
 
-func handleSessionVerify(w http.ResponseWriter, r *http.Request) {
+func handleSystemVerify(w http.ResponseWriter, r *http.Request) {
 	uuid, err := uuidFromRequest(r)
 	if err != nil {
 		httpError(w, r, err, http.StatusBadRequest)
 		return
 	}
 
-	var input SessionVerifyRequest
+	var input SystemVerifyRequest
 	err = json.NewDecoder(r.Body).Decode(&input)
 	if err != nil {
 		httpError(w, r, fmt.Errorf("failed to decode request body: %s", err), http.StatusBadRequest)
@@ -680,7 +674,7 @@ func handleSessionVerify(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := SessionVerifyResponse{
+	response := SystemVerifyResponse{
 		Valid: active,
 	}
 
@@ -692,17 +686,23 @@ func handleSessionVerify(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		var storedSaveData defs.SessionSaveData
-		storedSaveData, err = db.ReadSessionSaveData(uuid, input.Slot)
+		var storedSaveData defs.SystemSaveData
+		storedSaveData, err = db.ReadSystemSaveData(uuid)
 		if err != nil {
 			httpError(w, r, fmt.Errorf("failed to read session save data: %s", err), http.StatusInternalServerError)
 			return
 		}
 
-		response.SessionData = &storedSaveData
+		response.SystemData = &storedSaveData
 	}
 
-	jsonResponse(w, r, response)
+	err = db.UpdateAccountLastActivity(uuid)
+	if err != nil {
+		httpError(w, r, fmt.Errorf("failed to update account last activity: %s", err), http.StatusInternalServerError)
+		return
+	}
+
+	writeJSON(w, r, response)
 }
 
 func handleGetSystemData(w http.ResponseWriter, r *http.Request) {
@@ -736,8 +736,9 @@ func handleGetSystemData(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
+	//TODO apply vouchers
 
-	jsonResponse(w, r, save)
+	writeJSON(w, r, save)
 }
 
 func legacyHandleNewClear(w http.ResponseWriter, r *http.Request) {
@@ -762,7 +763,7 @@ func legacyHandleNewClear(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jsonResponse(w, r, newClear)
+	writeJSON(w, r, newClear)
 }
 
 // daily
@@ -806,7 +807,7 @@ func handleDailyRankings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jsonResponse(w, r, rankings)
+	writeJSON(w, r, rankings)
 }
 
 func handleDailyRankingPageCount(w http.ResponseWriter, r *http.Request) {

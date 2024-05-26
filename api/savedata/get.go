@@ -44,7 +44,7 @@ func Get(uuid []byte, datatype, slot int) (any, error) {
 			return nil, fmt.Errorf("failed to fetch compensations: %s", err)
 		}
 
-		needsUpdate := false
+		var needsUpdate bool
 		for compensationType, amount := range compensations {
 			system.VoucherCounts[strconv.Itoa(compensationType)] += amount
 			if amount > 0 {
@@ -56,6 +56,10 @@ func Get(uuid []byte, datatype, slot int) (any, error) {
 			err = db.StoreSystemSaveData(uuid, system)
 			if err != nil {
 				return nil, fmt.Errorf("failed to update system save data: %s", err)
+			}
+			err = db.DeleteClaimedAccountCompensations(uuid)
+			if err != nil {
+				return nil, fmt.Errorf("failed to delete claimed compensations: %s", err)
 			}
 
 			err = db.UpdateAccountStats(uuid, system.GameStats, system.VoucherCounts)
