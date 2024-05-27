@@ -18,9 +18,11 @@
 package db
 
 import (
+	"fmt"
 	"math"
 
 	"github.com/pagefaultgames/rogueserver/defs"
+	cache "github.com/pagefaultgames/rogueserver/shared"
 )
 
 func TryAddDailyRun(seed string) (string, error) {
@@ -54,7 +56,11 @@ func AddOrUpdateAccountDailyRun(uuid []byte, score int, wave int) error {
 
 func FetchRankings(category int, page int) ([]defs.DailyRanking, error) {
 	var rankings []defs.DailyRanking
+	cacheKey := fmt.Sprintf("dailyRankings:%d:%d", category, page)
 
+	if cachedRankings, found := cache.Get(cacheKey); found {
+		return cachedRankings.([]defs.DailyRanking), nil
+	}
 	offset := (page - 1) * 10
 
 	var query string
@@ -82,10 +88,17 @@ func FetchRankings(category int, page int) ([]defs.DailyRanking, error) {
 		rankings = append(rankings, ranking)
 	}
 
+	cache.Set(cacheKey, rankings)
+
 	return rankings, nil
 }
 
 func FetchRankingPageCount(category int) (int, error) {
+	cacheKey := fmt.Sprintf("dailyRankingsPageCount:%d", category)
+
+	if cachedPageCount, found := cache.Get(cacheKey); found {
+		return cachedPageCount.(int), nil
+	}
 	var query string
 	switch category {
 	case 0:
@@ -99,6 +112,7 @@ func FetchRankingPageCount(category int) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-
-	return int(math.Ceil(float64(recordCount) / 10)), nil
+	pageCount := int(math.Ceil(float64(recordCount) / 10))
+	cache.Set(cacheKey, pageCount)
+	return pageCount, nil
 }
