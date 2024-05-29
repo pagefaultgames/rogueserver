@@ -1,0 +1,54 @@
+services:
+  server:
+    command: --debug --dbaddr db --dbuser quixomatic --dbpass De3nn8rf! --dbname pokeroguedb
+    image: ghcr.io/pagefaultgames/rogueserver:master
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - internal
+    ports:
+      - "8001:8001"
+
+  db:
+    image: mariadb:11
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "healthcheck.sh", "--su-mysql", "--connect", "--innodb_initialized" ]
+      start_period: 10s
+      start_interval: 10s
+      interval: 1m
+      timeout: 5s
+      retries: 3
+    environment:
+      MYSQL_ROOT_PASSWORD: Pi8vv3uj!
+      MYSQL_DATABASE: pokeroguedb
+      MYSQL_USER: quixomatic
+      MYSQL_PASSWORD: De3nn8rf!
+    volumes:
+      - database:/var/lib/mysql
+    networks:
+      - internal
+
+  # Watchtower is a service that will automatically update your running containers
+  # when a new image is available. This is useful for keeping your server up-to-date.
+  # see https://containrrr.dev/watchtower/ for more information.
+  watchtower:
+    image: containrrr/watchtower
+    container_name: watchtower
+    restart: always
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      WATCHTOWER_CLEANUP: true
+      WATCHTOWER_SCHEDULE: "@midnight"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+
+volumes:
+  database:
+
+networks:
+  internal:
