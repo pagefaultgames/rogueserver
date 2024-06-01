@@ -55,18 +55,25 @@ func Login(username, password string) (LoginResponse, error) {
 		return response, fmt.Errorf("password doesn't match")
 	}
 
-	token := make([]byte, TokenSize)
-	_, err = rand.Read(token)
+	response.Token, err = GenerateTokenForUsername(username)
+
 	if err != nil {
 		return response, fmt.Errorf("failed to generate token: %s", err)
 	}
 
-	err = db.AddAccountSession(username, token)
+	return response, nil
+}
+
+func GenerateTokenForUsername(username string) (string, error) {
+	token := make([]byte, TokenSize)
+	_, err := rand.Read(token)
 	if err != nil {
-		return response, fmt.Errorf("failed to add account session")
+		return "", fmt.Errorf("failed to generate token: %s", err)
 	}
 
-	response.Token = base64.StdEncoding.EncodeToString(token)
-
-	return response, nil
+	err = db.AddAccountSession(username, token)
+	if err != nil {
+		return "", fmt.Errorf("failed to add account session")
+	}
+	return base64.StdEncoding.EncodeToString(token), nil
 }

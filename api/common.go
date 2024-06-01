@@ -65,7 +65,6 @@ func Init(mux *http.ServeMux) error {
 
 	// auth
 	mux.HandleFunc("/auth/{provider}/callback", handleProviderCallback)
-	mux.HandleFunc("/auth/{provider}/link", handleProviderLink)
 	mux.HandleFunc("/auth/{provider}/logout", handleProviderLogout)
 	return nil
 }

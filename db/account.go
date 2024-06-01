@@ -50,7 +50,7 @@ func AddAccountSession(username string, token []byte) error {
 	return nil
 }
 
-func AddDiscordAuthByUsername(discordId []byte, username string) error {
+func AddDiscordIdByUsername(discordId string, username string) error {
 	_, err := handle.Exec("UPDATE accounts SET discordId = ? WHERE username = ?", discordId, username)
 	if err != nil {
 		return err
@@ -59,14 +59,63 @@ func AddDiscordAuthByUsername(discordId []byte, username string) error {
 	return nil
 }
 
-func FetchDiscordIdByUsername(username string) ([]byte, error) {
-	var discordId []byte
+func AddGoogleIdByUsername(googleId string, username string) error {
+	_, err := handle.Exec("UPDATE accounts SET googleId = ? WHERE username = ?", googleId, username)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func FetchUsernameByDiscordId(discordId string) (string, error) {
+	var username string
+	err := handle.QueryRow("SELECT username FROM accounts WHERE discordId = ?", discordId).Scan(&username)
+	if err != nil {
+		return "", err
+	}
+
+	return username, nil
+}
+
+func FetchUsernameByGoogleId(googleId string) (string, error) {
+	var username string
+	err := handle.QueryRow("SELECT username FROM accounts WHERE googleId = ?", googleId).Scan(&username)
+	if err != nil {
+		return "", err
+	}
+
+	return username, nil
+}
+
+func FetchDiscordIdByUsername(username string) (string, error) {
+	var discordId string
 	err := handle.QueryRow("SELECT discordId FROM accounts WHERE username = ?", username).Scan(&discordId)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	return discordId, nil
+}
+
+func FetchGoogleIdByUsername(username string) (string, error) {
+	var googleId string
+	err := handle.QueryRow("SELECT googleId FROM accounts WHERE username = ?", username).Scan(&googleId)
+	if err != nil {
+		return "", err
+	}
+
+	return googleId, nil
+}
+
+func FetchUsernameBySessionToken(token []byte) (string, error) {
+	var username string
+	err := handle.QueryRow("SELECT a.username FROM accounts a JOIN sessions s ON a.uuid = s.uuid WHERE s.token = ?", token).Scan(&username)
+	if err != nil {
+		return "", err
+	}
+
+	return username, nil
 }
 
 func UpdateAccountPassword(uuid, key, salt []byte) error {
@@ -256,4 +305,22 @@ func FetchUsernameFromUUID(uuid []byte) (string, error) {
 	}
 
 	return username, nil
+}
+
+func RemoveDiscordIdByUUID(uuid []byte) error {
+	_, err := handle.Exec("UPDATE accounts SET discordId = NULL WHERE uuid = ?", uuid)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func RemoveGoogleIdByUUID(uuid []byte) error {
+	_, err := handle.Exec("UPDATE accounts SET googleId = NULL WHERE uuid = ?", uuid)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

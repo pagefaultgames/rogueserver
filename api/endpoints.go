@@ -19,14 +19,15 @@ package api
 
 import (
 	"database/sql"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
+	"os"
 	"strconv"
+	"strings"
 
-	"github.com/markbates/goth/gothic"
 	"github.com/pagefaultgames/rogueserver/api/account"
 	"github.com/pagefaultgames/rogueserver/api/daily"
 	"github.com/pagefaultgames/rogueserver/api/savedata"
@@ -39,11 +40,6 @@ import (
 	Handler functions are responsible for checking the validity of this data and returning a result or error.
 	Handlers should not return serialized JSON, instead return the struct itself.
 */
-
-var (
-	user = string("")
-)
-
 // account
 
 func handleAccountInfo(w http.ResponseWriter, r *http.Request) {
@@ -58,13 +54,25 @@ func handleAccountInfo(w http.ResponseWriter, r *http.Request) {
 		httpError(w, r, err, http.StatusInternalServerError)
 		return
 	}
-
-	response, err := account.Info(username, uuid)
+	discordId, err := db.FetchDiscordIdByUsername(username)
+	if err != nil {
+		if !errors.Is(err, sql.ErrNoRows) {
+			httpError(w, r, err, http.StatusInternalServerError)
+			return
+		}
+	}
+	googleId, err := db.FetchGoogleIdByUsername(username)
+	if err != nil {
+		if !errors.Is(err, sql.ErrNoRows) {
+			httpError(w, r, err, http.StatusInternalServerError)
+			return
+		}
+	}
+	response, err := account.Info(username, discordId, googleId, uuid)
 	if err != nil {
 		httpError(w, r, err, http.StatusInternalServerError)
 		return
 	}
-
 	writeJSON(w, r, response)
 }
 
@@ -552,51 +560,100 @@ func handleDailyRankingPageCount(w http.ResponseWriter, r *http.Request) {
 
 // redirect link after authorizing application link
 func handleProviderCallback(w http.ResponseWriter, r *http.Request) {
-	gothic.GetProviderName = func(r *http.Request) (string, error) { return r.PathValue("provider"), nil }
-
-	// called again with code after authorization
-	code := r.URL.Query().Get("code")
-	if code != "" {
-		userId, err := db.FetchDiscordIdByUsername(user)
-		if err != nil {
-
-		}
-		defer http.Redirect(w, r, "http://localhost:8000", http.StatusSeeOther)
+	provider := r.PathValue("provider")
+	state := r.URL.Query().Get("state")
+	gameUrl := os.Getenv("GAME_URL")
+	var externalAuthId string
+	var err error
+	switch provider {
+	case "discord":
+		externalAuthId, err = account.HandleDiscordCallback(w, r)
+	case "google":
+		externalAuthId, err = account.HandleGoogleCallback(w, r)
+	default:
+		http.Error(w, "invalid provider", http.StatusBadRequest)
+		return
 	}
 
-	gothUser, err := gothic.CompleteUserAuth(w, r)
 	if err != nil {
-		log.Println("callback err", w, r)
+		httpError(w, r, err, http.StatusInternalServerError)
 		return
-	} else {
-		err := db.AddDiscordAuthByUsername(gothUser.UserID, user)
+	}
+
+	if state != "" {
+		state = strings.Replace(state, " ", "+", -1)
+		stateByte, err := base64.StdEncoding.DecodeString(state)
 		if err != nil {
-			log.Println("error adding Discord Auth to database")
+			http.Redirect(w, r, gameUrl, http.StatusSeeOther)
 			return
 		}
-	}
-	log.Println("user", gothUser.UserID)
-}
 
-func handleProviderLink(w http.ResponseWriter, r *http.Request) {
-	gothic.GetProviderName = func(r *http.Request) (string, error) { return r.PathValue("provider"), nil }
-	username := r.URL.Query().Get("username")
-	// username recorded prior to authorization
-	if username != "" {
-		user = username
-	}
-	// try to get the user without re-authenticating
-	if gothUser, err := gothic.CompleteUserAuth(w, r); err == nil {
-		log.Print("gothUser:", gothUser.Name)
+		userName, err := db.FetchUsernameBySessionToken(stateByte)
+		if err != nil {
+			http.Redirect(w, r, gameUrl, http.StatusSeeOther)
+			return
+		}
+
+		switch provider {
+		case "discord":
+			err = db.AddDiscordIdByUsername(externalAuthId, userName)
+		case "google":
+			err = db.AddGoogleIdByUsername(externalAuthId, userName)
+		}
+
+		if err != nil {
+			http.Redirect(w, r, gameUrl, http.StatusSeeOther)
+			return
+		}
+
 	} else {
-		gothic.BeginAuthHandler(w, r)
+		var userName string
+		switch provider {
+		case "discord":
+			userName, err = db.FetchUsernameByDiscordId(externalAuthId)
+		case "google":
+			userName, err = db.FetchUsernameByGoogleId(externalAuthId)
+		}
+		if err != nil {
+			http.Redirect(w, r, gameUrl, http.StatusSeeOther)
+			return
+		}
+
+		sessionToken, err := account.GenerateTokenForUsername(userName)
+		if err != nil {
+			http.Redirect(w, r, gameUrl, http.StatusSeeOther)
+			return
+		}
+
+		http.SetCookie(w, &http.Cookie{
+			Name:  "pokerogue_sessionId",
+			Value: sessionToken,
+			Path:  "/",
+		})
 	}
 
+	defer http.Redirect(w, r, gameUrl, http.StatusSeeOther)
 }
 
 func handleProviderLogout(w http.ResponseWriter, r *http.Request) {
-	gothic.GetProviderName = func(r *http.Request) (string, error) { return r.PathValue("provider"), nil }
-	gothic.Logout(w, r)
-	w.Header().Set("Location", "/")
-	w.WriteHeader(http.StatusTemporaryRedirect)
+	uuid, err := uuidFromRequest(r)
+	if err != nil {
+		httpError(w, r, err, http.StatusBadRequest)
+		return
+	}
+
+	switch r.PathValue("provider") {
+	case "discord":
+		err = db.RemoveDiscordIdByUUID(uuid)
+	case "google":
+		err = db.RemoveGoogleIdByUUID(uuid)
+	default:
+		http.Error(w, "invalid provider", http.StatusBadRequest)
+		return
+	}
+	if err != nil {
+		httpError(w, r, err, http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
 }
