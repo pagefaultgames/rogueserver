@@ -71,7 +71,7 @@ func ReadSystemSaveData(uuid []byte) (defs.SystemSaveData, error) {
 
 func StoreSystemSaveData(uuid []byte, data defs.SystemSaveData) error {
 	systemData, err := ReadSystemSaveData(uuid)
-	if err != nil && systemData.Timestamp > data.Timestamp {
+	if err == nil && systemData.Timestamp > data.Timestamp {
 		return errors.New("attempted to save an older system save")
 	}
 
@@ -127,7 +127,7 @@ func GetLatestSessionSaveDataSlot(uuid []byte) (int, error) {
 
 func StoreSessionSaveData(uuid []byte, data defs.SessionSaveData, slot int) error {
 	session, err := ReadSessionSaveData(uuid, slot)
-	if err != nil && session.Seed == data.Seed && session.WaveIndex > data.WaveIndex {
+	if err == nil && session.Seed == data.Seed && session.WaveIndex > data.WaveIndex {
 		return errors.New("attempted to save an older session")
 	}
 
