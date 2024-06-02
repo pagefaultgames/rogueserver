@@ -20,6 +20,7 @@ package db
 import (
 	"bytes"
 	"encoding/gob"
+	"errors"
 
 	"github.com/pagefaultgames/rogueserver/defs"
 )
@@ -120,8 +121,13 @@ func GetLatestSessionSaveDataSlot(uuid []byte) (int, error) {
 }
 
 func StoreSessionSaveData(uuid []byte, data defs.SessionSaveData, slot int) error {
+	session, err := ReadSessionSaveData(uuid, slot)
+	if err != nil && session.Seed == data.Seed && session.WaveIndex > data.WaveIndex {
+		return errors.New("attempted to save an older session")
+	}
+
 	var buf bytes.Buffer
-	err := gob.NewEncoder(&buf).Encode(data)
+	err = gob.NewEncoder(&buf).Encode(data)
 	if err != nil {
 		return err
 	}
