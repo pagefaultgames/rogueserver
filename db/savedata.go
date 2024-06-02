@@ -70,8 +70,13 @@ func ReadSystemSaveData(uuid []byte) (defs.SystemSaveData, error) {
 }
 
 func StoreSystemSaveData(uuid []byte, data defs.SystemSaveData) error {
+	systemData, err := ReadSystemSaveData(uuid)
+	if err != nil && systemData.Timestamp > data.Timestamp {
+		return errors.New("attempted to save an older system save")
+	}
+
 	var buf bytes.Buffer
-	err := gob.NewEncoder(&buf).Encode(data)
+	err = gob.NewEncoder(&buf).Encode(data)
 	if err != nil {
 		return err
 	}
