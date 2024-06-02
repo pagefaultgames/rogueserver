@@ -143,7 +143,7 @@ func handleGameTitleStats(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleGameClassicSessionCount(w http.ResponseWriter, r *http.Request) {
-	_, _ = w.Write([]byte(strconv.Itoa(classicSessionCount)))
+	w.Write([]byte(strconv.Itoa(classicSessionCount)))
 }
 
 func handleGetSessionData(w http.ResponseWriter, r *http.Request) {
@@ -823,5 +823,5 @@ func handleDailyRankingPageCount(w http.ResponseWriter, r *http.Request) {
 		httpError(w, r, err, http.StatusInternalServerError)
 	}
 
-	_, _ = w.Write([]byte(strconv.Itoa(count)))
+	w.Write([]byte(strconv.Itoa(count)))
 }
