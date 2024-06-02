@@ -162,14 +162,12 @@ func handleGetSessionData(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	var clientSessionId string
-	if r.URL.Query().Has("clientSessionId") {
-		clientSessionId = r.URL.Query().Get("clientSessionId")
-	} else {
+	if !r.URL.Query().Has("clientSessionId") {
 		httpError(w, r, fmt.Errorf("missing clientSessionId"), http.StatusBadRequest)
+		return
 	}
 
-	err = db.UpdateActiveSession(uuid, clientSessionId)
+	err = db.UpdateActiveSession(uuid, r.URL.Query().Get("clientSessionId"))
 	if err != nil {
 		httpError(w, r, fmt.Errorf("failed to update active session: %s", err), http.StatusBadRequest)
 		return
@@ -434,10 +432,7 @@ func legacyHandleSaveData(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	var clientSessionId string
-	if r.URL.Query().Has("clientSessionId") {
-		clientSessionId = r.URL.Query().Get("clientSessionId")
-	}
+	clientSessionId := r.URL.Query().Get("clientSessionId")
 	if clientSessionId == "" {
 		clientSessionId = legacyClientSessionId
 	}
@@ -709,14 +704,12 @@ func handleGetSystemData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var clientSessionId string
-	if r.URL.Query().Has("clientSessionId") {
-		clientSessionId = r.URL.Query().Get("clientSessionId")
-	} else {
+	if !r.URL.Query().Has("clientSessionId") {
 		httpError(w, r, fmt.Errorf("missing clientSessionId"), http.StatusBadRequest)
+		return
 	}
 
-	err = db.UpdateActiveSession(uuid, clientSessionId)
+	err = db.UpdateActiveSession(uuid, r.URL.Query().Get("clientSessionId"))
 	if err != nil {
 		httpError(w, r, fmt.Errorf("failed to update active session: %s", err), http.StatusBadRequest)
 		return
