@@ -33,6 +33,8 @@ type SystemSaveData struct {
 	VoucherUnlocks     VoucherUnlocks     `json:"voucherUnlocks"`
 	VoucherCounts      VoucherCounts      `json:"voucherCounts"`
 	Eggs               []EggData          `json:"eggs"`
+	EggPity            []int              `json:"eggPity"`
+	UnlockPity         []int              `json:"unlockPity"`
 	GameVersion        string             `json:"gameVersion"`
 	Timestamp          int                `json:"timestamp"`
 }
