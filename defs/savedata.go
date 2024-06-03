@@ -107,6 +107,7 @@ type SessionSaveData struct {
 	Trainer        TrainerData              `json:"trainer"`
 	GameVersion    string                   `json:"gameVersion"`
 	Timestamp      int                      `json:"timestamp"`
+	TokenVersion   int                      `json:"tokenVersion"`
 }
 
 type GameMode int
