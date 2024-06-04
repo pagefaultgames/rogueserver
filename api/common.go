@@ -58,6 +58,10 @@ func Init(mux *http.ServeMux) error {
 	mux.HandleFunc("POST /savedata/clear", legacyHandleSaveData) // TODO use clearSessionData
 	mux.HandleFunc("GET /savedata/newclear", legacyHandleNewClear)
 
+	//run history
+	mux.HandleFunc("GET /savedata/runHistory", handleGetRunHistory)
+	mux.HandleFunc("POST /savedata/runHistory", handleRunHistory)
+
 	// new session
 	mux.HandleFunc("POST /savedata/updateall", handleUpdateAll)
 	mux.HandleFunc("POST /savedata/system/verify", handleSystemVerify)
