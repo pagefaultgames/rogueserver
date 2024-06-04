@@ -21,6 +21,7 @@ import (
 	"bytes"
 	"encoding/gob"
 	"errors"
+	"time"
 
 	"github.com/pagefaultgames/rogueserver/defs"
 )
@@ -73,6 +74,13 @@ func StoreSystemSaveData(uuid []byte, data defs.SystemSaveData) error {
 	systemData, err := ReadSystemSaveData(uuid)
 	if err == nil && systemData.Timestamp > data.Timestamp {
 		return errors.New("attempted to save an older system save")
+	}
+
+	if data.Timestamp > int(time.Now().UTC().Add(time.Hour*48).UnixMilli()) {
+		return errors.New("attempted to save a future system save")
+	}
+	if data.Timestamp < int(time.Now().UTC().Add(-time.Hour*48).UnixMilli()) {
+		return errors.New("attempted to save a past system save")
 	}
 
 	var buf bytes.Buffer
@@ -129,6 +137,13 @@ func StoreSessionSaveData(uuid []byte, data defs.SessionSaveData, slot int) erro
 	session, err := ReadSessionSaveData(uuid, slot)
 	if err == nil && session.Seed == data.Seed && session.WaveIndex > data.WaveIndex {
 		return errors.New("attempted to save an older session")
+	}
+
+	if data.Timestamp > int(time.Now().UTC().Add(time.Hour*48).UnixMilli()) {
+		return errors.New("attempted to save a future session save")
+	}
+	if data.Timestamp < int(time.Now().UTC().Add(-time.Hour*48).UnixMilli()) {
+		return errors.New("attempted to save a past session save")
 	}
 
 	var buf bytes.Buffer
