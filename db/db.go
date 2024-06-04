@@ -92,6 +92,11 @@ func setupDb(tx *sql.Tx) error {
 
 		`ALTER TABLE sessions DROP COLUMN IF EXISTS active`,
 		`CREATE TABLE IF NOT EXISTS activeClientSessions (uuid BINARY(16) NOT NULL PRIMARY KEY, clientSessionId VARCHAR(32) NOT NULL, FOREIGN KEY (uuid) REFERENCES accounts (uuid) ON DELETE CASCADE ON UPDATE CASCADE)`,
+	
+
+		// ----------------------------------
+		//Migration 002
+		`CREATE TABLE IF NOT EXISTS runHistoryData (uuid BINARY(16) PRIMARY KEY, data LONGBLOB, timestamp TIMESTAMP, FOREIGN KEY (uuid) REFERENCES accounts (uuid) ON DELETE CASCADE ON UPDATE CASCADE)`,
 	}
 
 	for _, q := range queries {
