@@ -139,10 +139,10 @@ func StoreSessionSaveData(uuid []byte, data defs.SessionSaveData, slot int) erro
 		return errors.New("attempted to save an older session")
 	}
 
-	if data.Timestamp > int(time.Now().UTC().Add(time.Hour*48).UnixMilli()) {
+	if int64(data.Timestamp) > int64(time.Now().Add(time.Hour*48).UnixMilli()) {
 		return errors.New("attempted to save a future session save")
 	}
-	if data.Timestamp < int(time.Now().UTC().Add(-time.Hour*48).UnixMilli()) {
+	if int64(data.Timestamp) < int64(time.Now().Add(-time.Hour*48).UnixMilli()) {
 		return errors.New("attempted to save a past session save")
 	}
 
