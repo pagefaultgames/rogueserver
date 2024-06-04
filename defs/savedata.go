@@ -139,3 +139,5 @@ type SessionHistoryData struct {
 }
 
 type SessionHistoryResult int
+
+type RunHistoryData map[int]interface{}

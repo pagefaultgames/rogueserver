@@ -30,6 +30,8 @@ import (
 	"github.com/pagefaultgames/rogueserver/api/savedata"
 	"github.com/pagefaultgames/rogueserver/db"
 	"github.com/pagefaultgames/rogueserver/defs"
+
+	"/api/savedata"
 )
 
 /*
@@ -574,7 +576,7 @@ func handleGetRunHistory(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var runHistory any
-	runHistory, err = savadata.Get(uuid,1);
+	runHistory, err = savedata.GetRunHistoryData(uuid);
 
 	if errors.Is(err, sql.ErrNoRows) {
 		http.Error(w, err.Error(), http.StatusNotFound)
@@ -585,6 +587,7 @@ func handleGetRunHistory(w http.ResponseWriter, r *http.Request) {
 		httpError(w, r, err, http.StatusInternalServerError)
 		return
 	}
+
 	writeJSON(w, r, runHistory)
 }
 
@@ -602,7 +605,7 @@ func handleRunHistory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = db.UpdateRunHistory(uuid, data)
+	err = savedata.UpdateRunHistoryData(uuid, data)
 	if err != nil {
 		httpError(w, r, err, http.StatusInternalServerError)
 		return
