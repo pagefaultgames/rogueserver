@@ -21,6 +21,7 @@ import (
 	"bytes"
 	"encoding/gob"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/pagefaultgames/rogueserver/defs"
@@ -72,15 +73,31 @@ func ReadSystemSaveData(uuid []byte) (defs.SystemSaveData, error) {
 
 func StoreSystemSaveData(uuid []byte, data defs.SystemSaveData) error {
 	systemData, err := ReadSystemSaveData(uuid)
-	if err == nil && systemData.Timestamp > data.Timestamp {
-		return errors.New("attempted to save an older system save")
+
+	currentTime := time.Now()
+	futureTime := currentTime.Add(time.Hour * 24).UnixMilli()
+	pastTime := currentTime.Add(-time.Hour * 24).UnixMilli()
+	if err == nil { // system save exists
+		// Check if the new data timestamp is in the past against the system save but only if the system save is not past 24 hours from now
+		if systemData.Timestamp > data.Timestamp && systemData.Timestamp < int(futureTime) {
+			// Error if the new data timestamp is older than the current system save timestamp
+			errorMessage := fmt.Sprintf("attempted to save an older system save from %s when the current system save is from %s",
+				time.UnixMilli(int64(data.Timestamp)).String(),
+				time.UnixMilli(int64(systemData.Timestamp)).String())
+			return errors.New(errorMessage)
+		}
 	}
 
-	if data.Timestamp > int(time.Now().UTC().Add(time.Hour*48).UnixMilli()) {
-		return errors.New("attempted to save a future system save")
+	// Check if the data.Timestamp is too far in the future
+	if data.Timestamp > int(futureTime) {
+		errorMessage := fmt.Sprintf("attempted to save a system save in the future from %s", time.UnixMilli(int64(data.Timestamp)).String())
+		return errors.New(errorMessage)
 	}
-	if data.Timestamp < int(time.Now().UTC().Add(-time.Hour*48).UnixMilli()) {
-		return errors.New("attempted to save a past system save")
+
+	// Check if the data.Timestamp is too far in the past
+	if data.Timestamp < int(pastTime) {
+		errorMessage := fmt.Sprintf("attempted to save a system save in the past from %s", time.UnixMilli(int64(data.Timestamp)).String())
+		return errors.New(errorMessage)
 	}
 
 	var buf bytes.Buffer
@@ -137,13 +154,6 @@ func StoreSessionSaveData(uuid []byte, data defs.SessionSaveData, slot int) erro
 	session, err := ReadSessionSaveData(uuid, slot)
 	if err == nil && session.Seed == data.Seed && session.WaveIndex > data.WaveIndex {
 		return errors.New("attempted to save an older session")
-	}
-
-	if int64(data.Timestamp) > int64(time.Now().Add(time.Hour*48).UnixMilli()) {
-		return errors.New("attempted to save a future session save")
-	}
-	if int64(data.Timestamp) < int64(time.Now().Add(-time.Hour*48).UnixMilli()) {
-		return errors.New("attempted to save a past session save")
 	}
 
 	var buf bytes.Buffer
