@@ -565,6 +565,52 @@ func legacyHandleSaveData(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, r, save)
 }
 
+//functions for run history
+func handleGetRunHistory(w http.ResponseWriter, r *http.Request) {
+	uuid, err := uuidFromRequest(r)
+	if err != nil {
+		httpError(w, r, err, http.StatusBadRequest)
+		return
+	}
+
+	var runHistory any
+	runHistory, err = db.GetRunHistoryData(uuid);
+
+	if errors.Is(err, sql.ErrNoRows) {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	if err != nil {
+		httpError(w, r, err, http.StatusInternalServerError)
+		return
+	}
+
+	writeJSON(w, r, runHistory)
+}
+
+func handleRunHistory(w http.ResponseWriter, r *http.Request) {
+	uuid, err := uuidFromRequest(r)
+	if err != nil {
+		httpError(w, r, err, http.StatusBadRequest)
+		return
+	}
+
+	var data defs.RunHistoryData
+	err = json.NewDecoder(r.Body).Decode(&data)
+	if err != nil {
+		httpError(w, r, fmt.Errorf("failed to decode request body: %s", err), http.StatusBadRequest)
+		return
+	}
+
+	err = db.UpdateRunHistoryData(uuid, data)
+	if err != nil {
+		httpError(w, r, err, http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
 type CombinedSaveData struct {
 	System          defs.SystemSaveData  `json:"system"`
 	Session         defs.SessionSaveData `json:"session"`
