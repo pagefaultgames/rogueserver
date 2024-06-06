@@ -21,6 +21,8 @@ import (
 	"bytes"
 	"encoding/gob"
 	"errors"
+	"fmt"
+	"time"
 
 	"github.com/pagefaultgames/rogueserver/defs"
 )
@@ -71,8 +73,29 @@ func ReadSystemSaveData(uuid []byte) (defs.SystemSaveData, error) {
 
 func StoreSystemSaveData(uuid []byte, data defs.SystemSaveData) error {
 	systemData, err := ReadSystemSaveData(uuid)
-	if err == nil && systemData.Timestamp > data.Timestamp {
-		return errors.New("attempted to save an older system save")
+
+	currentTime := time.Now()
+	futureTime := currentTime.Add(time.Hour * 24).UnixMilli()
+	pastTime := currentTime.Add(-time.Hour * 24).UnixMilli()
+	if err == nil { // system save exists
+		// Check if the new data timestamp is in the past against the system save but only if the system save is not past 24 hours from now
+		if systemData.Timestamp > data.Timestamp && systemData.Timestamp < int(futureTime) {
+			// Error if the new data timestamp is older than the current system save timestamp
+			return fmt.Errorf("attempted to save an older system save from %d when the current system save is from %d",
+				data.Timestamp,
+				systemData.Timestamp)
+		}
+	}
+
+	// Check if the data.Timestamp is too far in the future
+	if data.Timestamp > int(futureTime) {
+		return fmt.Errorf("attempted to save a system save in the future from %d", data.Timestamp)
+
+	}
+
+	// Check if the data.Timestamp is too far in the past
+	if data.Timestamp < int(pastTime) {
+		return fmt.Errorf("attempted to save a system save in the past from %d", data.Timestamp)
 	}
 
 	var buf bytes.Buffer
