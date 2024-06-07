@@ -586,6 +586,7 @@ func handleUpdateAll(w http.ResponseWriter, r *http.Request) {
 		httpError(w, r, fmt.Errorf("failed to decode request body: %s", err), http.StatusBadRequest)
 		return
 	}
+
 	if data.ClientSessionId == "" {
 		data.ClientSessionId = legacyClientSessionId
 	}
@@ -602,9 +603,6 @@ func handleUpdateAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	trainerId := data.System.TrainerId
-	secretId := data.System.SecretId
-
 	storedTrainerId, storedSecretId, err := db.FetchTrainerIds(uuid)
 	if err != nil {
 		httpError(w, r, err, http.StatusInternalServerError)
@@ -612,12 +610,13 @@ func handleUpdateAll(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if storedTrainerId > 0 || storedSecretId > 0 {
-		if trainerId != storedTrainerId || secretId != storedSecretId {
+		if data.System.TrainerId != storedTrainerId || data.System.SecretId != storedSecretId {
 			httpError(w, r, fmt.Errorf("session out of date: stored trainer or secret ID does not match"), http.StatusBadRequest)
 			return
 		}
 	} else {
-		if err = db.UpdateTrainerIds(trainerId, secretId, uuid); err != nil {
+		err = db.UpdateTrainerIds(data.System.TrainerId, data.System.SecretId, uuid)
+		if err != nil {
 			httpError(w, r, err, http.StatusInternalServerError)
 			return
 		}
@@ -628,11 +627,13 @@ func handleUpdateAll(w http.ResponseWriter, r *http.Request) {
 		httpError(w, r, err, http.StatusInternalServerError)
 		return
 	}
+
 	err = savedata.Update(uuid, 0, data.System)
 	if err != nil {
 		httpError(w, r, err, http.StatusInternalServerError)
 		return
 	}
+
 	w.WriteHeader(http.StatusOK)
 }
 
