@@ -48,6 +48,6 @@ func Delete(uuid []byte, datatype, slot int) error {
 	if err != nil {
 		return err
 	}
-	
+
 	return nil
 }
