@@ -217,7 +217,7 @@ const legacyClientSessionId = "LEGACY_CLIENT"
 	save = session
 
 	var active bool
-	active, err = db.IsActiveSession(uuid, legacyClientSessionId) //TODO unfinished, read token from query
+	active, err = db.IsActiveSession(uuid, legacyClientSessionId) // TODO: unfinished, read token from query
 	if err != nil {
 		httpError(w, r, fmt.Errorf("failed to check active session: %s", err), http.StatusBadRequest)
 		return
@@ -304,7 +304,7 @@ func deleteSystemSave(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var active bool
-	active, err = db.IsActiveSession(uuid, legacyClientSessionId) //TODO unfinished, read token from query
+	active, err = db.IsActiveSession(uuid, legacyClientSessionId) // TODO: unfinished, read token from query
 	if err != nil {
 		httpError(w, r, fmt.Errorf("failed to check active session: %s", err), http.StatusInternalServerError)
 		return
@@ -662,7 +662,7 @@ func handleGetSystemData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//TODO apply vouchers
+	// TODO: apply vouchers
 
 	writeJSON(w, r, save)
 }

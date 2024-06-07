@@ -14,7 +14,7 @@ func System(uuid []byte) (defs.SystemSaveData, error) {
 		return system, err
 	}
 
-	// TODO this should be a transaction
+	// TODO: this should be a transaction
 	compensations, err := db.FetchAndClaimAccountCompensations(uuid)
 	if err != nil {
 		return system, fmt.Errorf("failed to fetch compensations: %s", err)
