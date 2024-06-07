@@ -107,6 +107,13 @@ type SessionSaveData struct {
 	Trainer        TrainerData              `json:"trainer"`
 	GameVersion    string                   `json:"gameVersion"`
 	Timestamp      int                      `json:"timestamp"`
+	Challenges     []ChallengeData          `json:"challenges"`
+}
+
+type ChallengeData struct {
+	Id       int `json:"id"`
+	Value    int `json:"value"`
+	Severity int `json:"severity"`
 }
 
 type GameMode int
