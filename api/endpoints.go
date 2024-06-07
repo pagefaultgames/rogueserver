@@ -575,7 +575,6 @@ func handleGetRunHistory(w http.ResponseWriter, r *http.Request) {
 
 	var runHistory any
 	runHistory, err = db.GetRunHistoryData(uuid);
-
 	if errors.Is(err, sql.ErrNoRows) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
