@@ -161,6 +161,7 @@ func handleSession(w http.ResponseWriter, r *http.Request) {
 
 	if slot < 0 || slot >= defs.SessionSlotCount {
 		httpError(w, r, fmt.Errorf("slot id %d out of range", slot), http.StatusBadRequest)
+		return
 	}
 
 	if !r.URL.Query().Has("clientSessionId") {
