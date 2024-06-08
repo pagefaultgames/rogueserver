@@ -43,7 +43,7 @@ import (
 func handleAccountInfo(w http.ResponseWriter, r *http.Request) {
 	uuid, err := uuidFromRequest(r)
 	if err != nil {
-		httpError(w, r, err, http.StatusBadRequest)
+		httpError(w, r, err, http.StatusUnauthorized)
 		return
 	}
 
@@ -103,7 +103,7 @@ func handleAccountChangePW(w http.ResponseWriter, r *http.Request) {
 
 	uuid, err := uuidFromRequest(r)
 	if err != nil {
-		httpError(w, r, err, http.StatusBadRequest)
+		httpError(w, r, err, http.StatusUnauthorized)
 		return
 	}
 
@@ -125,7 +125,8 @@ func handleAccountLogout(w http.ResponseWriter, r *http.Request) {
 
 	err = account.Logout(token)
 	if err != nil {
-		httpError(w, r, err, http.StatusInternalServerError)
+		// also possible for InternalServerError but that's unlikely unless the server blew up
+		httpError(w, r, err, http.StatusUnauthorized)
 		return
 	}
 
@@ -149,7 +150,7 @@ func handleGameClassicSessionCount(w http.ResponseWriter, r *http.Request) {
 func handleSession(w http.ResponseWriter, r *http.Request) {
 	uuid, err := uuidFromRequest(r)
 	if err != nil {
-		httpError(w, r, err, http.StatusBadRequest)
+		httpError(w, r, err, http.StatusUnauthorized)
 		return
 	}
 
@@ -221,7 +222,7 @@ const legacyClientSessionId = "LEGACY_CLIENT"
 /*func clearSessionData(w http.ResponseWriter, r *http.Request) {
 	uuid, err := uuidFromRequest(r)
 	if err != nil {
-		httpError(w, r, err, http.StatusBadRequest)
+		httpError(w, r, err, http.StatusUnauthorized)
 		return
 	}
 
@@ -309,7 +310,7 @@ const legacyClientSessionId = "LEGACY_CLIENT"
 func legacyHandleSaveData(w http.ResponseWriter, r *http.Request) {
 	uuid, err := uuidFromRequest(r)
 	if err != nil {
-		httpError(w, r, err, http.StatusBadRequest)
+		httpError(w, r, err, http.StatusUnauthorized)
 		return
 	}
 
@@ -459,7 +460,7 @@ type CombinedSaveData struct {
 func handleUpdateAll(w http.ResponseWriter, r *http.Request) {
 	uuid, err := uuidFromRequest(r)
 	if err != nil {
-		httpError(w, r, err, http.StatusBadRequest)
+		httpError(w, r, err, http.StatusUnauthorized)
 		return
 	}
 
@@ -532,7 +533,7 @@ type SystemVerifyResponse struct {
 func handleSystemVerify(w http.ResponseWriter, r *http.Request) {
 	uuid, err := uuidFromRequest(r)
 	if err != nil {
-		httpError(w, r, err, http.StatusBadRequest)
+		httpError(w, r, err, http.StatusUnauthorized)
 		return
 	}
 
@@ -584,7 +585,7 @@ func handleSystemVerify(w http.ResponseWriter, r *http.Request) {
 func handleSystem(w http.ResponseWriter, r *http.Request) {
 	uuid, err := uuidFromRequest(r)
 	if err != nil {
-		httpError(w, r, err, http.StatusBadRequest)
+		httpError(w, r, err, http.StatusUnauthorized)
 		return
 	}
 
@@ -644,7 +645,7 @@ func handleSystem(w http.ResponseWriter, r *http.Request) {
 func legacyHandleNewClear(w http.ResponseWriter, r *http.Request) {
 	uuid, err := uuidFromRequest(r)
 	if err != nil {
-		httpError(w, r, err, http.StatusBadRequest)
+		httpError(w, r, err, http.StatusUnauthorized)
 		return
 	}
 
