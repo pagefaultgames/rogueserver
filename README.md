@@ -18,7 +18,7 @@ docker build . -t rogueserver
 The docker compose file should automatically implement a container with mariadb with an empty database and the default user and password combo of pokerogue:pokerogue
 
 ### .env and .env.development (in pokerogue)
-Replace both URLs (one on each line) with the local API server address from rogueserver.go (0.0.0.0:8001) (or whatever port you picked)
+Replace the URL on VITE_SERVER_URL in both files to match your local ip and port of rogueserver if nessessary
 
 # If you are on Windows
 
