@@ -1,7 +1,7 @@
 services:
   server:
     command: --debug --dbaddr db --dbuser pokerogue --dbpass pokerogue --dbname pokeroguedb
-    image: ghcr.io/pagefaultgames/rogueserver:master
+    image: rogueserver:latest
     restart: unless-stopped
     depends_on:
       db:
