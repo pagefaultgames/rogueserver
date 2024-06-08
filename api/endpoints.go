@@ -519,13 +519,13 @@ func handleUpdateAll(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+type SystemVerifyRequest struct {
+	ClientSessionId string `json:"clientSessionId"`
+}
+
 type SystemVerifyResponse struct {
 	Valid      bool                 `json:"valid"`
 	SystemData *defs.SystemSaveData `json:"systemData"`
-}
-
-type SystemVerifyRequest struct {
-	ClientSessionId string `json:"clientSessionId"`
 }
 
 func handleSystemVerify(w http.ResponseWriter, r *http.Request) {
