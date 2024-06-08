@@ -153,13 +153,14 @@ func handleSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var slot int
-	if r.URL.Query().Has("slot") {
-		slot, err = strconv.Atoi(r.URL.Query().Get("slot"))
-		if err != nil {
-			httpError(w, r, err, http.StatusBadRequest)
-			return
-		}
+	slot, err := strconv.Atoi(r.URL.Query().Get("slot"))
+	if err != nil {
+		httpError(w, r, err, http.StatusBadRequest)
+		return
+	}
+
+	if slot < 0 || slot >= defs.SessionSlotCount {
+		httpError(w, r, fmt.Errorf("slot id %d out of range", slot), http.StatusBadRequest)
 	}
 
 	if !r.URL.Query().Has("clientSessionId") {
@@ -180,12 +181,12 @@ func handleSession(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		}
-	
+
 		if err != nil {
 			httpError(w, r, err, http.StatusInternalServerError)
 			return
 		}
-	
+
 		writeJSON(w, r, save)
 	case "PUT":
 		var session defs.SessionSaveData
@@ -606,12 +607,12 @@ func handleSystem(w http.ResponseWriter, r *http.Request) {
 			} else {
 				httpError(w, r, err, http.StatusInternalServerError)
 			}
-	
+
 			return
 		}
-	
+
 		// TODO: apply vouchers
-	
+
 		writeJSON(w, r, save)
 	case "PUT":
 		var system defs.SystemSaveData

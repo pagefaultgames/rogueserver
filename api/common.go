@@ -53,8 +53,8 @@ func Init(mux *http.ServeMux) error {
 
 	// savedata
 	mux.HandleFunc("POST /savedata/update", legacyHandleSaveData) // DEPRECATED: use PUT method
-	mux.HandleFunc("GET /savedata/delete", legacyHandleSaveData) // DEPRECATED: use DELETE method
-	mux.HandleFunc("POST /savedata/clear", legacyHandleSaveData) // TODO: use clearSessionData
+	mux.HandleFunc("GET /savedata/delete", legacyHandleSaveData)  // DEPRECATED: use DELETE method
+	mux.HandleFunc("POST /savedata/clear", legacyHandleSaveData)  // TODO: use clearSessionData
 	mux.HandleFunc("GET /savedata/newclear", legacyHandleNewClear)
 
 	// new session
