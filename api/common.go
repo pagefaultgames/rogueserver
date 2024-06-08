@@ -52,16 +52,23 @@ func Init(mux *http.ServeMux) error {
 	mux.HandleFunc("GET /game/classicsessioncount", handleGameClassicSessionCount)
 
 	// savedata
-	mux.HandleFunc("POST /savedata/update", legacyHandleSaveData)
-	mux.HandleFunc("GET /savedata/delete", legacyHandleSaveData) // TODO: use deleteSystemSave
+	mux.HandleFunc("POST /savedata/update", legacyHandleSaveData) // DEPRECATED: use PUT method
+	mux.HandleFunc("GET /savedata/delete", legacyHandleSaveData) // DEPRECATED: use DELETE method
 	mux.HandleFunc("POST /savedata/clear", legacyHandleSaveData) // TODO: use clearSessionData
 	mux.HandleFunc("GET /savedata/newclear", legacyHandleNewClear)
 
 	// new session
-	mux.HandleFunc("POST /savedata/updateall", handleUpdateAll)
+	mux.HandleFunc("POST /savedata/updateall", handleUpdateAll) // DEPRECATED: use PUT method
+	mux.HandleFunc("PUT /savedata/updateall", handleUpdateAll)
+
+	mux.HandleFunc("GET /savedata/system", handleSystem)
+	mux.HandleFunc("PUT /savedata/system", handleSystem)
+	mux.HandleFunc("DELETE /savedata/system", handleSystem)
 	mux.HandleFunc("POST /savedata/system/verify", handleSystemVerify)
-	mux.HandleFunc("GET /savedata/system", handleGetSystemData)
-	mux.HandleFunc("GET /savedata/session", handleGetSessionData)
+
+	mux.HandleFunc("GET /savedata/session", handleSession)
+	mux.HandleFunc("PUT /savedata/session", handleSession)
+	mux.HandleFunc("DELETE /savedata/session", handleSession)
 
 	// daily
 	mux.HandleFunc("GET /daily/seed", handleDailySeed)

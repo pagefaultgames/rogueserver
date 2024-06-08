@@ -33,8 +33,6 @@ func Delete(uuid []byte, datatype, slot int) error {
 	}
 
 	switch datatype {
-	case 0: // System
-		err = db.DeleteSystemSaveData(uuid)
 	case 1: // Session
 		if slot < 0 || slot >= defs.SessionSlotCount {
 			err = fmt.Errorf("slot id %d out of range", slot)
