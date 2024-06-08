@@ -13,6 +13,7 @@ There is a sample docker-compose file for setting up a docker container to setup
 ## Installation:
 ```
 docker build . -t rogueserver
+docker compose -f docker.compose.Example.yml up -d
 ```
 
 The docker compose file should automatically implement a container with mariadb with an empty database and the default user and password combo of pokerogue:pokerogue
