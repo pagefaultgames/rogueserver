@@ -479,15 +479,18 @@ func handleSystem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !r.URL.Query().Has("clientSessionId") {
-		httpError(w, r, fmt.Errorf("missing clientSessionId"), http.StatusBadRequest)
-		return
-	}
-
-	active, err := db.IsActiveSession(uuid, r.URL.Query().Get("clientSessionId"))
-	if err != nil {
-		httpError(w, r, fmt.Errorf("failed to check active session: %s", err), http.StatusBadRequest)
-		return
+	var active bool
+	if r.URL.Path != "/savedata/system/verify" {
+		if !r.URL.Query().Has("clientSessionId") {
+			httpError(w, r, fmt.Errorf("missing clientSessionId"), http.StatusBadRequest)
+			return
+		}
+	
+		active, err = db.IsActiveSession(uuid, r.URL.Query().Get("clientSessionId"))
+		if err != nil {
+			httpError(w, r, fmt.Errorf("failed to check active session: %s", err), http.StatusBadRequest)
+			return
+		}
 	}
 
 	switch r.PathValue("action") {
@@ -536,12 +539,20 @@ func handleSystem(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
 	case "verify":
 		var input SystemVerifyRequest
-		err = json.NewDecoder(r.Body).Decode(&input)
-		if err != nil {
-			httpError(w, r, fmt.Errorf("failed to decode request body: %s", err), http.StatusBadRequest)
-			return
+		if !r.URL.Query().Has("clientSessionId") {
+			err = json.NewDecoder(r.Body).Decode(&input)
+			if err != nil {
+				httpError(w, r, fmt.Errorf("failed to decode request body: %s", err), http.StatusBadRequest)
+				return
+			}
+		} else {
+			active, err = db.IsActiveSession(uuid, r.URL.Query().Get("clientSessionId"))
+			if err != nil {
+				httpError(w, r, fmt.Errorf("failed to check active session: %s", err), http.StatusBadRequest)
+				return
+			}
 		}
-
+	
 		response := SystemVerifyResponse{
 			Valid: active,
 		}
