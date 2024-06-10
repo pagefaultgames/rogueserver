@@ -176,8 +176,10 @@ func handleSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	switch r.Method {
-	case "GET":
+	switch r.PathValue("action") {
+	default:
+		fallthrough
+	case "get":
 		save, err := savedata.GetSession(uuid, slot)
 		if errors.Is(err, sql.ErrNoRows) {
 			http.Error(w, err.Error(), http.StatusNotFound)
@@ -190,7 +192,7 @@ func handleSession(w http.ResponseWriter, r *http.Request) {
 		}
 
 		writeJSON(w, r, save)
-	case "PUT":
+	case "update":
 		var session defs.SessionSaveData
 		err = json.NewDecoder(r.Body).Decode(&session)
 		if err != nil {
@@ -204,108 +206,48 @@ func handleSession(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		w.WriteHeader(http.StatusNoContent)
-	case "DELETE":
+		w.WriteHeader(http.StatusOK)
+	case "clear":
+		var session defs.SessionSaveData
+		err = json.NewDecoder(r.Body).Decode(&session)
+		if err != nil {
+			httpError(w, r, fmt.Errorf("failed to decode request body: %s", err), http.StatusBadRequest)
+			return
+		}
+
+		seed, err := db.GetDailyRunSeed()
+		if err != nil {
+			httpError(w, r, err, http.StatusInternalServerError)
+			return
+		}
+
+		resp, err := savedata.Clear(uuid, slot, seed, session)
+		if err != nil {
+			httpError(w, r, err, http.StatusInternalServerError)
+			return
+		}
+
+		writeJSON(w, r, resp)
+	case "newclear":
+		resp, err := savedata.NewClear(uuid, slot)
+		if err != nil {
+			httpError(w, r, fmt.Errorf("failed to read new clear: %s", err), http.StatusInternalServerError)
+			return
+		}
+
+		writeJSON(w, r, resp)
+	case "delete":
 		err := savedata.DeleteSession(uuid, slot)
 		if err != nil {
 			httpError(w, r, err, http.StatusInternalServerError)
 			return
 		}
 
-		w.WriteHeader(http.StatusNoContent)
+		w.WriteHeader(http.StatusOK)
 	}
 }
 
 const legacyClientSessionId = "LEGACY_CLIENT"
-
-// FIXME UNFINISHED!!!
-/*func clearSessionData(w http.ResponseWriter, r *http.Request) {
-	uuid, err := uuidFromRequest(r)
-	if err != nil {
-		httpError(w, r, err, http.StatusUnauthorized)
-		return
-	}
-
-	var slot int
-	if r.URL.Query().Has("slot") {
-		slot, err = strconv.Atoi(r.URL.Query().Get("slot"))
-		if err != nil {
-			httpError(w, r, err, http.StatusBadRequest)
-			return
-		}
-	}
-
-	var save any
-	var session defs.SessionSaveData
-	err = json.NewDecoder(r.Body).Decode(&session)
-	if err != nil {
-		httpError(w, r, fmt.Errorf("failed to decode request body: %s", err), http.StatusBadRequest)
-		return
-	}
-
-	save = session
-
-	var active bool
-	active, err = db.IsActiveSession(uuid, legacyClientSessionId) // TODO: unfinished, read token from query
-	if err != nil {
-		httpError(w, r, fmt.Errorf("failed to check active session: %s", err), http.StatusBadRequest)
-		return
-	}
-
-	var trainerId, secretId int
-	if r.URL.Query().Has("trainerId") && r.URL.Query().Has("secretId") {
-		trainerId, err = strconv.Atoi(r.URL.Query().Get("trainerId"))
-		if err != nil {
-			httpError(w, r, err, http.StatusBadRequest)
-			return
-		}
-
-		secretId, err = strconv.Atoi(r.URL.Query().Get("secretId"))
-		if err != nil {
-			httpError(w, r, err, http.StatusBadRequest)
-			return
-		}
-	}
-
-	storedTrainerId, storedSecretId, err := db.FetchTrainerIds(uuid)
-	if err != nil {
-		httpError(w, r, err, http.StatusInternalServerError)
-		return
-	}
-
-	if storedTrainerId > 0 || storedSecretId > 0 {
-		if trainerId != storedTrainerId || secretId != storedSecretId {
-			httpError(w, r, fmt.Errorf("session out of date: stored trainer or secret ID does not match"), http.StatusBadRequest)
-			return
-		}
-	} else {
-		err = db.UpdateTrainerIds(trainerId, secretId, uuid)
-		if err != nil {
-			httpError(w, r, fmt.Errorf("unable to update trainer ID: %s", err), http.StatusInternalServerError)
-			return
-		}
-	}
-
-	if !active {
-		save = savedata.ClearResponse{Error: "session out of date: not active"}
-	}
-
-	var seed string
-	seed, err = db.GetDailyRunSeed()
-	if err != nil {
-		httpError(w, r, err, http.StatusInternalServerError)
-		return
-	}
-
-	response, err := savedata.Clear(uuid, slot, seed, save.(defs.SessionSaveData))
-	if err != nil {
-		httpError(w, r, err, http.StatusInternalServerError)
-		return
-	}
-
-	jsonResponse(w, r, response)
-}
-*/
 
 func legacyHandleSaveData(w http.ResponseWriter, r *http.Request) {
 	uuid, err := uuidFromRequest(r)
@@ -526,60 +468,8 @@ type SystemVerifyRequest struct {
 }
 
 type SystemVerifyResponse struct {
-	Valid      bool                 `json:"valid"`
-	SystemData *defs.SystemSaveData `json:"systemData"`
-}
-
-func handleSystemVerify(w http.ResponseWriter, r *http.Request) {
-	uuid, err := uuidFromRequest(r)
-	if err != nil {
-		httpError(w, r, err, http.StatusUnauthorized)
-		return
-	}
-
-	var input SystemVerifyRequest
-	err = json.NewDecoder(r.Body).Decode(&input)
-	if err != nil {
-		httpError(w, r, fmt.Errorf("failed to decode request body: %s", err), http.StatusBadRequest)
-		return
-	}
-
-	var active bool
-	active, err = db.IsActiveSession(uuid, input.ClientSessionId)
-	if err != nil {
-		httpError(w, r, fmt.Errorf("failed to check active session: %s", err), http.StatusBadRequest)
-		return
-	}
-
-	response := SystemVerifyResponse{
-		Valid: active,
-	}
-
-	// not valid, send server state
-	if !active {
-		err = db.UpdateActiveSession(uuid, input.ClientSessionId)
-		if err != nil {
-			httpError(w, r, fmt.Errorf("failed to update active session: %s", err), http.StatusBadRequest)
-			return
-		}
-
-		var storedSaveData defs.SystemSaveData
-		storedSaveData, err = db.ReadSystemSaveData(uuid)
-		if err != nil {
-			httpError(w, r, fmt.Errorf("failed to read session save data: %s", err), http.StatusInternalServerError)
-			return
-		}
-
-		response.SystemData = &storedSaveData
-	}
-
-	err = db.UpdateAccountLastActivity(uuid)
-	if err != nil {
-		httpError(w, r, fmt.Errorf("failed to update account last activity: %s", err), http.StatusInternalServerError)
-		return
-	}
-
-	writeJSON(w, r, response)
+	Valid      bool                `json:"valid"`
+	SystemData defs.SystemSaveData `json:"systemData"`
 }
 
 func handleSystem(w http.ResponseWriter, r *http.Request) {
@@ -594,14 +484,24 @@ func handleSystem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = db.UpdateActiveSession(uuid, r.URL.Query().Get("clientSessionId"))
+	active, err := db.IsActiveSession(uuid, r.URL.Query().Get("clientSessionId"))
 	if err != nil {
-		httpError(w, r, fmt.Errorf("failed to update active session: %s", err), http.StatusBadRequest)
+		httpError(w, r, fmt.Errorf("failed to check active session: %s", err), http.StatusBadRequest)
 		return
 	}
 
-	switch r.Method {
-	case "GET":
+	switch r.PathValue("action") {
+	default:
+		fallthrough
+	case "get":
+		if !active {
+			err = db.UpdateActiveSession(uuid, r.URL.Query().Get("clientSessionId"))
+			if err != nil {
+				httpError(w, r, fmt.Errorf("failed to update active session: %s", err), http.StatusBadRequest)
+				return
+			}
+		}
+
 		save, err := savedata.GetSystem(uuid)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
@@ -613,10 +513,13 @@ func handleSystem(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// TODO: apply vouchers
-
 		writeJSON(w, r, save)
-	case "PUT":
+	case "update":
+		if !active {
+			httpError(w, r, fmt.Errorf("session out of date: not active"), http.StatusBadRequest)
+			return
+		}
+
 		var system defs.SystemSaveData
 		err = json.NewDecoder(r.Body).Decode(&system)
 		if err != nil {
@@ -631,14 +534,45 @@ func handleSystem(w http.ResponseWriter, r *http.Request) {
 		}
 
 		w.WriteHeader(http.StatusNoContent)
-	case "DELETE":
+	case "verify":
+		var input SystemVerifyRequest
+		err = json.NewDecoder(r.Body).Decode(&input)
+		if err != nil {
+			httpError(w, r, fmt.Errorf("failed to decode request body: %s", err), http.StatusBadRequest)
+			return
+		}
+
+		response := SystemVerifyResponse{
+			Valid: active,
+		}
+
+		// not valid, send server state
+		if !active {
+			err = db.UpdateActiveSession(uuid, input.ClientSessionId)
+			if err != nil {
+				httpError(w, r, fmt.Errorf("failed to update active session: %s", err), http.StatusBadRequest)
+				return
+			}
+
+			var storedSaveData defs.SystemSaveData
+			storedSaveData, err = db.ReadSystemSaveData(uuid)
+			if err != nil {
+				httpError(w, r, fmt.Errorf("failed to read session save data: %s", err), http.StatusInternalServerError)
+				return
+			}
+
+			response.SystemData = storedSaveData
+		}
+
+		writeJSON(w, r, response)
+	case "delete":
 		err := savedata.DeleteSystem(uuid)
 		if err != nil {
 			httpError(w, r, err, http.StatusInternalServerError)
 			return
 		}
 
-		w.WriteHeader(http.StatusNoContent)
+		w.WriteHeader(http.StatusOK)
 	}
 }
 
