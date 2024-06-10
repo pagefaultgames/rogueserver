@@ -545,6 +545,12 @@ func handleSystem(w http.ResponseWriter, r *http.Request) {
 				httpError(w, r, fmt.Errorf("failed to decode request body: %s", err), http.StatusBadRequest)
 				return
 			}
+
+			active, err = db.IsActiveSession(uuid, input.ClientSessionId)
+			if err != nil {
+				httpError(w, r, fmt.Errorf("failed to check active session: %s", err), http.StatusBadRequest)
+				return
+			}
 		} else {
 			active, err = db.IsActiveSession(uuid, r.URL.Query().Get("clientSessionId"))
 			if err != nil {
