@@ -81,23 +81,21 @@ func StoreSystemSaveData(uuid []byte, data defs.SystemSaveData) error {
 		// Check if the new data timestamp is in the past against the system save but only if the system save is not past 24 hours from now
 		if systemData.Timestamp > data.Timestamp && systemData.Timestamp < int(futureTime) {
 			// Error if the new data timestamp is older than the current system save timestamp
-			errorMessage := fmt.Sprintf("attempted to save an older system save from %s when the current system save is from %s",
-				time.UnixMilli(int64(data.Timestamp)).String(),
-				time.UnixMilli(int64(systemData.Timestamp)).String())
-			return errors.New(errorMessage)
+			return fmt.Errorf("attempted to save an older system save from %d when the current system save is from %d",
+				data.Timestamp,
+				systemData.Timestamp)
 		}
 	}
 
 	// Check if the data.Timestamp is too far in the future
 	if data.Timestamp > int(futureTime) {
-		errorMessage := fmt.Sprintf("attempted to save a system save in the future from %s", time.UnixMilli(int64(data.Timestamp)).String())
-		return errors.New(errorMessage)
+		return fmt.Errorf("attempted to save a system save in the future from %d", data.Timestamp)
+
 	}
 
 	// Check if the data.Timestamp is too far in the past
 	if data.Timestamp < int(pastTime) {
-		errorMessage := fmt.Sprintf("attempted to save a system save in the past from %s", time.UnixMilli(int64(data.Timestamp)).String())
-		return errors.New(errorMessage)
+		return fmt.Errorf("attempted to save a system save in the past from %d", data.Timestamp)
 	}
 
 	var buf bytes.Buffer
