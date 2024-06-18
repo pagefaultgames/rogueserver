@@ -20,6 +20,7 @@ package savedata
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/pagefaultgames/rogueserver/db"
 	"github.com/pagefaultgames/rogueserver/defs"
@@ -27,6 +28,7 @@ import (
 
 // /savedata/update - update save data
 func Update(uuid []byte, slot int, save any) error {
+
 	err := db.UpdateAccountLastActivity(uuid)
 	if err != nil {
 		log.Print("failed to update account last activity")
@@ -53,5 +55,28 @@ func Update(uuid []byte, slot int, save any) error {
 
 	default:
 		return fmt.Errorf("invalid data type")
+	}
+}
+
+func ProcessSystemMetrics(save defs.SystemSaveData, uuid []byte) {
+
+}
+
+func ProcessSessionMetrics(save defs.SessionSaveData, uuid []byte) {
+	err := Cache.Add(fmt.Sprintf("session-%x-%d", uuid, save.GameMode), uuid, time.Minute*5)
+	if err != nil {
+		return
+	}
+	switch save.GameMode {
+	case 0:
+		gameModeCounter.WithLabelValues("classic").Inc()
+	case 1:
+		gameModeCounter.WithLabelValues("endless").Inc()
+	case 2:
+		gameModeCounter.WithLabelValues("spliced-endless").Inc()
+	case 3:
+		gameModeCounter.WithLabelValues("daily").Inc()
+	case 4:
+		gameModeCounter.WithLabelValues("challenge").Inc()
 	}
 }

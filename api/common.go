@@ -27,6 +27,7 @@ import (
 	"github.com/pagefaultgames/rogueserver/api/account"
 	"github.com/pagefaultgames/rogueserver/api/daily"
 	"github.com/pagefaultgames/rogueserver/db"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func Init(mux *http.ServeMux) error {
@@ -73,6 +74,7 @@ func Init(mux *http.ServeMux) error {
 	mux.HandleFunc("POST /admin/account/googleLink", handleAdminGoogleLink)
 	mux.HandleFunc("POST /admin/account/googleUnlink", handleAdminGoogleUnlink)
 	mux.HandleFunc("GET /admin/account/adminSearch", handleAdminSearch)
+	mux.Handle("GET /metrics", promhttp.Handler())
 
 	return nil
 }

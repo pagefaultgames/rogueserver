@@ -34,6 +34,8 @@ import (
 	"github.com/pagefaultgames/rogueserver/api/savedata"
 	"github.com/pagefaultgames/rogueserver/db"
 	"github.com/pagefaultgames/rogueserver/defs"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
 /*
@@ -41,6 +43,14 @@ import (
 	Handler functions are responsible for checking the validity of this data and returning a result or error.
 	Handlers should not return serialized JSON, instead return the struct itself.
 */
+
+var (
+	accountsRegistered = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "rogueserver_accounts_registered",
+		Help: "The total number of accounts registered",
+	})
+)
+
 // account
 
 func handleAccountInfo(w http.ResponseWriter, r *http.Request) {
@@ -95,7 +105,7 @@ func handleAccountRegister(w http.ResponseWriter, r *http.Request) {
 		httpError(w, r, err, http.StatusInternalServerError)
 		return
 	}
-
+	accountsRegistered.Inc()
 	w.WriteHeader(http.StatusOK)
 }
 

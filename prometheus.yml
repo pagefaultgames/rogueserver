@@ -1,0 +1,12 @@
+global:
+  scrape_interval: "10s"
+  scrape_timeout: "10s"
+  evaluation_interval: "1m"
+
+scrape_configs:
+  - job_name: 'rogueserver'
+    static_configs:
+      - targets: ['server:8001']
+  - job_name: 'mariadb'
+    static_configs:
+      - targets: ['db:3306']
