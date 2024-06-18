@@ -61,7 +61,7 @@ func Init() error {
 		secret = newSecret
 	}
 
-	seed, err := recordNewDaily()
+	seed, err := db.TryAddDailyRun(Seed())
 	if err != nil {
 		log.Print(err)
 	}
@@ -71,8 +71,7 @@ func Init() error {
 	_, err = scheduler.AddFunc("@daily", func() {
 		time.Sleep(time.Second)
 
-		seed, err = recordNewDaily()
-
+		seed, err = db.TryAddDailyRun(Seed())
 		if err != nil {
 			log.Printf("error while recording new daily: %s", err)
 		} else {
@@ -103,8 +102,4 @@ func deriveSeed(seedTime time.Time) []byte {
 	hashedSeed := md5.Sum(append(day, secret...))
 
 	return hashedSeed[:]
-}
-
-func recordNewDaily() (string, error) {
-	return db.TryAddDailyRun(Seed())
 }
