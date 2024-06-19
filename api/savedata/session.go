@@ -14,7 +14,7 @@ func GetSession(uuid []byte, slot int) (defs.SessionSaveData, error) {
 	return session, nil
 }
 
-func PutSession(uuid []byte, slot int, data defs.SessionSaveData) error {
+func UpdateSession(uuid []byte, slot int, data defs.SessionSaveData) error {
 	err := db.StoreSessionSaveData(uuid, data, slot)
 	if err != nil {
 		return err

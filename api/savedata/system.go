@@ -47,7 +47,7 @@ func GetSystem(uuid []byte) (defs.SystemSaveData, error) {
 	return system, nil
 }
 
-func PutSystem(uuid []byte, data defs.SystemSaveData) error {
+func UpdateSystem(uuid []byte, data defs.SystemSaveData) error {
 	if data.TrainerId == 0 && data.SecretId == 0 {
 		return fmt.Errorf("invalid system data")
 	}
