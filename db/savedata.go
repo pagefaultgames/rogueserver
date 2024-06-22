@@ -142,3 +142,13 @@ func DeleteSessionSaveData(uuid []byte, slot int) error {
 
 	return nil
 }
+
+func RetrievePlaytime(uuid []byte) (int, error) {
+	var playtime int
+	err := handle.QueryRow("SELECT playTime FROM accountStats WHERE uuid = ?", uuid).Scan(&playtime)
+	if err != nil {
+		return 0, err
+	}
+
+	return playtime, nil
+}
