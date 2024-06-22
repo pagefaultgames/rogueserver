@@ -313,8 +313,11 @@ func handleUpdateAll(w http.ResponseWriter, r *http.Request) {
 	}
 
 	existingPlaytime, err := db.RetrievePlaytime(uuid)
-	playtime := data.System.GameStats.(map[string]interface{})["playTime"].(float64)
 	if err == nil {
+		playtime, ok := data.System.GameStats.(map[string]interface{})["playTime"].(float64)
+		if !ok {
+			httpError(w, r, fmt.Errorf("no playtime found"), http.StatusBadRequest)
+		}
 		if float64(existingPlaytime) > playtime {
 			httpError(w, r, fmt.Errorf("session out of date: existing playtime is greater"), http.StatusBadRequest)
 			return
@@ -404,8 +407,11 @@ func handleSystem(w http.ResponseWriter, r *http.Request) {
 		}
 
 		existingPlaytime, err := db.RetrievePlaytime(uuid)
-		playtime := system.GameStats.(map[string]interface{})["playTime"].(float64)
 		if err == nil {
+			playtime, ok := system.GameStats.(map[string]interface{})["playTime"].(float64)
+			if !ok {
+				httpError(w, r, fmt.Errorf("no playtime found"), http.StatusBadRequest)
+			}
 			if float64(existingPlaytime) > playtime {
 				httpError(w, r, fmt.Errorf("session out of date: existing playtime is greater"), http.StatusBadRequest)
 				return
