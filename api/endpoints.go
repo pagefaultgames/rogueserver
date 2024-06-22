@@ -197,6 +197,7 @@ func handleSession(w http.ResponseWriter, r *http.Request) {
 			httpError(w, r, fmt.Errorf("failed to decode request body: %s", err), http.StatusBadRequest)
 			return
 		}
+
 		existingSave, err := savedata.GetSession(uuid, slot)
 		if err != nil && !errors.Is(err, sql.ErrNoRows) {
 			httpError(w, r, fmt.Errorf("failed to retrieve session save data: %s", err), http.StatusInternalServerError)
@@ -207,6 +208,7 @@ func handleSession(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		}
+
 		err = savedata.UpdateSession(uuid, slot, session)
 		if err != nil {
 			httpError(w, r, fmt.Errorf("failed to put session data: %s", err), http.StatusInternalServerError)
@@ -325,6 +327,7 @@ func handleUpdateAll(w http.ResponseWriter, r *http.Request) {
 			httpError(w, r, fmt.Errorf("no playtime found"), http.StatusBadRequest)
 			return
 		}
+
 		if float64(existingPlaytime) > playtime {
 			httpError(w, r, fmt.Errorf("session out of date: existing playtime is greater"), http.StatusBadRequest)
 			return
@@ -426,6 +429,7 @@ func handleSystem(w http.ResponseWriter, r *http.Request) {
 				httpError(w, r, fmt.Errorf("no playtime found"), http.StatusBadRequest)
 				return
 			}
+
 			if float64(existingPlaytime) > playtime {
 				httpError(w, r, fmt.Errorf("session out of date: existing playtime is greater"), http.StatusBadRequest)
 				return
