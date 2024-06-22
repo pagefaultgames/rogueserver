@@ -198,6 +198,17 @@ func handleSession(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		existingSave, err := savedata.GetSession(uuid, slot)
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+			httpError(w, r, fmt.Errorf("failed to retrieve session save data: %s", err), http.StatusInternalServerError)
+			return
+		} else {
+			if existingSave.Seed == session.Seed && existingSave.WaveIndex > session.WaveIndex {
+				httpError(w, r, fmt.Errorf("session out of date: existing wave index is greater"), http.StatusBadRequest)
+				return
+			}
+		}
+
 		err = savedata.UpdateSession(uuid, slot, session)
 		if err != nil {
 			httpError(w, r, fmt.Errorf("failed to put session data: %s", err), http.StatusInternalServerError)
@@ -306,6 +317,34 @@ func handleUpdateAll(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	existingPlaytime, err := db.RetrievePlaytime(uuid)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		httpError(w, r, fmt.Errorf("failed to retrieve playtime: %s", err), http.StatusInternalServerError)
+		return
+	} else {
+		playtime, ok := data.System.GameStats.(map[string]interface{})["playTime"].(float64)
+		if !ok {
+			httpError(w, r, fmt.Errorf("no playtime found"), http.StatusBadRequest)
+			return
+		}
+
+		if float64(existingPlaytime) > playtime {
+			httpError(w, r, fmt.Errorf("session out of date: existing playtime is greater"), http.StatusBadRequest)
+			return
+		}
+	}
+
+	existingSave, err := savedata.GetSession(uuid, data.SessionSlotId)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		httpError(w, r, fmt.Errorf("failed to retrieve session save data: %s", err), http.StatusInternalServerError)
+		return
+	} else {
+		if existingSave.Seed == data.Session.Seed && existingSave.WaveIndex > data.Session.WaveIndex {
+			httpError(w, r, fmt.Errorf("session out of date: existing wave index is greater"), http.StatusBadRequest)
+			return
+		}
+	}
+
 	err = savedata.Update(uuid, data.SessionSlotId, data.Session)
 	if err != nil {
 		httpError(w, r, err, http.StatusInternalServerError)
@@ -378,6 +417,23 @@ func handleSystem(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			httpError(w, r, fmt.Errorf("failed to decode request body: %s", err), http.StatusBadRequest)
 			return
+		}
+
+		existingPlaytime, err := db.RetrievePlaytime(uuid)
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+			httpError(w, r, fmt.Errorf("failed to retrieve playtime: %s", err), http.StatusInternalServerError)
+			return
+		} else {
+			playtime, ok := system.GameStats.(map[string]interface{})["playTime"].(float64)
+			if !ok {
+				httpError(w, r, fmt.Errorf("no playtime found"), http.StatusBadRequest)
+				return
+			}
+
+			if float64(existingPlaytime) > playtime {
+				httpError(w, r, fmt.Errorf("session out of date: existing playtime is greater"), http.StatusBadRequest)
+				return
+			}
 		}
 
 		err = savedata.UpdateSystem(uuid, system)
