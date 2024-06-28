@@ -89,7 +89,7 @@ func main() {
 	}
 
 	// start web server
-	handler := prodHandler(mux)
+	handler := prodHandler(mux, gameurl)
 	if *debug {
 		handler = debugHandler(mux)
 	}
@@ -124,11 +124,11 @@ func createListener(proto, addr string) (net.Listener, error) {
 	return listener, nil
 }
 
-func prodHandler(router *http.ServeMux) http.Handler {
+func prodHandler(router *http.ServeMux, clienturl *string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
 		w.Header().Set("Access-Control-Allow-Methods", "OPTIONS, GET, POST")
-		w.Header().Set("Access-Control-Allow-Origin", "https://pokerogue.net")
+		w.Header().Set("Access-Control-Allow-Origin", *clienturl)
 
 		if r.Method == "OPTIONS" {
 			w.WriteHeader(http.StatusOK)
