@@ -13,7 +13,7 @@ There is a sample docker-compose file for setting up a docker container to setup
 ## Installation:
 The docker compose file should automatically implement a container with mariadb with an empty database and the default user and password combo of pokerogue:pokerogue
 
-### src/utils.ts:224-225 (in pokerogue)
+### src/utils.ts:291-292 (in pokerogue)
 Replace both URLs (one on each line) with the local API server address from rogueserver.go (0.0.0.0:8001) (or whatever port you picked)
 
 # If you are on Windows
