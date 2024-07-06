@@ -19,7 +19,6 @@ package account
 
 import (
 	"github.com/pagefaultgames/rogueserver/db"
-	"github.com/pagefaultgames/rogueserver/defs"
 )
 
 type InfoResponse struct {
@@ -29,24 +28,7 @@ type InfoResponse struct {
 
 // /account/info - get account info
 func Info(username string, uuid []byte) (InfoResponse, error) {
-	response := InfoResponse{Username: username, LastSessionSlot: -1}
+	slot, _ := db.GetLatestSessionSaveDataSlot(uuid)
 
-	highest := -1
-	for i := 0; i < defs.SessionSlotCount; i++ {
-		data, err := db.ReadSessionSaveData(uuid, i)
-		if err != nil {
-			continue
-		}
-
-		if data.Timestamp > highest {
-			highest = data.Timestamp
-			response.LastSessionSlot = i
-		}
-	}
-
-	if response.LastSessionSlot < 0 || response.LastSessionSlot >= defs.SessionSlotCount {
-		response.LastSessionSlot = -1
-	}
-
-	return response, nil
+	return InfoResponse{Username: username, LastSessionSlot: slot}, nil
 }

@@ -20,7 +20,6 @@ package db
 import (
 	"bytes"
 	"encoding/gob"
-	"errors"
 
 	"github.com/pagefaultgames/rogueserver/defs"
 )
@@ -70,13 +69,8 @@ func ReadSystemSaveData(uuid []byte) (defs.SystemSaveData, error) {
 }
 
 func StoreSystemSaveData(uuid []byte, data defs.SystemSaveData) error {
-	systemData, err := ReadSystemSaveData(uuid)
-	if err == nil && systemData.Timestamp > data.Timestamp {
-		return errors.New("attempted to save an older system save")
-	}
-
 	var buf bytes.Buffer
-	err = gob.NewEncoder(&buf).Encode(data)
+	err := gob.NewEncoder(&buf).Encode(data)
 	if err != nil {
 		return err
 	}
@@ -126,13 +120,8 @@ func GetLatestSessionSaveDataSlot(uuid []byte) (int, error) {
 }
 
 func StoreSessionSaveData(uuid []byte, data defs.SessionSaveData, slot int) error {
-	session, err := ReadSessionSaveData(uuid, slot)
-	if err == nil && session.Seed == data.Seed && session.WaveIndex > data.WaveIndex {
-		return errors.New("attempted to save an older session")
-	}
-
 	var buf bytes.Buffer
-	err = gob.NewEncoder(&buf).Encode(data)
+	err := gob.NewEncoder(&buf).Encode(data)
 	if err != nil {
 		return err
 	}
@@ -152,6 +141,16 @@ func DeleteSessionSaveData(uuid []byte, slot int) error {
 	}
 
 	return nil
+}
+
+func RetrievePlaytime(uuid []byte) (int, error) {
+	var playtime int
+	err := handle.QueryRow("SELECT playTime FROM accountStats WHERE uuid = ?", uuid).Scan(&playtime)
+	if err != nil {
+		return 0, err
+	}
+
+	return playtime, nil
 }
 
 func GetRunHistoryData(uuid []byte) (defs.RunHistoryData, error) {

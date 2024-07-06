@@ -52,11 +52,8 @@ func Init(mux *http.ServeMux) error {
 	mux.HandleFunc("GET /game/classicsessioncount", handleGameClassicSessionCount)
 
 	// savedata
-	mux.HandleFunc("GET /savedata/get", legacyHandleGetSaveData)
-	mux.HandleFunc("POST /savedata/update", legacyHandleSaveData)
-	mux.HandleFunc("GET /savedata/delete", legacyHandleSaveData) // TODO use deleteSystemSave
-	mux.HandleFunc("POST /savedata/clear", legacyHandleSaveData) // TODO use clearSessionData
-	mux.HandleFunc("GET /savedata/newclear", legacyHandleNewClear)
+	mux.HandleFunc("/savedata/session/{action}", handleSession)
+	mux.HandleFunc("/savedata/system/{action}", handleSystem)
 
 	//run history
 	mux.HandleFunc("GET /savedata/runHistory", handleGetRunHistory)
@@ -64,9 +61,6 @@ func Init(mux *http.ServeMux) error {
 
 	// new session
 	mux.HandleFunc("POST /savedata/updateall", handleUpdateAll)
-	mux.HandleFunc("POST /savedata/system/verify", handleSystemVerify)
-	mux.HandleFunc("GET /savedata/system", handleGetSystemData)
-	mux.HandleFunc("GET /savedata/session", handleGetSessionData)
 
 	// daily
 	mux.HandleFunc("GET /daily/seed", handleDailySeed)
