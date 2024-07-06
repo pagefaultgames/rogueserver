@@ -55,6 +55,10 @@ func Init(mux *http.ServeMux) error {
 	mux.HandleFunc("/savedata/session/{action}", handleSession)
 	mux.HandleFunc("/savedata/system/{action}", handleSystem)
 
+	//run history
+	mux.HandleFunc("GET /savedata/runHistory", handleGetRunHistory)
+	mux.HandleFunc("POST /savedata/runHistory", handleRunHistory)
+
 	// new session
 	mux.HandleFunc("POST /savedata/updateall", handleUpdateAll)
 

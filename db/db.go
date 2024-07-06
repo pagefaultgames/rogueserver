@@ -97,6 +97,8 @@ func setupDb(tx *sql.Tx) error {
 		// MIGRATION 002
 
 		`DROP TABLE accountCompensations`,
+    
+    `CREATE TABLE IF NOT EXISTS runHistoryData (uuid BINARY(16) PRIMARY KEY, data LONGBLOB, timestamp TIMESTAMP, FOREIGN KEY (uuid) REFERENCES accounts (uuid) ON DELETE CASCADE ON UPDATE CASCADE)`,
 	}
 
 	for _, q := range queries {

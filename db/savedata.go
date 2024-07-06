@@ -152,3 +152,36 @@ func RetrievePlaytime(uuid []byte) (int, error) {
 
 	return playtime, nil
 }
+
+func GetRunHistoryData(uuid []byte) (defs.RunHistoryData, error) {
+	var runHistory defs.RunHistoryData
+	var err error
+	var data []byte
+
+	err = handle.QueryRow("SELECT data FROM runHistoryData WHERE uuid = ?", uuid).Scan(&data)
+	if err != nil {
+		return runHistory, err
+	}
+	err = gob.NewDecoder(bytes.NewReader(data)).Decode(&runHistory)
+	if err != nil {
+		return runHistory, err
+	}
+
+	return runHistory, err
+}
+
+func UpdateRunHistoryData(uuid []byte, data defs.RunHistoryData) error {
+	var buf bytes.Buffer
+	var err error
+
+	err = gob.NewEncoder(&buf).Encode(data)
+	if err != nil {
+		return err
+	}
+	_, err = handle.Exec("INSERT INTO runHistoryData (uuid, data, timestamp) VALUES (?, ?, UTC_TIMESTAMP()) ON DUPLICATE KEY UPDATE data = ?, timestamp = UTC_TIMESTAMP()", uuid, buf.Bytes(), buf.Bytes())
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
