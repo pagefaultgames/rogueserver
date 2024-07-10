@@ -89,23 +89,31 @@ func FetchUsernameByGoogleId(googleId string) (string, error) {
 }
 
 func FetchDiscordIdByUsername(username string) (string, error) {
-	var discordId string
+	var discordId sql.NullString
 	err := handle.QueryRow("SELECT discordId FROM accounts WHERE username = ?", username).Scan(&discordId)
 	if err != nil {
 		return "", err
 	}
 
-	return discordId, nil
+	if !discordId.Valid {
+		return "", nil
+	}
+
+	return discordId.String, nil
 }
 
 func FetchGoogleIdByUsername(username string) (string, error) {
-	var googleId string
+	var googleId sql.NullString
 	err := handle.QueryRow("SELECT googleId FROM accounts WHERE username = ?", username).Scan(&googleId)
 	if err != nil {
 		return "", err
 	}
 
-	return googleId, nil
+	if !googleId.Valid {
+		return "", nil
+	}
+
+	return googleId.String, nil
 }
 
 func FetchUsernameBySessionToken(token []byte) (string, error) {
