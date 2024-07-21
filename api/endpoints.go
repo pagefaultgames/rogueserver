@@ -626,9 +626,12 @@ func handleProviderCallback(w http.ResponseWriter, r *http.Request) {
 		}
 
 		http.SetCookie(w, &http.Cookie{
-			Name:  "pokerogue_sessionId",
-			Value: sessionToken,
-			Path:  "/",
+			Name:     "pokerogue_sessionId",
+			Value:    sessionToken,
+			Path:     "/",
+			Secure:   true,
+			SameSite: http.SameSiteStrictMode,
+			Domain:   "beta.pokerogue.net",
 		})
 	}
 
