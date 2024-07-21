@@ -27,6 +27,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/pagefaultgames/rogueserver/api/account"
 	"github.com/pagefaultgames/rogueserver/api/daily"
@@ -632,6 +633,7 @@ func handleProviderCallback(w http.ResponseWriter, r *http.Request) {
 			Secure:   true,
 			SameSite: http.SameSiteStrictMode,
 			Domain:   "beta.pokerogue.net",
+			Expires:  time.Now().Add(time.Hour * 24 * 30 * 3), // 3 months
 		})
 	}
 
