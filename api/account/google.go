@@ -50,7 +50,7 @@ func RetrieveGoogleId(code string) (string, error) {
 		"client_secret": {os.Getenv("GOOGLE_CLIENT_SECRET")},
 		"code":          {code},
 		"grant_type":    {"authorization_code"},
-		"redirect_uri":  {os.Getenv("GOOGLE_CALLBACK_URI")},
+		"redirect_uri":  {os.Getenv("GOOGLE_CALLBACK_URL")},
 	})
 
 	if err != nil {

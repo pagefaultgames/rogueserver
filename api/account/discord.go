@@ -48,7 +48,7 @@ func RetrieveDiscordId(code string) (string, error) {
 		"client_secret": {os.Getenv("DISCORD_CLIENT_SECRET")},
 		"grant_type":    {"authorization_code"},
 		"code":          {code},
-		"redirect_uri":  {os.Getenv("DISCORD_CALLBACK_URI")},
+		"redirect_uri":  {os.Getenv("DISCORD_CALLBACK_URL")},
 		"scope":         {"identify"},
 	})
 
