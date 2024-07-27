@@ -49,7 +49,7 @@ func main() {
 
 	googleclientid := flag.String("googleclientid", "gcid", "Google Oauth2 Client ID")
 	googlesecretid := flag.String("googlesecretid", "gsid", "Google Oauth2 Secret ID")
-	callbackuri := flag.String("callbackuri", "http://localhost:8001/", "Callback URI for Oauth2 Client")
+	callbackurl := flag.String("callbackurl", "http://localhost:8001/", "Callback URI for Oauth2 Client")
 
 	gameurl := flag.String("gameurl", "https://pokerogue.net", "URL for game server")
 
@@ -58,11 +58,11 @@ func main() {
 	// set discord client id as env variable
 	os.Setenv("DISCORD_CLIENT_ID", *discordclientid)
 	os.Setenv("DISCORD_CLIENT_SECRET", *discordsecretid)
-	os.Setenv("DISCORD_CALLBACK_URI", *callbackuri+"/auth/discord/callback")
+	os.Setenv("DISCORD_CALLBACK_URI", *callbackurl+"/auth/discord/callback")
 
 	os.Setenv("GOOGLE_CLIENT_ID", *googleclientid)
 	os.Setenv("GOOGLE_CLIENT_SECRET", *googlesecretid)
-	os.Setenv("GOOGLE_CALLBACK_URI", *callbackuri+"/auth/google/callback")
+	os.Setenv("GOOGLE_CALLBACK_URI", *callbackurl+"/auth/google/callback")
 	os.Setenv("GAME_URL", *gameurl)
 
 	// register gob types
