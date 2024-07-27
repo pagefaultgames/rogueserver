@@ -23,6 +23,7 @@ FROM scratch
 WORKDIR /app
 
 COPY --from=builder /src/rogueserver .
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
 EXPOSE 8001
 

@@ -44,7 +44,26 @@ func main() {
 	dbaddr := flag.String("dbaddr", "localhost", "database address")
 	dbname := flag.String("dbname", "pokeroguedb", "database name")
 
+	discordclientid := flag.String("discordclientid", "dcid", "Discord Oauth2 Client ID")
+	discordsecretid := flag.String("discordsecretid", "dsid", "Discord Oauth2 Secret ID")
+
+	googleclientid := flag.String("googleclientid", "gcid", "Google Oauth2 Client ID")
+	googlesecretid := flag.String("googlesecretid", "gsid", "Google Oauth2 Secret ID")
+	callbackurl := flag.String("callbackurl", "http://localhost:8001/", "Callback URL for Oauth2 Client")
+
+	gameurl := flag.String("gameurl", "https://pokerogue.net", "URL for game server")
+
 	flag.Parse()
+
+	// set discord client id as env variable
+	os.Setenv("DISCORD_CLIENT_ID", *discordclientid)
+	os.Setenv("DISCORD_CLIENT_SECRET", *discordsecretid)
+	os.Setenv("DISCORD_CALLBACK_URL", *callbackurl+"/auth/discord/callback")
+
+	os.Setenv("GOOGLE_CLIENT_ID", *googleclientid)
+	os.Setenv("GOOGLE_CLIENT_SECRET", *googlesecretid)
+	os.Setenv("GOOGLE_CALLBACK_URL", *callbackurl+"/auth/google/callback")
+	os.Setenv("GAME_URL", *gameurl)
 
 	// register gob types
 	gob.Register([]interface{}{})
@@ -70,7 +89,7 @@ func main() {
 	}
 
 	// start web server
-	handler := prodHandler(mux)
+	handler := prodHandler(mux, gameurl)
 	if *debug {
 		handler = debugHandler(mux)
 	}
@@ -105,11 +124,11 @@ func createListener(proto, addr string) (net.Listener, error) {
 	return listener, nil
 }
 
-func prodHandler(router *http.ServeMux) http.Handler {
+func prodHandler(router *http.ServeMux, clienturl *string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
 		w.Header().Set("Access-Control-Allow-Methods", "OPTIONS, GET, POST")
-		w.Header().Set("Access-Control-Allow-Origin", "https://pokerogue.net")
+		w.Header().Set("Access-Control-Allow-Origin", *clienturl)
 
 		if r.Method == "OPTIONS" {
 			w.WriteHeader(http.StatusOK)

@@ -97,6 +97,12 @@ func setupDb(tx *sql.Tx) error {
 		// MIGRATION 002
 
 		`DROP TABLE accountCompensations`,
+
+		// ----------------------------------
+		// MIGRATION 003
+
+		`ALTER TABLE accounts ADD COLUMN IF NOT EXISTS discordId VARCHAR(32) UNIQUE DEFAULT NULL`,
+		`ALTER TABLE accounts ADD COLUMN IF NOT EXISTS googleId VARCHAR(32) UNIQUE DEFAULT NULL`,
 	}
 
 	for _, q := range queries {
