@@ -44,6 +44,9 @@ var (
 
 	isValidUsername = regexp.MustCompile(`^\w{1,16}$`).MatchString
 	semaphore       = make(chan bool, ArgonMaxInstances)
+
+	GameURL string
+	OAuthCallbackURL string
 )
 
 func deriveArgon2IDKey(password, salt []byte) []byte {

@@ -22,20 +22,24 @@ import (
 	"errors"
 	"net/http"
 	"net/url"
-	"os"
+)
+
+var (
+	DiscordClientID string
+	DiscordClientSecret string
+	DiscordCallbackURL string
 )
 
 func HandleDiscordCallback(w http.ResponseWriter, r *http.Request) (string, error) {
 	code := r.URL.Query().Get("code")
-	gameUrl := os.Getenv("GAME_URL")
 	if code == "" {
-		defer http.Redirect(w, r, gameUrl, http.StatusSeeOther)
+		defer http.Redirect(w, r, GameURL, http.StatusSeeOther)
 		return "", errors.New("code is empty")
 	}
 
 	discordId, err := RetrieveDiscordId(code)
 	if err != nil {
-		defer http.Redirect(w, r, gameUrl, http.StatusSeeOther)
+		defer http.Redirect(w, r, GameURL, http.StatusSeeOther)
 		return "", err
 	}
 
@@ -43,15 +47,15 @@ func HandleDiscordCallback(w http.ResponseWriter, r *http.Request) (string, erro
 }
 
 func RetrieveDiscordId(code string) (string, error) {
-	token, err := http.PostForm("https://discord.com/api/oauth2/token", url.Values{
-		"client_id":     {os.Getenv("DISCORD_CLIENT_ID")},
-		"client_secret": {os.Getenv("DISCORD_CLIENT_SECRET")},
-		"grant_type":    {"authorization_code"},
-		"code":          {code},
-		"redirect_uri":  {os.Getenv("DISCORD_CALLBACK_URL")},
-		"scope":         {"identify"},
-	})
+	var v url.Values
+	v.Set("client_id", DiscordClientID)
+	v.Set("client_secret", DiscordClientSecret)
+	v.Set("grant_type", "authorization_code")
+	v.Set("code", code)
+	v.Set("redirect_uri", DiscordCallbackURL)
+	v.Set("scope", "identify")
 
+	token, err := http.PostForm("https://discord.com/api/oauth2/token", v)
 	if err != nil {
 		return "", err
 	}

@@ -26,6 +26,7 @@ import (
 	"os"
 
 	"github.com/pagefaultgames/rogueserver/api"
+	"github.com/pagefaultgames/rogueserver/api/account"
 	"github.com/pagefaultgames/rogueserver/db"
 )
 
@@ -49,21 +50,22 @@ func main() {
 
 	googleclientid := flag.String("googleclientid", "gcid", "Google Oauth2 Client ID")
 	googlesecretid := flag.String("googlesecretid", "gsid", "Google Oauth2 Secret ID")
+
 	callbackurl := flag.String("callbackurl", "http://localhost:8001/", "Callback URL for Oauth2 Client")
 
 	gameurl := flag.String("gameurl", "https://pokerogue.net", "URL for game server")
 
 	flag.Parse()
 
-	// set discord client id as env variable
-	os.Setenv("DISCORD_CLIENT_ID", *discordclientid)
-	os.Setenv("DISCORD_CLIENT_SECRET", *discordsecretid)
-	os.Setenv("DISCORD_CALLBACK_URL", *callbackurl+"/auth/discord/callback")
+	account.GameURL = *gameurl
 
-	os.Setenv("GOOGLE_CLIENT_ID", *googleclientid)
-	os.Setenv("GOOGLE_CLIENT_SECRET", *googlesecretid)
-	os.Setenv("GOOGLE_CALLBACK_URL", *callbackurl+"/auth/google/callback")
-	os.Setenv("GAME_URL", *gameurl)
+	account.DiscordClientID = *discordclientid
+	account.DiscordClientSecret = *discordsecretid
+	account.DiscordCallbackURL = *callbackurl+"/auth/discord/callback"
+
+	account.GoogleClientID = *googleclientid
+	account.GoogleClientSecret = *googlesecretid
+	account.GoogleCallbackURL = *callbackurl+"/auth/google/callback"
 
 	// register gob types
 	gob.Register([]interface{}{})

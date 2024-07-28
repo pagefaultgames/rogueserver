@@ -24,7 +24,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -563,7 +562,6 @@ func handleDailyRankingPageCount(w http.ResponseWriter, r *http.Request) {
 func handleProviderCallback(w http.ResponseWriter, r *http.Request) {
 	provider := r.PathValue("provider")
 	state := r.URL.Query().Get("state")
-	gameUrl := os.Getenv("GAME_URL")
 	var externalAuthId string
 	var err error
 	switch provider {
@@ -585,13 +583,13 @@ func handleProviderCallback(w http.ResponseWriter, r *http.Request) {
 		state = strings.Replace(state, " ", "+", -1)
 		stateByte, err := base64.StdEncoding.DecodeString(state)
 		if err != nil {
-			http.Redirect(w, r, gameUrl, http.StatusSeeOther)
+			http.Redirect(w, r, account.GameURL, http.StatusSeeOther)
 			return
 		}
 
 		userName, err := db.FetchUsernameBySessionToken(stateByte)
 		if err != nil {
-			http.Redirect(w, r, gameUrl, http.StatusSeeOther)
+			http.Redirect(w, r, account.GameURL, http.StatusSeeOther)
 			return
 		}
 
@@ -603,7 +601,7 @@ func handleProviderCallback(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if err != nil {
-			http.Redirect(w, r, gameUrl, http.StatusSeeOther)
+			http.Redirect(w, r, account.GameURL, http.StatusSeeOther)
 			return
 		}
 
@@ -616,13 +614,13 @@ func handleProviderCallback(w http.ResponseWriter, r *http.Request) {
 			userName, err = db.FetchUsernameByGoogleId(externalAuthId)
 		}
 		if err != nil {
-			http.Redirect(w, r, gameUrl, http.StatusSeeOther)
+			http.Redirect(w, r, account.GameURL, http.StatusSeeOther)
 			return
 		}
 
 		sessionToken, err := account.GenerateTokenForUsername(userName)
 		if err != nil {
-			http.Redirect(w, r, gameUrl, http.StatusSeeOther)
+			http.Redirect(w, r, account.GameURL, http.StatusSeeOther)
 			return
 		}
 
@@ -632,12 +630,12 @@ func handleProviderCallback(w http.ResponseWriter, r *http.Request) {
 			Path:     "/",
 			Secure:   true,
 			SameSite: http.SameSiteStrictMode,
-			Domain:   "beta.pokerogue.net",
+			Domain:   "pokerogue.net",
 			Expires:  time.Now().Add(time.Hour * 24 * 30 * 3), // 3 months
 		})
 	}
 
-	defer http.Redirect(w, r, gameUrl, http.StatusSeeOther)
+	defer http.Redirect(w, r, account.GameURL, http.StatusSeeOther)
 }
 
 func handleProviderLogout(w http.ResponseWriter, r *http.Request) {

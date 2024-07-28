@@ -27,6 +27,12 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+var (
+	GoogleClientID string
+	GoogleClientSecret string
+	GoogleCallbackURL string
+)
+
 func HandleGoogleCallback(w http.ResponseWriter, r *http.Request) (string, error) {
 	code := r.URL.Query().Get("code")
 	gameUrl := os.Getenv("GAME_URL")
@@ -45,18 +51,20 @@ func HandleGoogleCallback(w http.ResponseWriter, r *http.Request) (string, error
 }
 
 func RetrieveGoogleId(code string) (string, error) {
-	token, err := http.PostForm("https://oauth2.googleapis.com/token", url.Values{
-		"client_id":     {os.Getenv("GOOGLE_CLIENT_ID")},
-		"client_secret": {os.Getenv("GOOGLE_CLIENT_SECRET")},
-		"code":          {code},
-		"grant_type":    {"authorization_code"},
-		"redirect_uri":  {os.Getenv("GOOGLE_CALLBACK_URL")},
-	})
+	var v url.Values
+	v.Set("client_id", GoogleClientID)
+	v.Set("client_secret", GoogleClientSecret)
+	v.Set("code", code)
+	v.Set("grant_type", "authorization_code")
+	v.Set("redirect_uri", GoogleCallbackURL)
 
+	token, err := http.PostForm("https://oauth2.googleapis.com/token", v)
 	if err != nil {
 		return "", err
 	}
+
 	defer token.Body.Close()
+
 	type TokenResponse struct {
 		AccessToken  string `json:"access_token"`
 		TokenType    string `json:"token_type"`
@@ -65,6 +73,7 @@ func RetrieveGoogleId(code string) (string, error) {
 		RefreshToken string `json:"refresh_token"`
 		Scope        string `json:"scope"`
 	}
+
 	var tokenResponse TokenResponse
 	err = json.NewDecoder(token.Body).Decode(&tokenResponse)
 	if err != nil {
