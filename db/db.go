@@ -103,6 +103,11 @@ func setupDb(tx *sql.Tx) error {
 
 		`ALTER TABLE accounts ADD COLUMN IF NOT EXISTS discordId VARCHAR(32) UNIQUE DEFAULT NULL`,
 		`ALTER TABLE accounts ADD COLUMN IF NOT EXISTS googleId VARCHAR(32) UNIQUE DEFAULT NULL`,
+
+		// ----------------------------------
+		// MIGRATION 004
+		`CREATE TABLE IF NOT EXISTS featureFlags (id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY, name VARCHAR(64) UNIQUE NOT NULL, enabled TINYINT(1) NOT NULL, percentage TINYINT(3) NOT NULL DEFAULT 0)`
+		`CREATE TABLE IF NOT EXISTS accountFeatureFlagOverrides (accountId BINARY(16) NOT_NULL, flagId INT(11) NOT NULL, PRIMARY KEY (accountId, flagId), FOREIGN KEY (accountId) REFERENCES accounts (uuid) ON DELETE CASCADE ON UPDATE CASCADE, FOREIGN KEY (flagId) REFERENCES featureFlags (id) ON DELETE CASCADE ON UPDATE CASCADE)`
 	}
 
 	for _, q := range queries {
