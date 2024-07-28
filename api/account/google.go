@@ -35,13 +35,13 @@ var (
 func HandleGoogleCallback(w http.ResponseWriter, r *http.Request) (string, error) {
 	code := r.URL.Query().Get("code")
 	if code == "" {
-		defer http.Redirect(w, r, GameURL, http.StatusSeeOther)
+		http.Redirect(w, r, GameURL, http.StatusSeeOther)
 		return "", errors.New("code is empty")
 	}
 
 	googleId, err := RetrieveGoogleId(code)
 	if err != nil {
-		defer http.Redirect(w, r, GameURL, http.StatusSeeOther)
+		http.Redirect(w, r, GameURL, http.StatusSeeOther)
 		return "", err
 	}
 

@@ -635,7 +635,7 @@ func handleProviderCallback(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	defer http.Redirect(w, r, account.GameURL, http.StatusSeeOther)
+	http.Redirect(w, r, account.GameURL, http.StatusSeeOther)
 }
 
 func handleProviderLogout(w http.ResponseWriter, r *http.Request) {
