@@ -27,9 +27,9 @@ import (
 )
 
 var (
-	GoogleClientID string
+	GoogleClientID     string
 	GoogleClientSecret string
-	GoogleCallbackURL string
+	GoogleCallbackURL  string
 )
 
 func HandleGoogleCallback(w http.ResponseWriter, r *http.Request) (string, error) {

@@ -25,9 +25,9 @@ import (
 )
 
 var (
-	DiscordClientID string
+	DiscordClientID     string
 	DiscordClientSecret string
-	DiscordCallbackURL string
+	DiscordCallbackURL  string
 )
 
 func HandleDiscordCallback(w http.ResponseWriter, r *http.Request) (string, error) {

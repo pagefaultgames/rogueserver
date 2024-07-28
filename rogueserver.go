@@ -61,11 +61,11 @@ func main() {
 
 	account.DiscordClientID = *discordclientid
 	account.DiscordClientSecret = *discordsecretid
-	account.DiscordCallbackURL = *callbackurl+"/auth/discord/callback"
+	account.DiscordCallbackURL = *callbackurl + "/auth/discord/callback"
 
 	account.GoogleClientID = *googleclientid
 	account.GoogleClientSecret = *googlesecretid
-	account.GoogleCallbackURL = *callbackurl+"/auth/google/callback"
+	account.GoogleCallbackURL = *callbackurl + "/auth/google/callback"
 
 	// register gob types
 	gob.Register([]interface{}{})
