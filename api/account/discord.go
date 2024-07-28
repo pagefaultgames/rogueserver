@@ -47,7 +47,7 @@ func HandleDiscordCallback(w http.ResponseWriter, r *http.Request) (string, erro
 }
 
 func RetrieveDiscordId(code string) (string, error) {
-	var v url.Values
+	v := make(url.Values)
 	v.Set("client_id", DiscordClientID)
 	v.Set("client_secret", DiscordClientSecret)
 	v.Set("grant_type", "authorization_code")

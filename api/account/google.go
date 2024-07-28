@@ -51,7 +51,7 @@ func HandleGoogleCallback(w http.ResponseWriter, r *http.Request) (string, error
 }
 
 func RetrieveGoogleId(code string) (string, error) {
-	var v url.Values
+	v := make(url.Values)
 	v.Set("client_id", GoogleClientID)
 	v.Set("client_secret", GoogleClientSecret)
 	v.Set("code", code)
