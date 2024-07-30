@@ -18,11 +18,6 @@
 package defs
 
 type FeatureFlag struct {
-	Name       string
-	Percentage int
-}
-
-type FeatureFlagOverride struct {
-	FlagName string
-	Enabled  bool
+	Name        string
+	AccessLevel string // DEV_STAFF | CONTRIBUTOR | EVERYONE
 }

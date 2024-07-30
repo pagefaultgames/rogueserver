@@ -17,12 +17,14 @@
 
 package db
 
-import "github.com/pagefaultgames/rogueserver/defs"
+import (
+	"github.com/pagefaultgames/rogueserver/defs"
+)
 
 func GetEnabledFeatureFlags() ([]defs.FeatureFlag, error) {
 	var activeFlags []defs.FeatureFlag
 
-	results, err := handle.Query("SELECT name, percentage FROM featureFlags WHERE enabled = 1")
+	results, err := handle.Query("SELECT name, accessLevel FROM featureFlags WHERE enabled = 1")
 
 	if err != nil {
 		return activeFlags, err
@@ -33,7 +35,8 @@ func GetEnabledFeatureFlags() ([]defs.FeatureFlag, error) {
 	for results.Next() {
 		var flag defs.FeatureFlag
 
-		err = results.Scan(&flag.Name, &flag.Percentage)
+		err = results.Scan(&flag.Name, &flag.AccessLevel)
+
 		if err != nil {
 			return activeFlags, err
 		}
@@ -42,29 +45,4 @@ func GetEnabledFeatureFlags() ([]defs.FeatureFlag, error) {
 	}
 
 	return activeFlags, nil
-}
-
-func GetFeatureFlagOverrides(accountId []byte) ([]defs.FeatureFlagOverride, error) {
-	var overrides []defs.FeatureFlagOverride
-
-	results, err := handle.Query("SELECT ff.name, o.enabled FROM accoutFeatureFlagOverrides o JOIN featureFlags ff ON o.flagId = ff.id WHERE accountId = ?", accountId)
-
-	if err != nil {
-		return overrides, err
-	}
-
-	defer results.Close()
-
-	for results.Next() {
-		var override defs.FeatureFlagOverride
-
-		err = results.Scan(&override.FlagName, &override.Enabled)
-		if err != nil {
-			return overrides, err
-		}
-
-		overrides = append(overrides, override)
-	}
-
-	return overrides, nil
 }
