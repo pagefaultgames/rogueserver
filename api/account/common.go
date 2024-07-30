@@ -37,6 +37,11 @@ const (
 
 	UUIDSize  = 16
 	TokenSize = 32
+
+	// feature access groups
+	DEV_STAFF   = "DEV_STAFF"
+	CONTRIBUTOR = "CONTRIBUTOR"
+	EVERYONE    = "EVERYONE"
 )
 
 var (

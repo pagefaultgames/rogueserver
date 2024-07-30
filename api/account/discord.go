@@ -106,3 +106,19 @@ func RetrieveDiscordId(code string) (string, error) {
 
 	return user.Id, nil
 }
+
+// TODO: fetch these instead of hardcoding them
+var devsAndStaff = map[string]bool{}
+var contributors = map[string]bool{}
+
+func GetAccessGroupByDiscordRole(discordId string) (group string) {
+	if devsAndStaff[discordId] {
+		return DEV_STAFF
+	}
+
+	if contributors[discordId] {
+		return CONTRIBUTOR
+	}
+
+	return ""
+}

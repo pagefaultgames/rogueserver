@@ -103,6 +103,10 @@ func setupDb(tx *sql.Tx) error {
 
 		`ALTER TABLE accounts ADD COLUMN IF NOT EXISTS discordId VARCHAR(32) UNIQUE DEFAULT NULL`,
 		`ALTER TABLE accounts ADD COLUMN IF NOT EXISTS googleId VARCHAR(32) UNIQUE DEFAULT NULL`,
+
+		// ----------------------------------
+		// MIGRATION 004
+		`CREATE TABLE IF NOT EXISTS featureFlags (id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY, name VARCHAR(64) UNIQUE NOT NULL, accessLevel VARCHAR(16), CONSTRAINT chk_featureFlags_accessLevel CHECK(accessLevel IN ('DEV_STAFF', 'CONTRIBUTOR', 'EVERYONE')))`,
 	}
 
 	for _, q := range queries {

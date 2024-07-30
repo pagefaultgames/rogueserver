@@ -22,20 +22,54 @@ import (
 )
 
 type InfoResponse struct {
-	Username        string `json:"username"`
-	DiscordId       string `json:"discordId"`
-	GoogleId        string `json:"googleId"`
-	LastSessionSlot int    `json:"lastSessionSlot"`
+	Username        string   `json:"username"`
+	DiscordId       string   `json:"discordId"`
+	GoogleId        string   `json:"googleId"`
+	LastSessionSlot int      `json:"lastSessionSlot"`
+	FeatureFlags    []string `json:"featureFlags"`
 }
 
 // /account/info - get account info
 func Info(username string, discordId string, googleId string, uuid []byte) (InfoResponse, error) {
 	slot, _ := db.GetLatestSessionSaveDataSlot(uuid)
+	featureFlags := getFeatureFlags(discordId)
 	response := InfoResponse{
 		Username:        username,
 		LastSessionSlot: slot,
 		DiscordId:       discordId,
 		GoogleId:        googleId,
+		FeatureFlags:    featureFlags,
 	}
 	return response, nil
+}
+
+func getFeatureFlags(discordId string) []string {
+	var flags []string
+
+	enabledFlags, err := db.GetEnabledFeatureFlags()
+	if err != nil {
+		return flags
+	}
+
+	for _, flag := range enabledFlags {
+		var hasAccess = false
+
+		if flag.AccessLevel == EVERYONE {
+			hasAccess = true
+		} else {
+			accessGroup := GetAccessGroupByDiscordRole(discordId)
+
+			if flag.AccessLevel == DEV_STAFF {
+				hasAccess = accessGroup == DEV_STAFF
+			} else if flag.AccessLevel == CONTRIBUTOR {
+				hasAccess = accessGroup == CONTRIBUTOR || accessGroup == DEV_STAFF
+			}
+		}
+
+		if hasAccess {
+			flags = append(flags, flag.Name)
+		}
+	}
+
+	return flags
 }
