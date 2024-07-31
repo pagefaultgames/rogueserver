@@ -154,4 +154,12 @@ type SessionHistoryData struct {
 
 type SessionHistoryResult int
 
-type RunHistoryData map[string]interface{}
+type RunEntryData struct {
+	victory 	int 					`json:"victory"`
+	favorite 	int 					`json:"favorite"`
+	entry 		SessionSaveData 		`json:"entry"`
+}
+
+type RunHistoryData map[int]RunEntryData
+
+

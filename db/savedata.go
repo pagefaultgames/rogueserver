@@ -154,15 +154,29 @@ func RetrievePlaytime(uuid []byte) (int, error) {
 }
 
 func GetRunHistoryData(uuid []byte) (defs.RunHistoryData, error) {
+	var runEntry defs.RunEntryData
 	var runHistory defs.RunHistoryData
 	var err error
 	var data []byte
 
-	err = handle.QueryRow("SELECT data FROM runHistoryData WHERE uuid = ?", uuid).Scan(&data)
+	type row struct {
+		var ts int
+		var entry defs.RunEntryData
+	}
+
+	rows, err := handle.Query("SELECT runEntry FROM runHistoryData WHERE uuid = ?", uuid)
 	if err != nil {
 		return runHistory, err
 	}
-	err = gob.NewDecoder(bytes.NewReader(data)).Decode(&runHistory)
+	defer rows.close()
+
+	for rows.Next() {
+		var r row
+		rows.Scan(&r.ts, &r.entry)
+		err = gob.NewDecoder(bytes.NewReader(r.entry)).Decode(&runEntry)
+		runHistory[r.ts] = runEntry
+	}
+	
 	if err != nil {
 		return runHistory, err
 	}
@@ -170,7 +184,33 @@ func GetRunHistoryData(uuid []byte) (defs.RunHistoryData, error) {
 	return runHistory, err
 }
 
-func UpdateRunHistoryData(uuid []byte, data defs.RunHistoryData) error {
+func CheckRunHistoryData(uuid []byte) error {
+	var count int 
+
+	err := db.QueryRow("SELECT COUNT(runEntry) FROM runHistoryData WHERE uuid = ?", uuid).Scan(&count)
+
+	if err != nil {
+		return err
+	}
+
+	if count <= 25 {
+		return nil
+	}
+
+	_, err = handle.Exec("DELETE FROM runHistoryData ORDER BY timestamp DESC limit 1")
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func UpdateRunHistoryData(uuid []byte, data defs.RunEntryData) error {
+	var mode GameMode
+	var highestWave int
+	mode = data.entry.GameMode
+	highestWave = data.entry.WaveIndex
+
 	var buf bytes.Buffer
 	var err error
 
@@ -178,7 +218,7 @@ func UpdateRunHistoryData(uuid []byte, data defs.RunHistoryData) error {
 	if err != nil {
 		return err
 	}
-	_, err = handle.Exec("INSERT INTO runHistoryData (uuid, data, timestamp) VALUES (?, ?, UTC_TIMESTAMP()) ON DUPLICATE KEY UPDATE data = ?, timestamp = UTC_TIMESTAMP()", uuid, buf.Bytes(), buf.Bytes())
+	_, err = handle.Exec("INSERT INTO runHistoryData (uuid, timestamp, mode, highestWave, runEntry) VALUES (?, UTC_TIMESTAMP(), ?, ?, ?)", uuid, mode, highestWave, buf.Bytes())
 	if err != nil {
 		return err
 	}

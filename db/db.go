@@ -98,7 +98,7 @@ func setupDb(tx *sql.Tx) error {
 
 		`DROP TABLE accountCompensations`,
     
-    `CREATE TABLE IF NOT EXISTS runHistoryData (uuid BINARY(16) PRIMARY KEY, data LONGBLOB, timestamp TIMESTAMP, FOREIGN KEY (uuid) REFERENCES accounts (uuid) ON DELETE CASCADE ON UPDATE CASCADE)`,
+    	`CREATE TABLE IF NOT EXISTS runHistoryData (uuid BINARY(16) PRIMARY KEY, runEntry BLOB, highestWave INT(11) NOT NULL DEFAULT 0, mode INT(11) NOT NULL DEFAULT 0, timestamp TIMESTAMP, FOREIGN KEY (uuid) REFERENCES accounts (uuid) ON DELETE CASCADE ON UPDATE CASCADE)`,
 	}
 
 	for _, q := range queries {

@@ -289,7 +289,13 @@ func handleRunHistory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var data defs.RunHistoryData
+	err = db.CheckRunHistoryData(uuid)
+	if err != nil {
+		httpError(w, r, err, http.StatusBadRequest)
+		return
+	}
+
+	var data defs.RunEntryData
 	err = json.NewDecoder(r.Body).Decode(&data)
 	if err != nil {
 		httpError(w, r, fmt.Errorf("failed to decode request body: %s", err), http.StatusBadRequest)
