@@ -21,6 +21,7 @@ import (
 	"bytes"
 	"encoding/gob"
 
+	"github.com/klauspost/compress/zstd"
 	"github.com/pagefaultgames/rogueserver/defs"
 )
 
@@ -60,6 +61,19 @@ func ReadSystemSaveData(uuid []byte) (defs.SystemSaveData, error) {
 		return system, err
 	}
 
+	dec, err := zstd.NewReader(nil)
+	if err != nil {
+		return system, err
+	}
+
+	defer dec.Close()
+
+	decompressed, err := dec.DecodeAll(data, nil)
+	if err == nil {
+		// replace if it worked, otherwise use the original data
+		data = decompressed
+	}
+
 	err = gob.NewDecoder(bytes.NewReader(data)).Decode(&system)
 	if err != nil {
 		return system, err
@@ -75,7 +89,14 @@ func StoreSystemSaveData(uuid []byte, data defs.SystemSaveData) error {
 		return err
 	}
 
-	_, err = handle.Exec("INSERT INTO systemSaveData (uuid, data, timestamp) VALUES (?, ?, UTC_TIMESTAMP()) ON DUPLICATE KEY UPDATE data = ?, timestamp = UTC_TIMESTAMP()", uuid, buf.Bytes(), buf.Bytes())
+	enc, err := zstd.NewWriter(nil, zstd.WithEncoderLevel(zstd.SpeedBestCompression))
+	if err != nil {
+		return err
+	}
+
+	defer enc.Close()
+
+	_, err = handle.Exec("REPLACE INTO systemSaveData (uuid, data, timestamp) VALUES (?, ?, UTC_TIMESTAMP())", uuid, enc.EncodeAll(buf.Bytes(), nil))
 	if err != nil {
 		return err
 	}
@@ -99,6 +120,19 @@ func ReadSessionSaveData(uuid []byte, slot int) (defs.SessionSaveData, error) {
 	err := handle.QueryRow("SELECT data FROM sessionSaveData WHERE uuid = ? AND slot = ?", uuid, slot).Scan(&data)
 	if err != nil {
 		return session, err
+	}
+
+	dec, err := zstd.NewReader(nil)
+	if err != nil {
+		return session, err
+	}
+
+	defer dec.Close()
+
+	decompressed, err := dec.DecodeAll(data, nil)
+	if err == nil {
+		// replace if it worked, otherwise use the original data
+		data = decompressed
 	}
 
 	err = gob.NewDecoder(bytes.NewReader(data)).Decode(&session)
@@ -126,7 +160,14 @@ func StoreSessionSaveData(uuid []byte, data defs.SessionSaveData, slot int) erro
 		return err
 	}
 
-	_, err = handle.Exec("INSERT INTO sessionSaveData (uuid, slot, data, timestamp) VALUES (?, ?, ?, UTC_TIMESTAMP()) ON DUPLICATE KEY UPDATE data = ?, timestamp = UTC_TIMESTAMP()", uuid, slot, buf.Bytes(), buf.Bytes())
+	enc, err := zstd.NewWriter(nil, zstd.WithEncoderLevel(zstd.SpeedBestCompression))
+	if err != nil {
+		return err
+	}
+
+	defer enc.Close()
+
+	_, err = handle.Exec("REPLACE INTO sessionSaveData (uuid, slot, data, timestamp) VALUES (?, ?, ?, UTC_TIMESTAMP())", uuid, slot, enc.EncodeAll(buf.Bytes(), nil))
 	if err != nil {
 		return err
 	}
