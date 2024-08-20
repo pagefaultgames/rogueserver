@@ -89,7 +89,7 @@ func StoreSystemSaveData(uuid []byte, data defs.SystemSaveData) error {
 		return err
 	}
 
-	enc, err := zstd.NewWriter(nil, zstd.WithEncoderLevel(zstd.SpeedBestCompression))
+	enc, err := zstd.NewWriter(nil)
 	if err != nil {
 		return err
 	}
@@ -160,7 +160,7 @@ func StoreSessionSaveData(uuid []byte, data defs.SessionSaveData, slot int) erro
 		return err
 	}
 
-	enc, err := zstd.NewWriter(nil, zstd.WithEncoderLevel(zstd.SpeedBestCompression))
+	enc, err := zstd.NewWriter(nil)
 	if err != nil {
 		return err
 	}
