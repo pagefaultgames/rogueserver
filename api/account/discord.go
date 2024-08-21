@@ -22,12 +22,17 @@ import (
 	"errors"
 	"net/http"
 	"net/url"
+
+	"github.com/bwmarrin/discordgo"
 )
 
 var (
 	DiscordClientID     string
 	DiscordClientSecret string
 	DiscordCallbackURL  string
+
+	DiscordSession *discordgo.Session
+	DiscordGuildId string
 )
 
 func HandleDiscordCallback(w http.ResponseWriter, r *http.Request) (string, error) {
@@ -36,7 +41,6 @@ func HandleDiscordCallback(w http.ResponseWriter, r *http.Request) (string, erro
 		http.Redirect(w, r, GameURL, http.StatusSeeOther)
 		return "", errors.New("code is empty")
 	}
-
 	discordId, err := RetrieveDiscordId(code)
 	if err != nil {
 		http.Redirect(w, r, GameURL, http.StatusSeeOther)
@@ -105,4 +109,35 @@ func RetrieveDiscordId(code string) (string, error) {
 	}
 
 	return user.Id, nil
+}
+
+func IsUserDiscordAdmin(discordId string, discordGuildId string) (bool, error) {
+	// fetch all roles from discord
+	roles, err := DiscordSession.GuildRoles(discordGuildId)
+	if err != nil {
+		return false, err
+	}
+
+	// fetch all roles from user
+	userRoles, err := DiscordSession.GuildMember(discordGuildId, discordId)
+	if err != nil {
+		return false, err
+	}
+
+	// check if user has a "Dev" or a "Division Heads" role
+	var hasRole bool
+	for _, role := range userRoles.Roles {
+		for _, guildRole := range roles {
+			if role == guildRole.ID && (guildRole.Name == "Dev" || guildRole.Name == "Division Heads") {
+				hasRole = true
+				break
+			}
+		}
+	}
+
+	if !hasRole {
+		return false, nil
+	}
+
+	return true, nil
 }

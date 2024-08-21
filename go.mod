@@ -13,4 +13,8 @@ require (
 	github.com/klauspost/compress v1.17.9
 )
 
-require golang.org/x/sys v0.19.0 // indirect
+require (
+	github.com/bwmarrin/discordgo v0.28.1 // indirect
+	github.com/gorilla/websocket v1.4.2 // indirect
+	golang.org/x/sys v0.19.0 // indirect
+)

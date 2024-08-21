@@ -25,6 +25,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/bwmarrin/discordgo"
 	"github.com/pagefaultgames/rogueserver/api"
 	"github.com/pagefaultgames/rogueserver/api/account"
 	"github.com/pagefaultgames/rogueserver/db"
@@ -55,6 +56,8 @@ func main() {
 
 	gameurl := flag.String("gameurl", "https://pokerogue.net", "URL for game server")
 
+	discordbottoken := flag.String("discordbottoken", "dbt", "Discord Bot Token")
+
 	flag.Parse()
 
 	account.GameURL = *gameurl
@@ -66,6 +69,7 @@ func main() {
 	account.GoogleClientID = *googleclientid
 	account.GoogleClientSecret = *googlesecretid
 	account.GoogleCallbackURL = *callbackurl + "/auth/google/callback"
+	account.DiscordSession, _ = discordgo.New("Bot " + *discordbottoken)
 
 	// register gob types
 	gob.Register([]interface{}{})
