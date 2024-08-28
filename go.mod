@@ -8,6 +8,9 @@ require (
 	golang.org/x/crypto v0.22.0
 )
 
-require github.com/golang-jwt/jwt/v5 v5.2.1
+require (
+	github.com/golang-jwt/jwt/v5 v5.2.1
+	github.com/klauspost/compress v1.17.9
+)
 
 require golang.org/x/sys v0.19.0 // indirect
