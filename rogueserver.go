@@ -57,6 +57,7 @@ func main() {
 	gameurl := flag.String("gameurl", "https://pokerogue.net", "URL for game server")
 
 	discordbottoken := flag.String("discordbottoken", "dbt", "Discord Bot Token")
+	discordguildid := flag.String("discordguildid", "dgid", "Discord Guild ID")
 
 	flag.Parse()
 
@@ -70,7 +71,7 @@ func main() {
 	account.GoogleClientSecret = *googlesecretid
 	account.GoogleCallbackURL = *callbackurl + "/auth/google/callback"
 	account.DiscordSession, _ = discordgo.New("Bot " + *discordbottoken)
-
+	account.DiscordGuildId = *discordguildid
 	// register gob types
 	gob.Register([]interface{}{})
 	gob.Register(map[string]interface{}{})
