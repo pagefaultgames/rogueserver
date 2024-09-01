@@ -666,12 +666,6 @@ func handleProviderLogout(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleAdminDiscordLink(w http.ResponseWriter, r *http.Request) {
-	err := r.ParseForm()
-	if err != nil {
-		httpError(w, r, fmt.Errorf("failed to parse request form: %s", err), http.StatusBadRequest)
-		return
-	}
-
 	uuid, err := uuidFromRequest(r)
 	if err != nil {
 		httpError(w, r, err, http.StatusUnauthorized)
