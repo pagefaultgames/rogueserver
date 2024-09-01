@@ -56,8 +56,8 @@ func main() {
 
 	gameurl := flag.String("gameurl", "https://pokerogue.net", "URL for game server")
 
-	discordbottoken := flag.String("discordbottoken", "dbt", "Discord Bot Token")
-	discordguildid := flag.String("discordguildid", "dgid", "Discord Guild ID")
+	discordbottoken := flag.String("discordbottoken", "", "Discord Bot Token")
+	discordguildid := flag.String("discordguildid", "", "Discord Guild ID")
 
 	flag.Parse()
 
