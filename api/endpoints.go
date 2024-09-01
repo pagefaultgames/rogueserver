@@ -70,7 +70,10 @@ func handleAccountInfo(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	hasAdminRole, _ := account.IsUserDiscordAdmin(discordId, account.DiscordGuildID)
+	var hasAdminRole bool
+	if discordId != "" {
+		hasAdminRole, _ = account.IsUserDiscordAdmin(discordId, account.DiscordGuildID)
+	}
 
 	response, err := account.Info(username, discordId, googleId, uuid, hasAdminRole)
 	if err != nil {
