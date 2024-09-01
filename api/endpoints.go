@@ -69,7 +69,7 @@ func handleAccountInfo(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	hasAdminRole, _ := account.IsUserDiscordAdmin(discordId, account.DiscordGuildId)
+	hasAdminRole, _ := account.IsUserDiscordAdmin(discordId, account.DiscordGuildID)
 
 	response, err := account.Info(username, discordId, googleId, uuid, hasAdminRole)
 	if err != nil {
@@ -683,7 +683,7 @@ func handleAdminDiscordLink(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hasRole, err := account.IsUserDiscordAdmin(userDiscordId, account.DiscordGuildId)
+	hasRole, err := account.IsUserDiscordAdmin(userDiscordId, account.DiscordGuildID)
 
 	if !hasRole || err != nil {
 		httpError(w, r, fmt.Errorf("user does not have the required role"), http.StatusForbidden)

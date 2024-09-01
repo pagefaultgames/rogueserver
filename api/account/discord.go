@@ -32,7 +32,7 @@ var (
 	DiscordCallbackURL  string
 
 	DiscordSession *discordgo.Session
-	DiscordGuildId string
+	DiscordGuildID string
 )
 
 func HandleDiscordCallback(w http.ResponseWriter, r *http.Request) (string, error) {
@@ -111,15 +111,15 @@ func RetrieveDiscordId(code string) (string, error) {
 	return user.Id, nil
 }
 
-func IsUserDiscordAdmin(discordId string, discordGuildId string) (bool, error) {
+func IsUserDiscordAdmin(discordId string, discordGuildID string) (bool, error) {
 	// fetch all roles from discord
-	roles, err := DiscordSession.GuildRoles(discordGuildId)
+	roles, err := DiscordSession.GuildRoles(discordGuildID)
 	if err != nil {
 		return false, err
 	}
 
 	// fetch all roles from user
-	userRoles, err := DiscordSession.GuildMember(discordGuildId, discordId)
+	userRoles, err := DiscordSession.GuildMember(discordGuildID, discordId)
 	if err != nil {
 		return false, err
 	}
