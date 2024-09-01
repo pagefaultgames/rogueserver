@@ -23,6 +23,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -684,7 +685,6 @@ func handleAdminDiscordLink(w http.ResponseWriter, r *http.Request) {
 	}
 
 	hasRole, err := account.IsUserDiscordAdmin(userDiscordId, account.DiscordGuildID)
-
 	if !hasRole || err != nil {
 		httpError(w, r, fmt.Errorf("user does not have the required role"), http.StatusForbidden)
 		return
@@ -695,6 +695,6 @@ func handleAdminDiscordLink(w http.ResponseWriter, r *http.Request) {
 		httpError(w, r, err, http.StatusInternalServerError)
 		return
 	}
-	fmt.Printf("%s added discord id %s to username %s", userDiscordId, r.Form.Get("discordId"), r.Form.Get("username"))
+	log.Printf("%s added discord id %s to username %s", userDiscordId, r.Form.Get("discordId"), r.Form.Get("username"))
 	w.WriteHeader(http.StatusOK)
 }
