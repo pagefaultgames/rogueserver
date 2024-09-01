@@ -69,6 +69,7 @@ func Init(mux *http.ServeMux) error {
 
 	// admin
 	mux.HandleFunc("POST /admin/account/discord-link", handleAdminDiscordLink)
+
 	return nil
 }
 
