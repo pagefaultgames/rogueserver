@@ -695,6 +695,8 @@ func handleAdminDiscordLink(w http.ResponseWriter, r *http.Request) {
 		httpError(w, r, err, http.StatusInternalServerError)
 		return
 	}
+
 	log.Printf("%s added discord id %s to username %s", userDiscordId, r.Form.Get("discordId"), r.Form.Get("username"))
+
 	w.WriteHeader(http.StatusOK)
 }
