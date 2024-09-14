@@ -128,7 +128,7 @@ func IsUserDiscordAdmin(discordId string, discordGuildID string) (bool, error) {
 	var hasRole bool
 	for _, role := range userRoles.Roles {
 		for _, guildRole := range roles {
-			if role == guildRole.ID && (guildRole.Name == "Dev" || guildRole.Name == "Division Heads") {
+			if role == guildRole.ID && (guildRole.Name == "Dev" || guildRole.Name == "Division Heads" || guildRole.Name == "Helper") {
 				hasRole = true
 				break
 			}
