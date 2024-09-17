@@ -32,7 +32,7 @@ func ChangePW(uuid []byte, password string) error {
 	salt := make([]byte, ArgonSaltSize)
 	_, err := rand.Read(salt)
 	if err != nil {
-		return fmt.Errorf(fmt.Sprintf("failed to generate salt: %s", err))
+		return fmt.Errorf("failed to generate salt: %s", err)
 	}
 
 	err = db.UpdateAccountPassword(uuid, deriveArgon2IDKey([]byte(password), salt), salt)

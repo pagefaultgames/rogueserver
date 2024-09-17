@@ -116,6 +116,34 @@ func FetchGoogleIdByUsername(username string) (string, error) {
 	return googleId.String, nil
 }
 
+func FetchDiscordIdByUUID(uuid []byte) (string, error) {
+	var discordId sql.NullString
+	err := handle.QueryRow("SELECT discordId FROM accounts WHERE uuid = ?", uuid).Scan(&discordId)
+	if err != nil {
+		return "", err
+	}
+
+	if !discordId.Valid {
+		return "", nil
+	}
+
+	return discordId.String, nil
+}
+
+func FetchGoogleIdByUUID(uuid []byte) (string, error) {
+	var googleId sql.NullString
+	err := handle.QueryRow("SELECT googleId FROM accounts WHERE uuid = ?", uuid).Scan(&googleId)
+	if err != nil {
+		return "", err
+	}
+
+	if !googleId.Valid {
+		return "", nil
+	}
+
+	return googleId.String, nil
+}
+
 func FetchUsernameBySessionToken(token []byte) (string, error) {
 	var username string
 	err := handle.QueryRow("SELECT a.username FROM accounts a JOIN sessions s ON a.uuid = s.uuid WHERE s.token = ?", token).Scan(&username)

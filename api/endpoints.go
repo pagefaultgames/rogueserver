@@ -23,6 +23,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -68,7 +69,13 @@ func handleAccountInfo(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	response, err := account.Info(username, discordId, googleId, uuid)
+
+	var hasAdminRole bool
+	if discordId != "" {
+		hasAdminRole, _ = account.IsUserDiscordAdmin(discordId, account.DiscordGuildID)
+	}
+
+	response, err := account.Info(username, discordId, googleId, uuid, hasAdminRole)
 	if err != nil {
 		httpError(w, r, err, http.StatusInternalServerError)
 		return
@@ -658,5 +665,41 @@ func handleProviderLogout(w http.ResponseWriter, r *http.Request) {
 		httpError(w, r, err, http.StatusInternalServerError)
 		return
 	}
+	w.WriteHeader(http.StatusOK)
+}
+
+func handleAdminDiscordLink(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		httpError(w, r, fmt.Errorf("failed to parse request form: %s", err), http.StatusBadRequest)
+		return
+	}
+
+	uuid, err := uuidFromRequest(r)
+	if err != nil {
+		httpError(w, r, err, http.StatusUnauthorized)
+		return
+	}
+
+	userDiscordId, err := db.FetchDiscordIdByUUID(uuid)
+	if err != nil {
+		httpError(w, r, err, http.StatusUnauthorized)
+		return
+	}
+
+	hasRole, err := account.IsUserDiscordAdmin(userDiscordId, account.DiscordGuildID)
+	if !hasRole || err != nil {
+		httpError(w, r, fmt.Errorf("user does not have the required role"), http.StatusForbidden)
+		return
+	}
+
+	err = db.AddDiscordIdByUsername(r.Form.Get("discordId"), r.Form.Get("username"))
+	if err != nil {
+		httpError(w, r, err, http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("%s: %s added discord id %s to username %s", r.URL.Path, userDiscordId, r.Form.Get("discordId"), r.Form.Get("username"))
+
 	w.WriteHeader(http.StatusOK)
 }
