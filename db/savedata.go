@@ -22,6 +22,7 @@ import (
 	"encoding/gob"
 
 	"github.com/klauspost/compress/zstd"
+	"github.com/pagefaultgames/rogueserver/cache"
 	"github.com/pagefaultgames/rogueserver/defs"
 )
 
@@ -39,10 +40,16 @@ func TryAddSeedCompletion(uuid []byte, seed string, mode int) (bool, error) {
 		return false, err
 	}
 
+	cache.TryAddSeedCompletion(uuid, seed, mode)
+
 	return true, nil
 }
 
 func ReadSeedCompleted(uuid []byte, seed string) (bool, error) {
+	if cachedCompleted, ok := cache.ReadSeedCompletion(uuid, seed); ok {
+		return cachedCompleted, nil
+	}
+
 	var count int
 	err := handle.QueryRow("SELECT COUNT(*) FROM dailyRunCompletions WHERE uuid = ? AND seed = ?", uuid, seed).Scan(&count)
 	if err != nil {
