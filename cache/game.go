@@ -27,7 +27,6 @@ func FetchPlayerCount() (int, bool) {
 	return int(cachedPlayerCount), true
 }
 
-// FIXME: This is not working
 func FetchBattleCount() (int, bool) {
 	rdb.Do("SELECT", accountsDB)
 	cachedBattleCount, err := rdb.Get("battleCount").Int()
@@ -44,7 +43,6 @@ func UpdateBattleCount(battleCount int) bool {
 	return err == nil
 }
 
-// FIXME: This is not working
 func FetchClassicSessionCount() (int, bool) {
 	rdb.Do("SELECT", accountsDB)
 	cachedClassicSessionCount, err := rdb.Get("classicSessionCount").Int()

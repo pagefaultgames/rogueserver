@@ -58,7 +58,6 @@ func UpdateAccountLastActivity(uuid []byte) bool {
 	return err == nil
 }
 
-// FIXME: This is not atomic
 func UpdateAccountStats(uuid []byte, battles, classicSessionsPlayed int) bool {
 	rdb.Do("SELECT", accountsDB)
 	err := rdb.HIncrBy(string(uuid), "battles", int64(battles)).Err()
