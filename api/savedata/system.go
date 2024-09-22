@@ -21,10 +21,6 @@ func UpdateSystem(uuid []byte, data defs.SystemSaveData) error {
 		return fmt.Errorf("invalid system data")
 	}
 
-	if data.GameVersion != "1.0.4" {
-		return fmt.Errorf("client version out of date")
-	}
-
 	err := db.UpdateAccountStats(uuid, data.GameStats, data.VoucherCounts)
 	if err != nil {
 		return fmt.Errorf("failed to update account stats: %s", err)
