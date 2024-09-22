@@ -14,3 +14,5 @@ secret.key
 *.ipr
 *.iws
 .vscode/launch.json
+
+#local stuff
