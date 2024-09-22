@@ -25,14 +25,12 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-var (
-	handle *sql.DB
-)
+var handle *sql.DB
 
 func Init(username, password, protocol, address, database string) error {
 	var err error
 
-	handle, err = sql.Open("mysql", username+":"+password+"@"+protocol+"("+address+":13306)/"+database)
+	handle, err = sql.Open("mysql", username+":"+password+"@"+protocol+"("+address+":3306)/"+database)
 	if err != nil {
 		return fmt.Errorf("failed to open database connection: %s", err)
 	}
