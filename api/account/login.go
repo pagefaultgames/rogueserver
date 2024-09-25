@@ -24,7 +24,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"log"
 
 	"github.com/pagefaultgames/rogueserver/db"
 )
@@ -53,8 +52,7 @@ func Login(username, password string) (LoginResponse, error) {
 	}
 
 	if !bytes.Equal(key, deriveArgon2IDKey([]byte(password), salt)) {
-		log.Printf("Hello")
-		return response, fmt.Errorf("passworasdasdasdd doesn't match")
+		return response, fmt.Errorf("password doesn't match")
 	}
 
 	response.Token, err = GenerateTokenForUsername(username)
