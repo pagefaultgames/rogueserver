@@ -360,3 +360,21 @@ func RemoveGoogleIdByUUID(uuid []byte) error {
 
 	return nil
 }
+
+func RemoveDiscordIdByUsername(username string) error {
+	_, err := handle.Exec("UPDATE accounts SET discordId = NULL WHERE username = ?", username)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func RemoveDiscordIdByDiscordId(discordId string) error {
+	_, err := handle.Exec("UPDATE accounts SET discordId = NULL WHERE discordId = ?", discordId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

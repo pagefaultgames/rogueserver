@@ -703,3 +703,58 @@ func handleAdminDiscordLink(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 }
+
+func handleAdminDiscordUnlink(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		httpError(w, r, fmt.Errorf("failed to parse request form: %s", err), http.StatusBadRequest)
+		return
+	}
+
+	uuid, err := uuidFromRequest(r)
+	if err != nil {
+		httpError(w, r, err, http.StatusUnauthorized)
+		return
+	}
+
+	userDiscordId, err := db.FetchDiscordIdByUUID(uuid)
+	if err != nil {
+		httpError(w, r, err, http.StatusUnauthorized)
+		return
+	}
+
+	hasRole, err := account.IsUserDiscordAdmin(userDiscordId, account.DiscordGuildID)
+	if !hasRole || err != nil {
+		httpError(w, r, fmt.Errorf("user does not have the required role"), http.StatusForbidden)
+		return
+	}
+
+	if err != nil {
+		httpError(w, r, err, http.StatusUnauthorized)
+		return
+	}
+
+	username := r.Form.Get("username")
+	discordId := r.Form.Get("discordId")
+
+	if username != "" {
+		log.Printf("Username given, removing discordId")
+		err = db.RemoveDiscordIdByUsername(username)
+		if err != nil {
+			httpError(w, r, err, http.StatusInternalServerError)
+			return
+		}
+	}
+	if discordId != "" {
+		log.Printf("DiscordID given, removing discordId")
+		err = db.RemoveDiscordIdByDiscordId(discordId)
+		if err != nil {
+			httpError(w, r, err, http.StatusInternalServerError)
+			return
+		}
+	}
+
+	log.Printf("%s: %s removed discord id %s from username %s", userDiscordId, r.URL.Path, r.Form.Get("discordId"), r.Form.Get("username"))
+
+	w.WriteHeader(http.StatusOK)
+}
