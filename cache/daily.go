@@ -18,18 +18,22 @@
 package cache
 
 import (
+	"fmt"
 	"time"
 )
 
 func TryAddDailyRun(seed string) bool {
-	rdb.Do("SELECT", dailyRunsDB)
-	err := rdb.Set(time.Now().Format("2006-01-02"), seed, 24*time.Hour).Err()
+	key := fmt.Sprintf("daily:%s", time.Now().Format("2006-01-02"))
+	now := time.Now()
+	midnight := time.Date(now.Year(), now.Month(), now.Day()+1, 0, 1, 0, 0, now.Location())
+	duration := time.Until(midnight)
+	err := rdb.Set(key, seed, duration).Err()
 	return err == nil
 }
 
 func GetDailyRunSeed() (string, bool) {
-	rdb.Do("SELECT", dailyRunsDB)
-	cachedSeed, err := rdb.Get(time.Now().Format("2006-01-02")).Result()
+	key := fmt.Sprintf("daily:%s", time.Now().Format("2006-01-02"))
+	cachedSeed, err := rdb.Get(key).Result()
 	if err != nil {
 		return "", false
 	}

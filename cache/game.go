@@ -18,8 +18,7 @@
 package cache
 
 func FetchPlayerCount() (int, bool) {
-	rdb.Do("SELECT", activePlayersDB)
-	cachedPlayerCount, err := rdb.DBSize().Result()
+	cachedPlayerCount, err := rdb.SCard("active_players").Result()
 	if err != nil {
 		return 0, false
 	}
@@ -27,34 +26,6 @@ func FetchPlayerCount() (int, bool) {
 	return int(cachedPlayerCount), true
 }
 
-func FetchBattleCount() (int, bool) {
-	rdb.Do("SELECT", accountsDB)
-	cachedBattleCount, err := rdb.Get("battleCount").Int()
-	if err != nil {
-		return 0, false
-	}
+// TODO Cache battle count
 
-	return cachedBattleCount, true
-}
-
-func UpdateBattleCount(battleCount int) bool {
-	rdb.Do("SELECT", accountsDB)
-	err := rdb.Set("battleCount", battleCount, 0).Err()
-	return err == nil
-}
-
-func FetchClassicSessionCount() (int, bool) {
-	rdb.Do("SELECT", accountsDB)
-	cachedClassicSessionCount, err := rdb.Get("classicSessionCount").Int()
-	if err != nil {
-		return 0, false
-	}
-
-	return cachedClassicSessionCount, true
-}
-
-func UpdateClassicSessionCount(classicSessionCount int) bool {
-	rdb.Do("SELECT", accountsDB)
-	err := rdb.Set("classicSessionCount", classicSessionCount, 0).Err()
-	return err == nil
-}
+// TODO Cache classic session count

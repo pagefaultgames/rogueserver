@@ -18,18 +18,20 @@
 package cache
 
 import (
+	"fmt"
+	"log"
 	"time"
 )
 
 func AddAccountSession(uuid []byte, token []byte) bool {
-	rdb.Do("SELECT", sessionDB)
-	err := rdb.Set(string(token), string(uuid), 7*24*time.Hour).Err()
+	key := fmt.Sprintf("session:%s", token)
+	err := rdb.Set(key, string(uuid), 24*time.Hour).Err()
 	return err == nil
 }
 
 func FetchUsernameBySessionToken(token []byte) (string, bool) {
-	rdb.Do("SELECT", sessionDB)
-	username, err := rdb.Get(string(token)).Result()
+	key := fmt.Sprintf("session:%s", token)
+	username, err := rdb.Get(key).Result()
 	if err != nil {
 		return "", false
 	}
@@ -37,40 +39,31 @@ func FetchUsernameBySessionToken(token []byte) (string, bool) {
 	return username, true
 }
 
-func updateActivePlayers(uuid []byte) bool {
-	rdb.Do("SELECT", activePlayersDB)
-	err := rdb.Set(string(uuid), 1, 0).Err()
-	if err != nil {
-		return false
-	}
-	err = rdb.Expire(string(uuid), 5*time.Minute).Err()
-	return err == nil
-}
-
 func UpdateAccountLastActivity(uuid []byte) bool {
-	rdb.Do("SELECT", accountsDB)
-	err := rdb.HSet(string(uuid), "lastActivity", time.Now().Format("2006-01-02 15:04:05")).Err()
+	key := fmt.Sprintf("account:%s", uuid)
+	err := rdb.HSet(key, "lastActivity", time.Now().Format("2006-01-02 15:04:05")).Err()
 	if err != nil {
 		return false
 	}
-	updateActivePlayers(uuid)
-
+	err = rdb.Expire(key, 5*time.Minute).Err()
 	return err == nil
 }
 
+// FIXME
 func UpdateAccountStats(uuid []byte, battles, classicSessionsPlayed int) bool {
-	rdb.Do("SELECT", accountsDB)
-	err := rdb.HIncrBy(string(uuid), "battles", int64(battles)).Err()
+	key := fmt.Sprintf("account:%s", uuid)
+	err := rdb.HIncrBy(key, "battles", int64(battles)).Err()
 	if err != nil {
 		return false
 	}
-	err = rdb.HIncrBy(string(uuid), "classicSessionsPlayed", int64(classicSessionsPlayed)).Err()
+	err = rdb.HIncrBy(key, "classicSessionsPlayed", int64(classicSessionsPlayed)).Err()
 	return err == nil
 }
 
 func FetchTrainerIds(uuid []byte) (int, int, bool) {
-	rdb.Do("SELECT", accountsDB)
-	vals, err := rdb.HMGet(string(uuid), "trainerId", "secretId").Result()
+	log.Println("FetchTrainerIds", uuid)
+	key := fmt.Sprintf("account:%s", uuid)
+	vals, err := rdb.HMGet(key, "trainerId", "secretId").Result()
 	if err == nil && len(vals) == 2 && vals[0] != nil && vals[1] != nil {
 		trainerId, ok1 := vals[0].(int)
 		secretId, ok2 := vals[1].(int)
@@ -83,42 +76,53 @@ func FetchTrainerIds(uuid []byte) (int, int, bool) {
 }
 
 func UpdateTrainerIds(trainerId, secretId int, uuid []byte) bool {
-	rdb.Do("SELECT", accountsDB)
-	err := rdb.HMSet(string(uuid), map[string]interface{}{
+	key := fmt.Sprintf("account:%s", uuid)
+	err := rdb.HMSet(key, map[string]interface{}{
 		"trainerId": trainerId,
 		"secretId":  secretId,
 	}).Err()
+	if err != nil {
+		return false
+	}
+
+	err = rdb.Expire(key, 5*time.Minute).Err()
 	return err == nil
 }
 
 func IsActiveSession(uuid []byte, sessionId string) (bool, bool) {
-	rdb.Do("SELECT", activeClientSessionsDB)
-	id, err := rdb.Get(string(uuid)).Result()
-	if err != nil {
-		return false, false
-	}
-
-	return id == sessionId, true
+	key := fmt.Sprintf("active_sessions:%s", uuid)
+	id, err := rdb.Get(key).Result()
+	return id == sessionId, err == nil
 }
 
 func UpdateActiveSession(uuid []byte, sessionId string) bool {
-	rdb.Do("SELECT", activeClientSessionsDB)
-	err := rdb.Set(string(uuid), sessionId, 0).Err()
+	key := fmt.Sprintf("active_sessions:%s", uuid)
+	err := rdb.Set(key, sessionId, 0).Err()
+	if err != nil {
+		return false
+	}
+	err = rdb.Expire(key, 5*time.Minute).Err()
+	if err != nil {
+		return false
+	}
+
+	err = rdb.SAdd("active_players", uuid).Err()
+	if err != nil {
+		return false
+	}
+	err = rdb.Expire("active_players", 5*time.Minute).Err()
+
 	return err == nil
 }
 
 func FetchUUIDFromToken(token []byte) ([]byte, bool) {
-	rdb.Do("SELECT", sessionDB)
-	uuid, err := rdb.Get(string(token)).Bytes()
-	if err != nil {
-		return nil, false
-	}
-
-	return uuid, true
+	key := fmt.Sprintf("session:%s", token)
+	uuid, err := rdb.Get(key).Bytes()
+	return uuid, err == nil
 }
 
 func RemoveSessionFromToken(token []byte) bool {
-	rdb.Do("SELECT", sessionDB)
-	err := rdb.Del(string(token)).Err()
+	key := fmt.Sprintf("session:%s", token)
+	err := rdb.Del(key).Err()
 	return err == nil
 }

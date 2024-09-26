@@ -24,16 +24,6 @@ import (
 	"github.com/go-redis/redis"
 )
 
-const (
-	dailyRunCompletionsDB  = 1
-	dailyRunsDB            = 2
-	accountDailyRunsDB     = 3
-	accountsDB             = 4
-	sessionDB              = 5
-	activeClientSessionsDB = 6
-	activePlayersDB        = 7
-)
-
 var rdb *redis.Client
 
 func InitRedis(address, password, database string) error {

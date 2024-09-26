@@ -18,12 +18,13 @@
 package cache
 
 import (
+	"fmt"
 	"time"
 )
 
 func TryAddSeedCompletion(uuid []byte, seed string, mode int) bool {
-	rdb.Do("SELECT", dailyRunCompletionsDB)
-	err := rdb.HMSet(string(uuid), map[string]interface{}{
+	key := fmt.Sprintf("savedata:%s", uuid)
+	err := rdb.HMSet(key, map[string]interface{}{
 		"mode":      mode,
 		"seed":      seed,
 		"timestamp": time.Now().Unix(),
@@ -32,7 +33,7 @@ func TryAddSeedCompletion(uuid []byte, seed string, mode int) bool {
 }
 
 func ReadSeedCompletion(uuid []byte, seed string) (bool, bool) {
-	rdb.Do("SELECT", dailyRunCompletionsDB)
-	completed, err := rdb.HExists(string(uuid), seed).Result()
+	key := fmt.Sprintf("savedata:%s", uuid)
+	completed, err := rdb.HExists(key, seed).Result()
 	return completed, err == nil
 }
