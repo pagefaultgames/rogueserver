@@ -19,7 +19,6 @@ package cache
 
 import (
 	"fmt"
-	"log"
 	"time"
 )
 
@@ -49,19 +48,7 @@ func UpdateAccountLastActivity(uuid []byte) bool {
 	return err == nil
 }
 
-// FIXME
-func UpdateAccountStats(uuid []byte, battles, classicSessionsPlayed int) bool {
-	key := fmt.Sprintf("account:%s", uuid)
-	err := rdb.HIncrBy(key, "battles", int64(battles)).Err()
-	if err != nil {
-		return false
-	}
-	err = rdb.HIncrBy(key, "classicSessionsPlayed", int64(classicSessionsPlayed)).Err()
-	return err == nil
-}
-
 func FetchTrainerIds(uuid []byte) (int, int, bool) {
-	log.Println("FetchTrainerIds", uuid)
 	key := fmt.Sprintf("account:%s", uuid)
 	vals, err := rdb.HMGet(key, "trainerId", "secretId").Result()
 	if err == nil && len(vals) == 2 && vals[0] != nil && vals[1] != nil {

@@ -266,9 +266,6 @@ func UpdateAccountStats(uuid []byte, stats defs.GameStats, voucherCounts map[str
 		return err
 	}
 
-	// TODO: Update cache battle count and classic session count
-	cache.UpdateAccountStats(uuid, int(statValues[1].(float64)), int(statValues[2].(float64)))
-
 	return nil
 }
 

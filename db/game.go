@@ -36,10 +36,6 @@ func FetchPlayerCount() (int, error) {
 }
 
 func FetchBattleCount() (int, error) {
-	// if cachedBattleCount, ok := cache.FetchBattleCount(); ok {
-	// 	return cachedBattleCount, nil
-	// }
-
 	var battleCount int
 	err := handle.QueryRow("SELECT COALESCE(SUM(s.battles), 0) FROM accountStats s JOIN accounts a ON a.uuid = s.uuid WHERE a.banned = 0").Scan(&battleCount)
 	if err != nil {
