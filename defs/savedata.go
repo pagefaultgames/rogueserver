@@ -95,32 +95,56 @@ type EggData struct {
 type GachaType int
 
 type SessionSaveData struct {
-	Seed           string                   `json:"seed"`
-	PlayTime       int                      `json:"playTime"`
-	GameMode       GameMode                 `json:"gameMode"`
-	Party          []PokemonData            `json:"party"`
-	EnemyParty     []PokemonData            `json:"enemyParty"`
-	Modifiers      []PersistentModifierData `json:"modifiers"`
-	EnemyModifiers []PersistentModifierData `json:"enemyModifiers"`
-	Arena          ArenaData                `json:"arena"`
-	PokeballCounts PokeballCounts           `json:"pokeballCounts"`
-	Money          int                      `json:"money"`
-	Score          int                      `json:"score"`
-	VictoryCount   int                      `json:"victoryCount"`
-	FaintCount     int                      `json:"faintCount"`
-	ReviveCount    int                      `json:"reviveCount"`
-	WaveIndex      int                      `json:"waveIndex"`
-	BattleType     BattleType               `json:"battleType"`
-	Trainer        TrainerData              `json:"trainer"`
-	GameVersion    string                   `json:"gameVersion"`
-	Timestamp      int                      `json:"timestamp"`
-	Challenges     []ChallengeData          `json:"challenges"`
+	Seed                     string                   `json:"seed"`
+	PlayTime                 int                      `json:"playTime"`
+	GameMode                 GameMode                 `json:"gameMode"`
+	Party                    []PokemonData            `json:"party"`
+	EnemyParty               []PokemonData            `json:"enemyParty"`
+	Modifiers                []PersistentModifierData `json:"modifiers"`
+	EnemyModifiers           []PersistentModifierData `json:"enemyModifiers"`
+	Arena                    ArenaData                `json:"arena"`
+	PokeballCounts           PokeballCounts           `json:"pokeballCounts"`
+	Money                    int                      `json:"money"`
+	Score                    int                      `json:"score"`
+	VictoryCount             int                      `json:"victoryCount"`
+	FaintCount               int                      `json:"faintCount"`
+	ReviveCount              int                      `json:"reviveCount"`
+	WaveIndex                int                      `json:"waveIndex"`
+	BattleType               BattleType               `json:"battleType"`
+	Trainer                  TrainerData              `json:"trainer"`
+	GameVersion              string                   `json:"gameVersion"`
+	Timestamp                int                      `json:"timestamp"`
+	Challenges               []ChallengeData          `json:"challenges"`
+	MysteryEncounterType     MysteryEncounterType     `json:"mysteryEncounterType"`
+	MysteryEncounterSaveData MysteryEncounterSaveData `json:"mysteryEncounterSaveData"`
 }
 
 type ChallengeData struct {
 	Id       int `json:"id"`
 	Value    int `json:"value"`
 	Severity int `json:"severity"`
+}
+
+type MysteryEncounterType int
+
+type MysteryEncounterTier int
+
+type SeenEncounterData struct {
+	Type           MysteryEncounterType `json:"type"`
+	Tier           MysteryEncounterTier `json:"tier"`
+	WaveIndex      int                  `json:"waveIndex"`
+	SelectedOption int                  `json:"selectedOption"`
+}
+
+type QueuedEncounter struct {
+	Type         MysteryEncounterType `json:"type"`
+	SpawnPercent int                  `json:"spawnPercent"`
+}
+
+type MysteryEncounterSaveData struct {
+	EncounteredEvents    []SeenEncounterData `json:"encounteredEvents"`
+	EncounterSpawnChance int                 `json:"encounterSpawnChance"`
+	QueuedEncounters     []QueuedEncounter   `json:"queuedEncounters"`
 }
 
 type GameMode int
