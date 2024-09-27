@@ -28,6 +28,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/pagefaultgames/rogueserver/api"
 	"github.com/pagefaultgames/rogueserver/api/account"
+	"github.com/pagefaultgames/rogueserver/cache"
 	"github.com/pagefaultgames/rogueserver/db"
 )
 
@@ -45,6 +46,10 @@ func main() {
 	dbproto := getEnv("dbproto", "tcp")
 	dbaddr := getEnv("dbaddr", "localhost")
 	dbname := getEnv("dbname", "pokeroguedb")
+
+	redisaddr := getEnv("redisaddr", "localhost:6379")
+	redispass := getEnv("redispass", "")
+	redisdb := getEnv("redisdb", "0")
 
 	discordclientid := getEnv("discordclientid", "")
 	discordsecretid := getEnv("discordsecretid", "")
@@ -78,6 +83,12 @@ func main() {
 	err := db.Init(dbuser, dbpass, dbproto, dbaddr, dbname)
 	if err != nil {
 		log.Fatalf("failed to initialize database: %s", err)
+	}
+
+	// get redis connection
+	err = cache.InitRedis(redisaddr, redispass, redisdb)
+	if err != nil {
+		log.Fatalf("failed to initialize redis: %s", err)
 	}
 
 	// create listener

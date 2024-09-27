@@ -20,6 +20,7 @@ package db
 import (
 	"math"
 
+	"github.com/pagefaultgames/rogueserver/cache"
 	"github.com/pagefaultgames/rogueserver/defs"
 )
 
@@ -30,10 +31,16 @@ func TryAddDailyRun(seed string) (string, error) {
 		return "", err
 	}
 
+	cache.TryAddDailyRun(actualSeed)
+
 	return actualSeed, nil
 }
 
 func GetDailyRunSeed() (string, error) {
+	if cachedSeed, ok := cache.GetDailyRunSeed(); ok {
+		return cachedSeed, nil
+	}
+
 	var seed string
 	err := handle.QueryRow("SELECT seed FROM dailyRuns WHERE date = UTC_DATE()").Scan(&seed)
 	if err != nil {

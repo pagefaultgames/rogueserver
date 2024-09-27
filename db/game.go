@@ -17,7 +17,15 @@
 
 package db
 
+import (
+	"github.com/pagefaultgames/rogueserver/cache"
+)
+
 func FetchPlayerCount() (int, error) {
+	if cachedPlayerCount, ok := cache.FetchPlayerCount(); ok {
+		return cachedPlayerCount, nil
+	}
+
 	var playerCount int
 	err := handle.QueryRow("SELECT COUNT(*) FROM accounts WHERE lastActivity > DATE_SUB(UTC_TIMESTAMP(), INTERVAL 5 MINUTE)").Scan(&playerCount)
 	if err != nil {

@@ -24,6 +24,7 @@ import (
 	"slices"
 
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/pagefaultgames/rogueserver/cache"
 	"github.com/pagefaultgames/rogueserver/defs"
 )
 
@@ -37,7 +38,18 @@ func AddAccountRecord(uuid []byte, username string, key, salt []byte) error {
 }
 
 func AddAccountSession(username string, token []byte) error {
-	_, err := handle.Exec("INSERT INTO sessions (uuid, token, expire) SELECT a.uuid, ?, DATE_ADD(UTC_TIMESTAMP(), INTERVAL 1 WEEK) FROM accounts a WHERE a.username = ?", token, username)
+	// _, err := handle.Exec("INSERT INTO sessions (uuid, token, expire) SELECT a.uuid, ?, DATE_ADD(UTC_TIMESTAMP(), INTERVAL 1 WEEK) FROM accounts a WHERE a.username = ?", token, username)
+	// if err != nil {
+	// 	return err
+	// }
+
+	var uuid []byte
+	err := handle.QueryRow("SELECT uuid FROM accounts WHERE username = ?", username).Scan(&uuid)
+	if err != nil {
+		return err
+	}
+
+	_, err = handle.Exec("INSERT INTO sessions (uuid, token, expire) VALUES (?, ?, DATE_ADD(UTC_TIMESTAMP(), INTERVAL 1 WEEK))", uuid, token)
 	if err != nil {
 		return err
 	}
@@ -46,6 +58,8 @@ func AddAccountSession(username string, token []byte) error {
 	if err != nil {
 		return err
 	}
+
+	cache.AddAccountSession(uuid, token)
 
 	return nil
 }
@@ -145,6 +159,10 @@ func FetchGoogleIdByUUID(uuid []byte) (string, error) {
 }
 
 func FetchUsernameBySessionToken(token []byte) (string, error) {
+	if username, ok := cache.FetchUsernameBySessionToken(token); ok {
+		return username, nil
+	}
+
 	var username string
 	err := handle.QueryRow("SELECT a.username FROM accounts a JOIN sessions s ON a.uuid = s.uuid WHERE s.token = ?", token).Scan(&username)
 	if err != nil {
@@ -168,6 +186,8 @@ func UpdateAccountLastActivity(uuid []byte) error {
 	if err != nil {
 		return err
 	}
+
+	cache.UpdateAccountLastActivity(uuid)
 
 	return nil
 }
@@ -269,10 +289,16 @@ func FetchAccountKeySaltFromUsername(username string) ([]byte, []byte, error) {
 }
 
 func FetchTrainerIds(uuid []byte) (trainerId, secretId int, err error) {
+	if trainerId, secretId, ok := cache.FetchTrainerIds(uuid); ok {
+		return trainerId, secretId, nil
+	}
+
 	err = handle.QueryRow("SELECT trainerId, secretId FROM accounts WHERE uuid = ?", uuid).Scan(&trainerId, &secretId)
 	if err != nil {
 		return 0, 0, err
 	}
+
+	cache.UpdateTrainerIds(trainerId, secretId, uuid)
 
 	return trainerId, secretId, nil
 }
@@ -283,10 +309,16 @@ func UpdateTrainerIds(trainerId, secretId int, uuid []byte) error {
 		return err
 	}
 
+	cache.UpdateTrainerIds(trainerId, secretId, uuid)
+
 	return nil
 }
 
 func IsActiveSession(uuid []byte, sessionId string) (bool, error) {
+	if result, ok := cache.IsActiveSession(uuid, sessionId); ok {
+		return result, nil
+	}
+
 	var id string
 	err := handle.QueryRow("SELECT clientSessionId FROM activeClientSessions WHERE uuid = ?", uuid).Scan(&id)
 	if err != nil {
@@ -311,10 +343,16 @@ func UpdateActiveSession(uuid []byte, clientSessionId string) error {
 		return err
 	}
 
+	cache.UpdateActiveSession(uuid, clientSessionId)
+
 	return nil
 }
 
 func FetchUUIDFromToken(token []byte) ([]byte, error) {
+	if uuid, ok := cache.FetchUUIDFromToken(token); ok {
+		return uuid, nil
+	}
+
 	var uuid []byte
 	err := handle.QueryRow("SELECT uuid FROM sessions WHERE token = ?", token).Scan(&uuid)
 	if err != nil {
@@ -329,6 +367,8 @@ func RemoveSessionFromToken(token []byte) error {
 	if err != nil {
 		return err
 	}
+
+	cache.RemoveSessionFromToken(token)
 
 	return nil
 }

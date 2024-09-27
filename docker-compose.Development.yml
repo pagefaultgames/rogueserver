@@ -12,3 +12,10 @@ services:
       - "3306:3306"
     volumes:
       - ./.data/db:/var/lib/mysql
+
+  redis:
+    image: redis:7
+    container_name: pokerogue-redis-local
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
