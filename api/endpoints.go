@@ -804,7 +804,7 @@ func handleAdminSearch(w http.ResponseWriter, r *http.Request) {
 
 
 	// this way does a single call that does a query for multiple columns from our database and makes an object out of it, which is returned to us
-	/adminSearchResult, err := db.FetchAdminDetailsByUsername(username)
+	adminSearchResult, err := db.FetchAdminDetailsByUsername(username)
 	if err != nil {
 		httpError(w, r, err, http.StatusInternalServerError)
 		return
