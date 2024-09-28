@@ -802,7 +802,7 @@ func handleAdminSearch(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("USERNAME SEARCH STARTING")
 
-	/*
+
 	// this way does a single call that does a query for multiple columns from our database and makes an object out of it, which is returned to us
 	/adminSearchResult, err := db.FetchAdminDetailsByUsername(username)
 	if err != nil {
@@ -811,12 +811,12 @@ func handleAdminSearch(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Printf("Username is: %s", adminSearchResult.Username.String)
 	writeJSON(w, r, adminSearchResult)
-	*/
+
 
 	// this way does multiple calls to get individual things (for example, a single call for username, a single call for discord Id, a single call for google Id etc)
 	// once we have all the single fields we need, it then makes an object out of them with the info that we want
 
-	
+	/*
 	dbUsername, err := db.CheckUsernameExists(username)
 	if err != nil {
 		httpError(w, r, err, http.StatusInternalServerError)
@@ -853,6 +853,6 @@ func handleAdminSearch(w http.ResponseWriter, r *http.Request) {
 	}
 	
 	writeJSON(w, r, adminResponse)
-	
+	*/
 	log.Printf("%s: %s searched for username %s", userDiscordId, r.URL.Path, username)
 }
