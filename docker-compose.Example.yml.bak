@@ -4,7 +4,7 @@ services:
       - beta.env
     image: rogueserver:latest
     restart: unless-stopped
-    depends_on:
+    depends_on:S
       db:
         condition: service_healthy
     networks:
