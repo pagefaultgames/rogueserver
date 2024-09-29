@@ -179,17 +179,51 @@ func FetchLastLoggedInDateByUsername(username string) (string, error) {
 }
 
 type AdminSearchResponse struct {
-	Username        sql.NullString `json:"username"`
-	DiscordId       sql.NullString `json:"discordId"`
-	GoogleId        sql.NullString `json:"googleId"`
-	LastLoggedIn	sql.NullString `json:"lastLoggedIn"`
+	Username        string `json:"username"`
+	DiscordId       string `json:"discordId"`
+	GoogleId        string `json:"googleId"`
+	LastLoggedIn	string `json:"lastLoggedIn"`
 }
 
 func FetchAdminDetailsByUsername(dbUsername string) (AdminSearchResponse, error) {
+	var resultUsername, resultDiscordId, resultGoogleId, resultLastLoggedIn sql.NullString
+	var username, discordId, googleId, lastLoggedIn string
 	var adminResponse AdminSearchResponse
-	err := handle.QueryRow("SELECT username, discordId, googleId, lastLoggedIn from accounts WHERE username = ?", dbUsername).Scan(&adminResponse.Username, &adminResponse.DiscordId, &adminResponse.GoogleId, &adminResponse.LastLoggedIn)
+
+	err := handle.QueryRow("SELECT username, discordId, googleId, lastLoggedIn from accounts WHERE username = ?", dbUsername).Scan(&resultUsername, &resultDiscordId, &resultGoogleId, &resultLastLoggedIn)
 	if err != nil {
 		return adminResponse, err
+	}
+
+	if resultUsername.Valid {
+		username = resultUsername.String
+	} else {
+		username = ""
+	}
+
+	if resultDiscordId.Valid {
+		discordId = resultDiscordId.String
+	} else {
+		discordId = ""
+	}
+
+	if resultGoogleId.Valid {
+		googleId = resultGoogleId.String
+	} else {
+		googleId = ""
+	}
+
+	if resultLastLoggedIn.Valid {
+		lastLoggedIn = resultLastLoggedIn.String
+	} else {
+		lastLoggedIn = ""
+	}
+
+	adminResponse = AdminSearchResponse{
+		Username:        username,
+		DiscordId:       discordId,
+		GoogleId:        googleId,
+		LastLoggedIn:    lastLoggedIn,
 	}
 
 	return adminResponse, nil

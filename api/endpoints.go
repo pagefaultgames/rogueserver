@@ -759,15 +759,6 @@ func handleAdminDiscordUnlink(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// this is for the output for the admin search, but should probably be moved elsewhere, though not sure where
-// account/info has its own version under api/account/info.ts, but not sure if we want a new folder/file for admin stuff or to put it elsewhere?
-type AdminSearchResponse struct { 
-	Username        string `json:"username"`
-	DiscordId       string `json:"discordId"`
-	GoogleId        string `json:"googleId"`
-	LastLoggedIn	string `json:"lastLoggedIn"`
-}
-
 func handleAdminSearch(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
@@ -800,59 +791,21 @@ func handleAdminSearch(w http.ResponseWriter, r *http.Request) {
 
 	username := r.Form.Get("username")
 
-	log.Printf("USERNAME SEARCH STARTING")
+	// this does a quick call to make sure the username exists on the server before allowing the rest of the code to run
+	// this calls error value 204 (StatusNoContent) if there's no data; this means the username does not exist in the server
+	_, err = db.CheckUsernameExists(username)
+	if err != nil {
+		httpError(w, r, fmt.Errorf("username does not exist on the server"), http.StatusNoContent)
+		return
+	}
 
-
-	// this way does a single call that does a query for multiple columns from our database and makes an object out of it, which is returned to us
+	// this does a single call that does a query for multiple columns from our database and makes an object out of it, which is returned to us
 	adminSearchResult, err := db.FetchAdminDetailsByUsername(username)
 	if err != nil {
 		httpError(w, r, err, http.StatusInternalServerError)
 		return
 	}
-	log.Printf("Username is: %s", adminSearchResult.Username.String)
+
 	writeJSON(w, r, adminSearchResult)
-
-
-	// this way does multiple calls to get individual things (for example, a single call for username, a single call for discord Id, a single call for google Id etc)
-	// once we have all the single fields we need, it then makes an object out of them with the info that we want
-
-	/*
-	dbUsername, err := db.CheckUsernameExists(username)
-	if err != nil {
-		httpError(w, r, err, http.StatusInternalServerError)
-		return
-	}
-	log.Printf("Username is: %s", dbUsername)
-
-	discordId, err := db.FetchDiscordIdByUsername(username)
-	if err != nil {
-		httpError(w, r, err, http.StatusUnauthorized)
-		return
-	}
-	log.Printf("Discord Id is: %s", discordId)
-
-	googleId, err := db.FetchGoogleIdByUsername(username)
-	if err != nil {
-		httpError(w, r, err, http.StatusUnauthorized)
-		return
-	}
-	log.Printf("Google Id is: %s", googleId)
-
-	lastLoggedIn, err := db.FetchLastLoggedInDateByUsername(username)
-	if err != nil {
-		httpError(w, r, err, http.StatusUnauthorized)
-		return
-	}
-	log.Printf("Last Logged in date is: %s", lastLoggedIn)
-
-	adminResponse := AdminSearchResponse{
-		Username:        username,
-		DiscordId:       discordId,
-		GoogleId:        googleId,
-		LastLoggedIn:    lastLoggedIn,
-	}
-	
-	writeJSON(w, r, adminResponse)
-	*/
 	log.Printf("%s: %s searched for username %s", userDiscordId, r.URL.Path, username)
 }
