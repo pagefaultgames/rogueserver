@@ -693,13 +693,24 @@ func handleAdminDiscordLink(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = db.AddDiscordIdByUsername(r.Form.Get("discordId"), r.Form.Get("username"))
+	username := r.Form.Get("username")
+	discordId := r.Form.Get("discordId")
+
+	// this does a quick call to make sure the username exists on the server before allowing the rest of the code to run
+	// this calls error value 204 (StatusNoContent) if there's no data; this means the username does not exist in the server
+	_, err = db.CheckUsernameExists(username)
+	if err != nil {
+		httpError(w, r, fmt.Errorf("username does not exist on the server"), http.StatusNoContent)
+		return
+	}
+
+	err = db.AddDiscordIdByUsername(discordId, username)
 	if err != nil {
 		httpError(w, r, err, http.StatusInternalServerError)
 		return
 	}
 
-	log.Printf("%s: %s added discord id %s to username %s", r.URL.Path, userDiscordId, r.Form.Get("discordId"), r.Form.Get("username"))
+	log.Printf("%s: %s added discord id %s to username %s", r.URL.Path, userDiscordId, discordId, username)
 
 	w.WriteHeader(http.StatusOK)
 }
@@ -739,6 +750,13 @@ func handleAdminDiscordUnlink(w http.ResponseWriter, r *http.Request) {
 
 	if username != "" {
 		log.Printf("Username given, removing discordId")
+		// this does a quick call to make sure the username exists on the server before allowing the rest of the code to run
+		// this calls error value 204 (StatusNoContent) if there's no data; this means the username does not exist in the server
+		_, err = db.CheckUsernameExists(username)
+		if err != nil {
+			httpError(w, r, fmt.Errorf("username does not exist on the server"), http.StatusNoContent)
+			return
+		}
 		err = db.RemoveDiscordIdByUsername(username)
 		if err != nil {
 			httpError(w, r, err, http.StatusInternalServerError)
