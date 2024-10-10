@@ -70,6 +70,8 @@ func Init(mux *http.ServeMux) error {
 	// admin
 	mux.HandleFunc("POST /admin/account/discord-link", handleAdminDiscordLink)
 	mux.HandleFunc("POST /admin/account/discord-unlink", handleAdminDiscordUnlink)
+	mux.HandleFunc("POST /admin/account/google-link", handleAdminGoogleLink)
+	mux.HandleFunc("POST /admin/account/google-unlink", handleAdminGoogleUnlink)
 	mux.HandleFunc("GET /admin/account/admin-search", handleAdminSearch)
 
 	return nil
