@@ -1,8 +1,7 @@
 services:
   server:
-    env_file:
-      - beta.env
-    image: rogueserver:latest
+    command: --debug --dbaddr db --dbuser pokerogue --dbpass pokerogue --dbname pokeroguedb --gameurl http://localhost:8000 --callbackurl http://localhost:8001 
+    image: ghcr.io/pagefaultgames/rogueserver:master
     restart: unless-stopped
     depends_on:
       db:
