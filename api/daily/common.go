@@ -40,8 +40,9 @@ import (
 const secondsPerDay = 60 * 60 * 24
 
 var (
-	scheduler = cron.New(cron.WithLocation(time.UTC))
-	secret    []byte
+	scheduler   = cron.New(cron.WithLocation(time.UTC))
+	s3scheduler = cron.New(cron.WithLocation(time.UTC))
+	secret      []byte
 )
 
 func Init() error {
