@@ -1,6 +1,6 @@
 services:
   server: 
-    image: ghcr.io/pagefaultgames/rogueserver:master
+    image: rogueserver:latest
     restart: unless-stopped
     environment:
       debug: true
@@ -10,6 +10,11 @@ services:
       dbname: pokeroguedb
       gameurl: http://localhost:8000
       callbackurl: http://localhost:8001
+      AWS_ACCESS_KEY_ID: <access>
+      AWS_SECRET_ACCESS_KEY: <secret>
+      AWS_REGION: <region>
+      AWS_ENDPOINT_URL_S3: <endpoint>
+
     depends_on:
       db:
         condition: service_healthy

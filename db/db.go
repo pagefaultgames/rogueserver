@@ -103,6 +103,11 @@ func setupDb(tx *sql.Tx) error {
 
 		`ALTER TABLE accounts ADD COLUMN IF NOT EXISTS discordId VARCHAR(32) UNIQUE DEFAULT NULL`,
 		`ALTER TABLE accounts ADD COLUMN IF NOT EXISTS googleId VARCHAR(32) UNIQUE DEFAULT NULL`,
+
+		// ----------------------------------
+		// MIGRATION 004
+
+		`ALTER TABLE accounts ADD COLUMN IF NOT EXISTS isInLocalDb TINYINT(1) NOT NULL DEFAULT 1`,
 	}
 
 	for _, q := range queries {

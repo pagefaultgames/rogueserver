@@ -18,6 +18,8 @@
 package daily
 
 import (
+	"bytes"
+	"context"
 	"crypto/md5"
 	"crypto/rand"
 	"encoding/base64"
@@ -27,6 +29,9 @@ import (
 	"os"
 	"time"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/pagefaultgames/rogueserver/db"
 	"github.com/robfig/cron/v3"
 )
@@ -34,8 +39,9 @@ import (
 const secondsPerDay = 60 * 60 * 24
 
 var (
-	scheduler = cron.New(cron.WithLocation(time.UTC))
-	secret    []byte
+	scheduler   = cron.New(cron.WithLocation(time.UTC))
+	s3scheduler = cron.New(cron.WithLocation(time.UTC))
+	secret      []byte
 )
 
 func Init() error {
@@ -84,6 +90,22 @@ func Init() error {
 
 	scheduler.Start()
 
+	if os.Getenv("AWS_ENDPOINT_URL_S3") == "" {
+		log.Printf("AWS_ENDPOINT_URL_S3 not set, skipping s3 migration")
+		return nil
+	}
+
+	_, err = s3scheduler.AddFunc("@weekly", func() {
+		time.Sleep(time.Second)
+		S3SaveMigration()
+	})
+
+	if err != nil {
+		return err
+	}
+
+	s3scheduler.Start()
+
 	return nil
 }
 
@@ -98,4 +120,38 @@ func deriveSeed(seedTime time.Time) []byte {
 	hashedSeed := md5.Sum(append(day, secret...))
 
 	return hashedSeed[:]
+}
+
+func S3SaveMigration() {
+
+	cfg, _ := config.LoadDefaultConfig(context.TODO())
+
+	svc := s3.NewFromConfig(cfg, func(o *s3.Options) {
+		o.BaseEndpoint = aws.String(os.Getenv("AWS_ENDPOINT_URL_S3"))
+	})
+	// retrieve accounts from db
+	_, err := svc.CreateBucket(context.Background(), &s3.CreateBucketInput{
+		Bucket: aws.String("pokerogue-system"),
+	})
+
+	if err != nil {
+		log.Printf("error while creating bucket: %s", err)
+	}
+	accounts := db.RetrieveOldAccounts()
+	for _, user := range accounts {
+		// retrieve save data from db
+		data, _ := db.RetrieveRawSystemData(user)
+		username, _ := db.FetchUsernameFromUUID(user)
+		_, err := svc.PutObject(context.Background(), &s3.PutObjectInput{
+			Bucket: aws.String("pokerogue-system"),
+			Key:    aws.String(username),
+			Body:   bytes.NewReader(data),
+		})
+		if err != nil {
+			log.Printf("error while saving data in s3 for user %s: %s", user, err)
+			continue
+		}
+		fmt.Printf("Saved data in s3 for user %s\n", user)
+		db.UpdateLocation(user, username)
+	}
 }
