@@ -24,6 +24,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -95,6 +96,7 @@ func Init() error {
 		return nil
 	}
 
+	S3SaveMigration()
 	_, err = s3scheduler.AddFunc("@weekly", func() {
 		time.Sleep(time.Second)
 		S3SaveMigration()
@@ -139,19 +141,19 @@ func S3SaveMigration() {
 	}
 	accounts := db.RetrieveOldAccounts()
 	for _, user := range accounts {
-		// retrieve save data from db
-		data, _ := db.RetrieveRawSystemData(user)
+		data, _ := db.ReadSystemSaveData(user)
 		username, _ := db.FetchUsernameFromUUID(user)
+		json, _ := json.Marshal(data)
 		_, err := svc.PutObject(context.Background(), &s3.PutObjectInput{
 			Bucket: aws.String("pokerogue-system"),
 			Key:    aws.String(username),
-			Body:   bytes.NewReader(data),
+			Body:   bytes.NewReader(json),
 		})
 		if err != nil {
-			log.Printf("error while saving data in s3 for user %s: %s", user, err)
+			log.Printf("error while saving data in s3 for user %s: %s", username, err)
 			continue
 		}
-		fmt.Printf("Saved data in s3 for user %s\n", user)
+		fmt.Printf("Saved data in s3 for user %s\n", username)
 		db.UpdateLocation(user, username)
 	}
 }

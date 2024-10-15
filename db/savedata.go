@@ -21,6 +21,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/gob"
+	"encoding/json"
 	"fmt"
 
 	"github.com/klauspost/compress/zstd"
@@ -62,7 +63,6 @@ func ReadSystemSaveData(uuid []byte) (defs.SystemSaveData, error) {
 	var system defs.SystemSaveData
 
 	isLocal, err := isSaveInLocalDb(uuid)
-
 	if err != nil {
 		return system, err
 	}
@@ -242,22 +242,29 @@ func RetrieveSystemSaveFromS3(uuid []byte) error {
 		return err
 	}
 
-	var data []byte
-	_, err = resp.Body.Read(data)
-	if err != nil {
-		return err
-	}
+	var session defs.SystemSaveData
+	json.NewDecoder(resp.Body).Decode(&session)
 
-	_, err = handle.Exec("REPLACE INTO systemSaveData (uuid, data, timestamp) VALUES (?, ?, UTC_TIMESTAMP())", uuid, data)
+	err = StoreSystemSaveData(uuid, session)
+
 	if err != nil {
+		fmt.Printf("Failed to store system save data from s3 for user %s\n", username)
 		return err
 	}
+	fmt.Printf("Retrieved system save data from s3 for user %s\n", username)
 
 	_, err = handle.Exec("UPDATE accounts SET isInLocalDb = 1 WHERE uuid = ?", uuid)
 	if err != nil {
 		return err
 	}
 
+	_, err = client.DeleteObject(context.TODO(), &s3.DeleteObjectInput{
+		Bucket: aws.String("pokerogue-system"),
+		Key:    aws.String(username),
+	})
+	if err != nil {
+		fmt.Printf("Failed to delete object %s from s3: %s\n", username, err)
+	}
 	return nil
 }
 
@@ -283,19 +290,9 @@ func RetrieveOldAccounts() [][]byte {
 	return users
 }
 
-func RetrieveRawSystemData(uuid []byte) ([]byte, error) {
-	var data []byte
-	err := handle.QueryRow("SELECT data FROM systemSaveData WHERE uuid = ?", uuid).Scan(&data)
-	if err != nil {
-		return nil, err
-	}
-
-	return data, nil
-}
-
 func UpdateLocation(uuid []byte, username string) {
 	_, err := handle.Exec("UPDATE accounts SET isInLocalDb = 0 WHERE uuid = ?", uuid)
-	if err == nil {
+	if err != nil {
 		fmt.Printf("Failed to update location for user %s\n", username)
 		return
 	}
