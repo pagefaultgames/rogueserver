@@ -159,6 +159,7 @@ func S3SaveMigration() error {
 			Key:    aws.String(username),
 			Body:   bytes.NewReader(json),
 		})
+
 		if err != nil {
 			log.Printf("error while saving data in S3 for user %s: %s", username, err)
 			continue
