@@ -96,8 +96,7 @@ func Init() error {
 		return nil
 	}
 
-	S3SaveMigration()
-	_, err = s3scheduler.AddFunc("@weekly", func() {
+	_, err = s3scheduler.AddFunc("@hourly", func() {
 		time.Sleep(time.Second)
 		S3SaveMigration()
 	})
