@@ -124,7 +124,6 @@ func deriveSeed(seedTime time.Time) []byte {
 }
 
 func S3SaveMigration() {
-
 	cfg, _ := config.LoadDefaultConfig(context.TODO())
 
 	svc := s3.NewFromConfig(cfg, func(o *s3.Options) {
@@ -138,6 +137,7 @@ func S3SaveMigration() {
 	if err != nil {
 		log.Printf("error while creating bucket: %s", err)
 	}
+
 	accounts := db.RetrieveOldAccounts()
 	for _, user := range accounts {
 		data, _ := db.ReadSystemSaveData(user)
@@ -148,10 +148,12 @@ func S3SaveMigration() {
 			Key:    aws.String(username),
 			Body:   bytes.NewReader(json),
 		})
+
 		if err != nil {
 			log.Printf("error while saving data in s3 for user %s: %s", username, err)
 			continue
 		}
+
 		fmt.Printf("Saved data in s3 for user %s\n", username)
 		db.UpdateLocation(user, username)
 	}

@@ -246,11 +246,11 @@ func RetrieveSystemSaveFromS3(uuid []byte) error {
 	json.NewDecoder(resp.Body).Decode(&session)
 
 	err = StoreSystemSaveData(uuid, session)
-
 	if err != nil {
 		fmt.Printf("Failed to store system save data from s3 for user %s\n", username)
 		return err
 	}
+
 	fmt.Printf("Retrieved system save data from s3 for user %s\n", username)
 
 	_, err = handle.Exec("UPDATE accounts SET isInLocalDb = 1 WHERE uuid = ?", uuid)
@@ -262,6 +262,7 @@ func RetrieveSystemSaveFromS3(uuid []byte) error {
 		Bucket: aws.String("pokerogue-system"),
 		Key:    aws.String(username),
 	})
+
 	if err != nil {
 		fmt.Printf("Failed to delete object %s from s3: %s\n", username, err)
 	}
