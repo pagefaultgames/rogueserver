@@ -740,38 +740,36 @@ func handleAdminDiscordUnlink(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err != nil {
-		httpError(w, r, err, http.StatusUnauthorized)
-		return
-	}
-
 	username := r.Form.Get("username")
 	discordId := r.Form.Get("discordId")
 
-	if username != "" {
-		log.Printf("Username given, removing discordId")
-		// this does a quick call to make sure the username exists on the server before allowing the rest of the code to run
-		// this calls error value 404 (StatusNotFound) if there's no data; this means the username does not exist in the server
-		_, err = db.CheckUsernameExists(username)
-		if err != nil {
-			httpError(w, r, fmt.Errorf("username does not exist on the server"), http.StatusNotFound)
-			return
-		}
-		err = db.RemoveDiscordIdByUsername(username)
-		if err != nil {
-			httpError(w, r, err, http.StatusInternalServerError)
-			return
-		}
-	}
-	if discordId != "" {
-		log.Printf("DiscordID given, removing discordId")
-		err = db.RemoveDiscordIdByDiscordId(discordId)
-		if err != nil {
-			httpError(w, r, err, http.StatusInternalServerError)
-			return
-		}
-	}
+	switch {
+		case username != "":
+			log.Printf("Username given, removing discordId")
+			// this does a quick call to make sure the username exists on the server before allowing the rest of the code to run
+			// this calls error value 404 (StatusNotFound) if there's no data; this means the username does not exist in the server
+			_, err = db.CheckUsernameExists(username)
+			if err != nil {
+				httpError(w, r, fmt.Errorf("username does not exist on the server"), http.StatusNotFound)
+				return
+			}
 
+			err = db.RemoveDiscordIdByUsername(username)
+			if err != nil {
+				httpError(w, r, err, http.StatusInternalServerError)
+				return
+			}
+
+		case discordId != "":
+			log.Printf("DiscordID given, removing discordId")
+			err = db.RemoveDiscordIdByDiscordId(discordId)
+			if err != nil {
+				httpError(w, r, err, http.StatusInternalServerError)
+				return
+			}
+
+	}
+	
 	log.Printf("%s: %s removed discord id %s from username %s", userDiscordId, r.URL.Path, r.Form.Get("discordId"), r.Form.Get("username"))
 
 	w.WriteHeader(http.StatusOK)
@@ -849,36 +847,34 @@ func handleAdminGoogleUnlink(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err != nil {
-		httpError(w, r, err, http.StatusUnauthorized)
-		return
-	}
-
 	username := r.Form.Get("username")
 	googleId := r.Form.Get("googleId")
 
-	if username != "" {
-		log.Printf("Username given, removing googleId")
-		// this does a quick call to make sure the username exists on the server before allowing the rest of the code to run
-		// this calls error value 404 (StatusNotFound) if there's no data; this means the username does not exist in the server
-		_, err = db.CheckUsernameExists(username)
-		if err != nil {
-			httpError(w, r, fmt.Errorf("username does not exist on the server"), http.StatusNotFound)
-			return
-		}
-		err = db.RemoveGoogleIdByUsername(username)
-		if err != nil {
-			httpError(w, r, err, http.StatusInternalServerError)
-			return
-		}
-	}
-	if googleId != "" {
-		log.Printf("DiscordID given, removing googleId")
-		err = db.RemoveGoogleIdByDiscordId(googleId)
-		if err != nil {
-			httpError(w, r, err, http.StatusInternalServerError)
-			return
-		}
+	switch {
+		case username != "":
+			log.Printf("Username given, removing googleId")
+			// this does a quick call to make sure the username exists on the server before allowing the rest of the code to run
+			// this calls error value 404 (StatusNotFound) if there's no data; this means the username does not exist in the server
+			_, err = db.CheckUsernameExists(username)
+			if err != nil {
+				httpError(w, r, fmt.Errorf("username does not exist on the server"), http.StatusNotFound)
+				return
+			}
+
+			err = db.RemoveGoogleIdByUsername(username)
+			if err != nil {
+				httpError(w, r, err, http.StatusInternalServerError)
+				return
+			}
+
+		case googleId != "":
+			log.Printf("DiscordID given, removing googleId")
+			err = db.RemoveGoogleIdByDiscordId(googleId)
+			if err != nil {
+				httpError(w, r, err, http.StatusInternalServerError)
+				return
+			}
+
 	}
 
 	log.Printf("%s: %s removed google id %s from username %s", userDiscordId, r.URL.Path, r.Form.Get("googleId"), r.Form.Get("username"))
@@ -908,11 +904,6 @@ func handleAdminSearch(w http.ResponseWriter, r *http.Request) {
 	hasRole, err := account.IsUserDiscordAdmin(userDiscordId, account.DiscordGuildID)
 	if !hasRole || err != nil {
 		httpError(w, r, fmt.Errorf("user does not have the required role"), http.StatusForbidden)
-		return
-	}
-
-	if err != nil {
-		httpError(w, r, err, http.StatusUnauthorized)
 		return
 	}
 
