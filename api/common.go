@@ -68,7 +68,11 @@ func Init(mux *http.ServeMux) error {
 	mux.HandleFunc("/auth/{provider}/logout", handleProviderLogout)
 
 	// admin
-	mux.HandleFunc("POST /admin/account/discord-link", handleAdminDiscordLink)
+	mux.HandleFunc("POST /admin/account/discordLink", handleAdminDiscordLink)
+	mux.HandleFunc("POST /admin/account/discordUnlink", handleAdminDiscordUnlink)
+	mux.HandleFunc("POST /admin/account/googleLink", handleAdminGoogleLink)
+	mux.HandleFunc("POST /admin/account/googleUnlink", handleAdminGoogleUnlink)
+	mux.HandleFunc("GET /admin/account/adminSearch", handleAdminSearch)
 
 	return nil
 }

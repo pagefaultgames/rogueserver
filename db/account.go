@@ -68,6 +68,25 @@ func AddGoogleIdByUsername(googleId string, username string) error {
 	return nil
 }
 
+func AddGoogleIdByUUID(googleId string, uuid []byte) error {
+	_, err := handle.Exec("UPDATE accounts SET googleId = ? WHERE uuid = ?", googleId, uuid)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func AddDiscordIdByUUID(discordId string, uuid []byte) error {
+	_, err := handle.Exec("UPDATE accounts SET discordId = ? WHERE uuid = ?", discordId, uuid)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+
 func FetchUsernameByDiscordId(discordId string) (string, error) {
 	var username string
 	err := handle.QueryRow("SELECT username FROM accounts WHERE discordId = ?", discordId).Scan(&username)
@@ -152,6 +171,60 @@ func FetchUsernameBySessionToken(token []byte) (string, error) {
 	}
 
 	return username, nil
+}
+
+func CheckUsernameExists(username string) (string, error) {
+	var dbUsername sql.NullString
+	err := handle.QueryRow("SELECT username FROM accounts WHERE username = ?", username).Scan(&dbUsername)
+	if err != nil {
+		return "", err
+	}
+	if !dbUsername.Valid {
+		return "", nil
+	}
+
+	return dbUsername.String, nil
+}
+
+func FetchLastLoggedInDateByUsername(username string) (string, error) {
+	var lastLoggedIn sql.NullString
+	err := handle.QueryRow("SELECT lastLoggedIn FROM accounts WHERE username = ?", username).Scan(&lastLoggedIn)
+	if err != nil {
+		return "", err
+	}
+	if !lastLoggedIn.Valid {
+		return "", nil
+	}
+
+	return lastLoggedIn.String, nil
+}
+
+type AdminSearchResponse struct {
+	Username        string `json:"username"`
+	DiscordId       string `json:"discordId"`
+	GoogleId        string `json:"googleId"`
+	LastLoggedIn	string `json:"lastLoggedIn"`
+	Registered		string `json:"registered"`
+}
+
+func FetchAdminDetailsByUsername(dbUsername string) (AdminSearchResponse, error) {
+	var resultUsername, resultDiscordId, resultGoogleId, resultLastLoggedIn, resultRegistered sql.NullString
+	var adminResponse AdminSearchResponse
+
+	err := handle.QueryRow("SELECT username, discordId, googleId, lastLoggedIn, registered from accounts WHERE username = ?", dbUsername).Scan(&resultUsername, &resultDiscordId, &resultGoogleId, &resultLastLoggedIn, &resultRegistered)
+	if err != nil {
+		return adminResponse, err
+	}
+
+	adminResponse = AdminSearchResponse{
+		Username:        resultUsername.String,
+		DiscordId:       resultDiscordId.String,
+		GoogleId:        resultGoogleId.String,
+		LastLoggedIn:    resultLastLoggedIn.String,
+		Registered:		 resultRegistered.String,
+	}
+
+	return adminResponse, nil
 }
 
 func UpdateAccountPassword(uuid, key, salt []byte) error {
@@ -343,6 +416,16 @@ func FetchUsernameFromUUID(uuid []byte) (string, error) {
 	return username, nil
 }
 
+func FetchUUIDFromUsername(username string) ([]byte, error) {
+	var uuid []byte
+	err := handle.QueryRow("SELECT uuid FROM accounts WHERE username = ?", username).Scan(&uuid)
+	if err != nil {
+		return nil, err
+	}
+
+	return uuid, nil
+}
+
 func RemoveDiscordIdByUUID(uuid []byte) error {
 	_, err := handle.Exec("UPDATE accounts SET discordId = NULL WHERE uuid = ?", uuid)
 	if err != nil {
@@ -354,6 +437,42 @@ func RemoveDiscordIdByUUID(uuid []byte) error {
 
 func RemoveGoogleIdByUUID(uuid []byte) error {
 	_, err := handle.Exec("UPDATE accounts SET googleId = NULL WHERE uuid = ?", uuid)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func RemoveGoogleIdByUsername(username string) error {
+	_, err := handle.Exec("UPDATE accounts SET googleId = NULL WHERE username = ?", username)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func RemoveDiscordIdByUsername(username string) error {
+	_, err := handle.Exec("UPDATE accounts SET discordId = NULL WHERE username = ?", username)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func RemoveDiscordIdByDiscordId(discordId string) error {
+	_, err := handle.Exec("UPDATE accounts SET discordId = NULL WHERE discordId = ?", discordId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func RemoveGoogleIdByDiscordId(discordId string) error {
+	_, err := handle.Exec("UPDATE accounts SET googleId = NULL WHERE discordId = ?", discordId)
 	if err != nil {
 		return err
 	}

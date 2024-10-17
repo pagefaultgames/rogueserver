@@ -37,6 +37,8 @@ services:
       - database:/var/lib/mysql
     networks:
       - internal
+    ports:
+      - "3306:3306"
 
   # Watchtower is a service that will automatically update your running containers
   # when a new image is available. This is useful for keeping your server up-to-date.
