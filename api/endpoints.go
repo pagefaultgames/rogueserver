@@ -704,7 +704,13 @@ func handleAdminDiscordLink(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = db.AddDiscordIdByUsername(discordId, username)
+	userUuid, err := db.FetchUUIDFromUsername(username)
+	if err != nil {
+		httpError(w, r, err, http.StatusInternalServerError)
+		return
+	}
+
+	err = db.AddDiscordIdByUUID(discordId, userUuid)
 	if err != nil {
 		httpError(w, r, err, http.StatusInternalServerError)
 		return
@@ -754,12 +760,17 @@ func handleAdminDiscordUnlink(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			err = db.RemoveDiscordIdByUsername(username)
+			userUuid, err := db.FetchUUIDFromUsername(username)
 			if err != nil {
 				httpError(w, r, err, http.StatusInternalServerError)
 				return
 			}
 
+			err = db.RemoveDiscordIdByUUID(userUuid)
+			if err != nil {
+				httpError(w, r, err, http.StatusInternalServerError)
+				return
+			}
 		case discordId != "":
 			log.Printf("DiscordID given, removing discordId")
 			err = db.RemoveDiscordIdByDiscordId(discordId)
@@ -767,7 +778,6 @@ func handleAdminDiscordUnlink(w http.ResponseWriter, r *http.Request) {
 				httpError(w, r, err, http.StatusInternalServerError)
 				return
 			}
-
 	}
 	
 	log.Printf("%s: %s removed discord id %s from username %s", userDiscordId, r.URL.Path, r.Form.Get("discordId"), r.Form.Get("username"))
@@ -810,8 +820,14 @@ func handleAdminGoogleLink(w http.ResponseWriter, r *http.Request) {
 		httpError(w, r, fmt.Errorf("username does not exist on the server"), http.StatusNotFound)
 		return
 	}
+	
+	userUuid, err := db.FetchUUIDFromUsername(username)
+	if err != nil {
+		httpError(w, r, err, http.StatusInternalServerError)
+		return
+	}
 
-	err = db.AddGoogleIdByUsername(googleId, username)
+	err = db.AddGoogleIdByUUID(googleId, userUuid)
 	if err != nil {
 		httpError(w, r, err, http.StatusInternalServerError)
 		return
@@ -861,12 +877,17 @@ func handleAdminGoogleUnlink(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			err = db.RemoveGoogleIdByUsername(username)
+			userUuid, err := db.FetchUUIDFromUsername(username)
 			if err != nil {
 				httpError(w, r, err, http.StatusInternalServerError)
 				return
 			}
 
+			err = db.RemoveGoogleIdByUUID(userUuid)
+			if err != nil {
+				httpError(w, r, err, http.StatusInternalServerError)
+				return
+			}
 		case googleId != "":
 			log.Printf("DiscordID given, removing googleId")
 			err = db.RemoveGoogleIdByDiscordId(googleId)
@@ -874,7 +895,6 @@ func handleAdminGoogleUnlink(w http.ResponseWriter, r *http.Request) {
 				httpError(w, r, err, http.StatusInternalServerError)
 				return
 			}
-
 	}
 
 	log.Printf("%s: %s removed google id %s from username %s", userDiscordId, r.URL.Path, r.Form.Get("googleId"), r.Form.Get("username"))

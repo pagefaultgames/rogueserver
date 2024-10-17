@@ -68,6 +68,25 @@ func AddGoogleIdByUsername(googleId string, username string) error {
 	return nil
 }
 
+func AddGoogleIdByUUID(googleId string, uuid []byte) error {
+	_, err := handle.Exec("UPDATE accounts SET googleId = ? WHERE uuid = ?", googleId, uuid)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func AddDiscordIdByUUID(discordId string, uuid []byte) error {
+	_, err := handle.Exec("UPDATE accounts SET discordId = ? WHERE uuid = ?", discordId, uuid)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+
 func FetchUsernameByDiscordId(discordId string) (string, error) {
 	var username string
 	err := handle.QueryRow("SELECT username FROM accounts WHERE discordId = ?", discordId).Scan(&username)
@@ -163,6 +182,7 @@ func CheckUsernameExists(username string) (string, error) {
 	if !dbUsername.Valid {
 		return "", nil
 	}
+
 	return dbUsername.String, nil
 }
 
@@ -175,6 +195,7 @@ func FetchLastLoggedInDateByUsername(username string) (string, error) {
 	if !lastLoggedIn.Valid {
 		return "", nil
 	}
+
 	return lastLoggedIn.String, nil
 }
 
@@ -188,7 +209,6 @@ type AdminSearchResponse struct {
 
 func FetchAdminDetailsByUsername(dbUsername string) (AdminSearchResponse, error) {
 	var resultUsername, resultDiscordId, resultGoogleId, resultLastLoggedIn, resultRegistered sql.NullString
-	var username, discordId, googleId, lastLoggedIn, registered string
 	var adminResponse AdminSearchResponse
 
 	err := handle.QueryRow("SELECT username, discordId, googleId, lastLoggedIn, registered from accounts WHERE username = ?", dbUsername).Scan(&resultUsername, &resultDiscordId, &resultGoogleId, &resultLastLoggedIn, &resultRegistered)
@@ -196,42 +216,12 @@ func FetchAdminDetailsByUsername(dbUsername string) (AdminSearchResponse, error)
 		return adminResponse, err
 	}
 
-	if resultUsername.Valid {
-		username = resultUsername.String
-	} else {
-		username = ""
-	}
-
-	if resultDiscordId.Valid {
-		discordId = resultDiscordId.String
-	} else {
-		discordId = ""
-	}
-
-	if resultGoogleId.Valid {
-		googleId = resultGoogleId.String
-	} else {
-		googleId = ""
-	}
-
-	if resultLastLoggedIn.Valid {
-		lastLoggedIn = resultLastLoggedIn.String
-	} else {
-		lastLoggedIn = ""
-	}
-
-	if resultRegistered.Valid {
-		registered = resultRegistered.String
-	} else {
-		registered = ""
-	}
-
 	adminResponse = AdminSearchResponse{
-		Username:        username,
-		DiscordId:       discordId,
-		GoogleId:        googleId,
-		LastLoggedIn:    lastLoggedIn,
-		Registered:		 registered,
+		Username:        resultUsername.String,
+		DiscordId:       resultDiscordId.String,
+		GoogleId:        resultGoogleId.String,
+		LastLoggedIn:    resultLastLoggedIn.String,
+		Registered:		 resultRegistered.String,
 	}
 
 	return adminResponse, nil
@@ -424,6 +414,16 @@ func FetchUsernameFromUUID(uuid []byte) (string, error) {
 	}
 
 	return username, nil
+}
+
+func FetchUUIDFromUsername(username string) ([]byte, error) {
+	var uuid []byte
+	err := handle.QueryRow("SELECT uuid FROM accounts WHERE username = ?", username).Scan(&uuid)
+	if err != nil {
+		return nil, err
+	}
+
+	return uuid, nil
 }
 
 func RemoveDiscordIdByUUID(uuid []byte) error {
