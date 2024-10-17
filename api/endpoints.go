@@ -420,6 +420,7 @@ func handleSystem(w http.ResponseWriter, r *http.Request) {
 			if errors.Is(err, sql.ErrNoRows) {
 				http.Error(w, err.Error(), http.StatusNotFound)
 			} else {
+				fmt.Printf("failed to get system save data: %s\n", err)
 				httpError(w, r, err, http.StatusInternalServerError)
 			}
 

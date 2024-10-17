@@ -19,10 +19,17 @@ package db
 
 import (
 	"bytes"
+	"context"
 	"encoding/gob"
+	"encoding/json"
+	"fmt"
 
 	"github.com/klauspost/compress/zstd"
 	"github.com/pagefaultgames/rogueserver/defs"
+
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
 func TryAddSeedCompletion(uuid []byte, seed string, mode int) (bool, error) {
@@ -55,8 +62,16 @@ func ReadSeedCompleted(uuid []byte, seed string) (bool, error) {
 func ReadSystemSaveData(uuid []byte) (defs.SystemSaveData, error) {
 	var system defs.SystemSaveData
 
+	isLocal, err := isSaveInLocalDb(uuid)
+	if err != nil {
+		return system, err
+	}
+
+	if !isLocal {
+		RetrieveSystemSaveFromS3(uuid)
+	}
 	var data []byte
-	err := handle.QueryRow("SELECT data FROM systemSaveData WHERE uuid = ?", uuid).Scan(&data)
+	err = handle.QueryRow("SELECT data FROM systemSaveData WHERE uuid = ?", uuid).Scan(&data)
 	if err != nil {
 		return system, err
 	}
@@ -192,4 +207,96 @@ func RetrievePlaytime(uuid []byte) (int, error) {
 	}
 
 	return playtime, nil
+}
+
+func isSaveInLocalDb(uuid []byte) (bool, error) {
+	var isLocal bool
+	err := handle.QueryRow("SELECT isInLocalDb FROM accounts WHERE uuid = ?", uuid).Scan(&isLocal)
+	if err != nil {
+		return false, err
+	}
+
+	return isLocal, nil
+}
+
+func RetrieveSystemSaveFromS3(uuid []byte) error {
+	cfg, err := config.LoadDefaultConfig(context.TODO())
+	if err != nil {
+		return err
+	}
+
+	client := s3.NewFromConfig(cfg)
+
+	username, err := FetchUsernameFromUUID(uuid)
+	if err != nil {
+		return err
+	}
+
+	s3Object := &s3.GetObjectInput{
+		Bucket: aws.String("pokerogue-system"),
+		Key:    aws.String(username),
+	}
+
+	resp, err := client.GetObject(context.TODO(), s3Object)
+	if err != nil {
+		return err
+	}
+
+	var session defs.SystemSaveData
+	json.NewDecoder(resp.Body).Decode(&session)
+
+	err = StoreSystemSaveData(uuid, session)
+	if err != nil {
+		fmt.Printf("Failed to store system save data from s3 for user %s\n", username)
+		return err
+	}
+
+	fmt.Printf("Retrieved system save data from s3 for user %s\n", username)
+
+	_, err = handle.Exec("UPDATE accounts SET isInLocalDb = 1 WHERE uuid = ?", uuid)
+	if err != nil {
+		return err
+	}
+
+	_, err = client.DeleteObject(context.TODO(), &s3.DeleteObjectInput{
+		Bucket: aws.String("pokerogue-system"),
+		Key:    aws.String(username),
+	})
+
+	if err != nil {
+		fmt.Printf("Failed to delete object %s from s3: %s\n", username, err)
+	}
+	return nil
+}
+
+func RetrieveOldAccounts() [][]byte {
+	var users [][]byte
+	rows, err := handle.Query("SELECT uuid FROM accounts WHERE isInLocalDb = 1 && lastActivity < DATE_SUB(NOW(), INTERVAL 3 MONTH) LIMIT 3000")
+	if err != nil {
+		return nil
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var uuid []byte
+		if err := rows.Scan(&uuid); err != nil {
+			return nil
+		}
+		users = append(users, uuid)
+	}
+	if err := rows.Err(); err != nil {
+		return nil
+	}
+
+	return users
+}
+
+func UpdateLocation(uuid []byte, username string) {
+	_, err := handle.Exec("UPDATE accounts SET isInLocalDb = 0 WHERE uuid = ?", uuid)
+	if err != nil {
+		fmt.Printf("Failed to update location for user %s\n", username)
+		return
+	}
+
+	DeleteSystemSaveData(uuid)
 }
