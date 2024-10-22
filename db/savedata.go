@@ -243,7 +243,10 @@ func RetrieveSystemSaveFromS3(uuid []byte) error {
 	}
 
 	var session defs.SystemSaveData
-	json.NewDecoder(resp.Body).Decode(&session)
+	err = json.NewDecoder(resp.Body).Decode(&session)
+	if err != nil {
+		return err
+	}
 
 	err = StoreSystemSaveData(uuid, session)
 	if err != nil {
@@ -262,41 +265,46 @@ func RetrieveSystemSaveFromS3(uuid []byte) error {
 		Bucket: aws.String("pokerogue-system"),
 		Key:    aws.String(username),
 	})
-
 	if err != nil {
 		fmt.Printf("Failed to delete object %s from s3: %s\n", username, err)
 	}
+
 	return nil
 }
 
-func RetrieveOldAccounts() [][]byte {
+func RetrieveOldAccounts() ([][]byte, error) {
 	var users [][]byte
 	rows, err := handle.Query("SELECT uuid FROM accounts WHERE isInLocalDb = 1 && lastActivity < DATE_SUB(NOW(), INTERVAL 3 MONTH) LIMIT 3000")
 	if err != nil {
-		return nil
+		return nil, err
 	}
+
 	defer rows.Close()
 
 	for rows.Next() {
 		var uuid []byte
-		if err := rows.Scan(&uuid); err != nil {
-			return nil
+		err := rows.Scan(&uuid)
+		if err != nil {
+			return nil, err
 		}
+
 		users = append(users, uuid)
 	}
-	if err := rows.Err(); err != nil {
-		return nil
-	}
 
-	return users
+	return users, nil
 }
 
-func UpdateLocation(uuid []byte, username string) {
+func UpdateLocation(uuid []byte, username string) error {
 	_, err := handle.Exec("UPDATE accounts SET isInLocalDb = 0 WHERE uuid = ?", uuid)
 	if err != nil {
 		fmt.Printf("Failed to update location for user %s\n", username)
-		return
+		return err
 	}
 
-	DeleteSystemSaveData(uuid)
+	err = DeleteSystemSaveData(uuid)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

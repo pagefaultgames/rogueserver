@@ -96,11 +96,7 @@ func Init() error {
 		return nil
 	}
 
-	_, err = s3scheduler.AddFunc("@hourly", func() {
-		time.Sleep(time.Second)
-		S3SaveMigration()
-	})
-
+	_, err = s3scheduler.AddFunc("@hourly", S3SaveMigration)
 	if err != nil {
 		return err
 	}
@@ -129,32 +125,52 @@ func S3SaveMigration() {
 	svc := s3.NewFromConfig(cfg, func(o *s3.Options) {
 		o.BaseEndpoint = aws.String(os.Getenv("AWS_ENDPOINT_URL_S3"))
 	})
+
 	// retrieve accounts from db
 	_, err := svc.CreateBucket(context.Background(), &s3.CreateBucketInput{
 		Bucket: aws.String("pokerogue-system"),
 	})
-
 	if err != nil {
 		log.Printf("error while creating bucket: %s", err)
 	}
 
-	accounts := db.RetrieveOldAccounts()
+	accounts, err := db.RetrieveOldAccounts()
+	if err != nil {
+		log.Printf("failed to retrieve old accounts")
+		return
+	}
+
 	for _, user := range accounts {
-		data, _ := db.ReadSystemSaveData(user)
-		username, _ := db.FetchUsernameFromUUID(user)
-		json, _ := json.Marshal(data)
-		_, err := svc.PutObject(context.Background(), &s3.PutObjectInput{
+		data, err := db.ReadSystemSaveData(user)
+		if err != nil {
+			continue
+		}
+
+		username, err := db.FetchUsernameFromUUID(user)
+		if err != nil {
+			continue
+		}
+
+		json, err := json.Marshal(data)
+		if err != nil {
+			continue
+		}
+
+		_, err = svc.PutObject(context.Background(), &s3.PutObjectInput{
 			Bucket: aws.String("pokerogue-system"),
 			Key:    aws.String(username),
 			Body:   bytes.NewReader(json),
 		})
-
 		if err != nil {
 			log.Printf("error while saving data in s3 for user %s: %s", username, err)
 			continue
 		}
 
+		err = db.UpdateLocation(user, username)
+		if err != nil {
+			continue
+		}
+
 		fmt.Printf("Saved data in s3 for user %s\n", username)
-		db.UpdateLocation(user, username)
 	}
 }

@@ -75,5 +75,6 @@ func GenerateTokenForUsername(username string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to add account session")
 	}
+
 	return base64.StdEncoding.EncodeToString(token), nil
 }
