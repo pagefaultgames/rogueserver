@@ -91,17 +91,14 @@ func Init() error {
 
 	scheduler.Start()
 
-	if os.Getenv("AWS_ENDPOINT_URL_S3") == "" {
-		log.Printf("AWS_ENDPOINT_URL_S3 not set, skipping s3 migration")
-		return nil
-	}
+	if os.Getenv("AWS_ENDPOINT_URL_S3") != "" {
+		_, err = s3scheduler.AddFunc("@hourly", S3SaveMigration)
+		if err != nil {
+			return err
+		}
 
-	_, err = s3scheduler.AddFunc("@hourly", S3SaveMigration)
-	if err != nil {
-		return err
+		s3scheduler.Start()
 	}
-
-	s3scheduler.Start()
 
 	return nil
 }
@@ -162,15 +159,16 @@ func S3SaveMigration() {
 			Body:   bytes.NewReader(json),
 		})
 		if err != nil {
-			log.Printf("error while saving data in s3 for user %s: %s", username, err)
+			log.Printf("error while saving data in S3 for user %s: %s", username, err)
 			continue
 		}
 
 		err = db.UpdateLocation(user, username)
 		if err != nil {
+			log.Printf("Failed to update location for user %s: %s", username, err)
 			continue
 		}
 
-		fmt.Printf("Saved data in s3 for user %s\n", username)
+		log.Printf("Saved data in S3 for user %s", username)
 	}
 }

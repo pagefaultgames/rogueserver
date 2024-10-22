@@ -22,7 +22,7 @@ import (
 	"context"
 	"encoding/gob"
 	"encoding/json"
-	"fmt"
+	"log"
 
 	"github.com/klauspost/compress/zstd"
 	"github.com/pagefaultgames/rogueserver/defs"
@@ -250,11 +250,11 @@ func RetrieveSystemSaveFromS3(uuid []byte) error {
 
 	err = StoreSystemSaveData(uuid, session)
 	if err != nil {
-		fmt.Printf("Failed to store system save data from s3 for user %s\n", username)
+		log.Printf("Failed to store system save data from s3 for user %s", username)
 		return err
 	}
 
-	fmt.Printf("Retrieved system save data from s3 for user %s\n", username)
+	log.Printf("Retrieved system save data from s3 for user %s", username)
 
 	_, err = handle.Exec("UPDATE accounts SET isInLocalDb = 1 WHERE uuid = ?", uuid)
 	if err != nil {
@@ -266,7 +266,7 @@ func RetrieveSystemSaveFromS3(uuid []byte) error {
 		Key:    aws.String(username),
 	})
 	if err != nil {
-		fmt.Printf("Failed to delete object %s from s3: %s\n", username, err)
+		log.Printf("Failed to delete object %s from s3: %s", username, err)
 	}
 
 	return nil
@@ -297,7 +297,6 @@ func RetrieveOldAccounts() ([][]byte, error) {
 func UpdateLocation(uuid []byte, username string) error {
 	_, err := handle.Exec("UPDATE accounts SET isInLocalDb = 0 WHERE uuid = ?", uuid)
 	if err != nil {
-		fmt.Printf("Failed to update location for user %s\n", username)
 		return err
 	}
 
