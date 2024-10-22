@@ -40,9 +40,8 @@ import (
 const secondsPerDay = 60 * 60 * 24
 
 var (
-	scheduler   = cron.New(cron.WithLocation(time.UTC))
-	s3scheduler = cron.New(cron.WithLocation(time.UTC))
-	secret      []byte
+	scheduler = cron.New(cron.WithLocation(time.UTC))
+	secret    []byte
 )
 
 func Init() error {
@@ -92,12 +91,14 @@ func Init() error {
 	scheduler.Start()
 
 	if os.Getenv("AWS_ENDPOINT_URL_S3") != "" {
-		_, err = s3scheduler.AddFunc("@hourly", S3SaveMigration)
-		if err != nil {
-			return err
-		}
-
-		s3scheduler.Start()
+		go func() {
+			for {
+				err = S3SaveMigration()
+				if err != nil {
+					return
+				}
+			}
+		}()
 	}
 
 	return nil
@@ -116,7 +117,7 @@ func deriveSeed(seedTime time.Time) []byte {
 	return hashedSeed[:]
 }
 
-func S3SaveMigration() {
+func S3SaveMigration() error {
 	cfg, _ := config.LoadDefaultConfig(context.TODO())
 
 	svc := s3.NewFromConfig(cfg, func(o *s3.Options) {
@@ -128,13 +129,12 @@ func S3SaveMigration() {
 		Bucket: aws.String("pokerogue-system"),
 	})
 	if err != nil {
-		log.Printf("error while creating bucket: %s", err)
+		log.Printf("error while creating bucket (already exists?): %s", err)
 	}
 
 	accounts, err := db.RetrieveOldAccounts()
 	if err != nil {
-		log.Printf("failed to retrieve old accounts")
-		return
+		return fmt.Errorf("failed to retrieve old accounts: %s", err)
 	}
 
 	for _, user := range accounts {
@@ -165,10 +165,12 @@ func S3SaveMigration() {
 
 		err = db.UpdateLocation(user, username)
 		if err != nil {
-			log.Printf("Failed to update location for user %s: %s", username, err)
+			log.Printf("failed to update location for user %s: %s", username, err)
 			continue
 		}
 
-		log.Printf("Saved data in S3 for user %s", username)
+		log.Printf("saved data in S3 for user %s", username)
 	}
+
+	return nil
 }
