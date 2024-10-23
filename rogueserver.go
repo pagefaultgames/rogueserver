@@ -70,6 +70,7 @@ func main() {
 	account.GoogleCallbackURL = callbackurl + "/auth/google/callback"
 	account.DiscordSession, _ = discordgo.New("Bot " + discordbottoken)
 	account.DiscordGuildID = discordguildid
+
 	// register gob types
 	gob.Register([]interface{}{})
 	gob.Register(map[string]interface{}{})

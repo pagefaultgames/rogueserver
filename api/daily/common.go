@@ -124,7 +124,6 @@ func S3SaveMigration() error {
 		o.BaseEndpoint = aws.String(os.Getenv("AWS_ENDPOINT_URL_S3"))
 	})
 
-	// retrieve accounts from db
 	_, err := svc.CreateBucket(context.Background(), &s3.CreateBucketInput{
 		Bucket: aws.String("pokerogue-system"),
 	})
@@ -132,6 +131,7 @@ func S3SaveMigration() error {
 		log.Printf("error while creating bucket (already exists?): %s", err)
 	}
 
+	// retrieve accounts from db
 	accounts, err := db.RetrieveOldAccounts()
 	if err != nil {
 		return fmt.Errorf("failed to retrieve old accounts: %s", err)
