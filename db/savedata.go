@@ -276,7 +276,7 @@ func RetrieveSystemSaveFromS3(uuid []byte) error {
 
 func RetrieveOldAccounts() ([][]byte, error) {
 	var users [][]byte
-	rows, err := handle.Query("SELECT uuid FROM accounts WHERE isInLocalDb = 1 && lastActivity < DATE_SUB(NOW(), INTERVAL 3 MONTH) LIMIT 3000")
+	rows, err := handle.Query("SELECT uuid FROM accounts WHERE isInLocalDb = 1 AND lastActivity < DATE_SUB(NOW(), INTERVAL 3 MONTH) LIMIT 3000")
 	if err != nil {
 		return nil, err
 	}
