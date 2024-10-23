@@ -22,7 +22,7 @@ import (
 	"context"
 	"encoding/gob"
 	"encoding/json"
-	"log"
+	"fmt"
 
 	"github.com/klauspost/compress/zstd"
 	"github.com/pagefaultgames/rogueserver/defs"
@@ -68,8 +68,13 @@ func ReadSystemSaveData(uuid []byte) (defs.SystemSaveData, error) {
 	}
 
 	if !isLocal {
-		RetrieveSystemSaveFromS3(uuid)
+		// writes the data back into the database
+		err = RetrieveSystemSaveFromS3(uuid)
+		if err != nil {
+			return system, err
+		}
 	}
+
 	var data []byte
 	err = handle.QueryRow("SELECT data FROM systemSaveData WHERE uuid = ?", uuid).Scan(&data)
 	if err != nil {
@@ -220,6 +225,11 @@ func isSaveInLocalDb(uuid []byte) (bool, error) {
 }
 
 func RetrieveSystemSaveFromS3(uuid []byte) error {
+	username, err := FetchUsernameFromUUID(uuid)
+	if err != nil {
+		return err
+	}
+
 	cfg, err := config.LoadDefaultConfig(context.TODO())
 	if err != nil {
 		return err
@@ -227,17 +237,12 @@ func RetrieveSystemSaveFromS3(uuid []byte) error {
 
 	client := s3.NewFromConfig(cfg)
 
-	username, err := FetchUsernameFromUUID(uuid)
-	if err != nil {
-		return err
-	}
-
-	s3Object := &s3.GetObjectInput{
+	s3Object := s3.GetObjectInput{
 		Bucket: aws.String("pokerogue-system"),
 		Key:    aws.String(username),
 	}
 
-	resp, err := client.GetObject(context.TODO(), s3Object)
+	resp, err := client.GetObject(context.TODO(), &s3Object)
 	if err != nil {
 		return err
 	}
@@ -250,11 +255,8 @@ func RetrieveSystemSaveFromS3(uuid []byte) error {
 
 	err = StoreSystemSaveData(uuid, session)
 	if err != nil {
-		log.Printf("Failed to store system save data from s3 for user %s", username)
-		return err
+		return fmt.Errorf("failed to store system save data from S3 for user %s: %s", username, err)
 	}
-
-	log.Printf("Retrieved system save data from s3 for user %s", username)
 
 	_, err = handle.Exec("UPDATE accounts SET isInLocalDb = 1 WHERE uuid = ?", uuid)
 	if err != nil {
@@ -266,7 +268,7 @@ func RetrieveSystemSaveFromS3(uuid []byte) error {
 		Key:    aws.String(username),
 	})
 	if err != nil {
-		log.Printf("Failed to delete object %s from s3: %s", username, err)
+		return fmt.Errorf("failed to delete object %s from S3: %s", username, err)
 	}
 
 	return nil
