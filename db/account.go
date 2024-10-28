@@ -208,20 +208,20 @@ type AdminSearchResponse struct {
 }
 
 func FetchAdminDetailsByUsername(dbUsername string) (AdminSearchResponse, error) {
-	var resultUsername, resultDiscordId, resultGoogleId, resultLastActivity, resultRegistered sql.NullString
+	var username, discordId, googleId, lastActivity, registered sql.NullString
 	var adminResponse AdminSearchResponse
 
-	err := handle.QueryRow("SELECT username, discordId, googleId, lastActivity, registered from accounts WHERE username = ?", dbUsername).Scan(&resultUsername, &resultDiscordId, &resultGoogleId, &resultLastActivity, &resultRegistered)
+	err := handle.QueryRow("SELECT username, discordId, googleId, lastActivity, registered from accounts WHERE username = ?", dbUsername).Scan(&username, &discordId, &googleId, &lastActivity, &registered)
 	if err != nil {
 		return adminResponse, err
 	}
 
 	adminResponse = AdminSearchResponse{
-		Username:        resultUsername.String,
-		DiscordId:       resultDiscordId.String,
-		GoogleId:        resultGoogleId.String,
-		LastActivity:    resultLastActivity.String,
-		Registered:		 resultRegistered.String,
+		Username:        username.String,
+		DiscordId:       discordId.String,
+		GoogleId:        googleId.String,
+		LastActivity:    lastActivity.String,
+		Registered:		 registered.String,
 	}
 
 	return adminResponse, nil
