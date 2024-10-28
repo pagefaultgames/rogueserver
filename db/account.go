@@ -203,15 +203,15 @@ type AdminSearchResponse struct {
 	Username        string `json:"username"`
 	DiscordId       string `json:"discordId"`
 	GoogleId        string `json:"googleId"`
-	LastLoggedIn	string `json:"lastLoggedIn"`
+	LastActivity	string `json:"lastLoggedIn"`
 	Registered		string `json:"registered"`
 }
 
 func FetchAdminDetailsByUsername(dbUsername string) (AdminSearchResponse, error) {
-	var resultUsername, resultDiscordId, resultGoogleId, resultLastLoggedIn, resultRegistered sql.NullString
+	var resultUsername, resultDiscordId, resultGoogleId, resultLastActivity, resultRegistered sql.NullString
 	var adminResponse AdminSearchResponse
 
-	err := handle.QueryRow("SELECT username, discordId, googleId, lastLoggedIn, registered from accounts WHERE username = ?", dbUsername).Scan(&resultUsername, &resultDiscordId, &resultGoogleId, &resultLastLoggedIn, &resultRegistered)
+	err := handle.QueryRow("SELECT username, discordId, googleId, lastActivity, registered from accounts WHERE username = ?", dbUsername).Scan(&resultUsername, &resultDiscordId, &resultGoogleId, &resultLastActivity, &resultRegistered)
 	if err != nil {
 		return adminResponse, err
 	}
@@ -220,7 +220,7 @@ func FetchAdminDetailsByUsername(dbUsername string) (AdminSearchResponse, error)
 		Username:        resultUsername.String,
 		DiscordId:       resultDiscordId.String,
 		GoogleId:        resultGoogleId.String,
-		LastLoggedIn:    resultLastLoggedIn.String,
+		LastActivity:    resultLastActivity.String,
 		Registered:		 resultRegistered.String,
 	}
 
