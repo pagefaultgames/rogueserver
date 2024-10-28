@@ -41,6 +41,7 @@ func HandleDiscordCallback(w http.ResponseWriter, r *http.Request) (string, erro
 		http.Redirect(w, r, GameURL, http.StatusSeeOther)
 		return "", errors.New("code is empty")
 	}
+
 	discordId, err := RetrieveDiscordId(code)
 	if err != nil {
 		http.Redirect(w, r, GameURL, http.StatusSeeOther)

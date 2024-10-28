@@ -420,8 +420,7 @@ func handleSystem(w http.ResponseWriter, r *http.Request) {
 			if errors.Is(err, sql.ErrNoRows) {
 				http.Error(w, err.Error(), http.StatusNotFound)
 			} else {
-				fmt.Printf("failed to get system save data: %s\n", err)
-				httpError(w, r, err, http.StatusInternalServerError)
+				httpError(w, r, fmt.Errorf("failed to get system save data: %s", err), http.StatusInternalServerError)
 			}
 
 			return
@@ -751,36 +750,36 @@ func handleAdminDiscordUnlink(w http.ResponseWriter, r *http.Request) {
 	discordId := r.Form.Get("discordId")
 
 	switch {
-		case username != "":
-			log.Printf("Username given, removing discordId")
-			// this does a quick call to make sure the username exists on the server before allowing the rest of the code to run
-			// this calls error value 404 (StatusNotFound) if there's no data; this means the username does not exist in the server
-			_, err = db.CheckUsernameExists(username)
-			if err != nil {
-				httpError(w, r, fmt.Errorf("username does not exist on the server"), http.StatusNotFound)
-				return
-			}
+	case username != "":
+		log.Printf("Username given, removing discordId")
+		// this does a quick call to make sure the username exists on the server before allowing the rest of the code to run
+		// this calls error value 404 (StatusNotFound) if there's no data; this means the username does not exist in the server
+		_, err = db.CheckUsernameExists(username)
+		if err != nil {
+			httpError(w, r, fmt.Errorf("username does not exist on the server"), http.StatusNotFound)
+			return
+		}
 
-			userUuid, err := db.FetchUUIDFromUsername(username)
-			if err != nil {
-				httpError(w, r, err, http.StatusInternalServerError)
-				return
-			}
+		userUuid, err := db.FetchUUIDFromUsername(username)
+		if err != nil {
+			httpError(w, r, err, http.StatusInternalServerError)
+			return
+		}
 
-			err = db.RemoveDiscordIdByUUID(userUuid)
-			if err != nil {
-				httpError(w, r, err, http.StatusInternalServerError)
-				return
-			}
-		case discordId != "":
-			log.Printf("DiscordID given, removing discordId")
-			err = db.RemoveDiscordIdByDiscordId(discordId)
-			if err != nil {
-				httpError(w, r, err, http.StatusInternalServerError)
-				return
-			}
+		err = db.RemoveDiscordIdByUUID(userUuid)
+		if err != nil {
+			httpError(w, r, err, http.StatusInternalServerError)
+			return
+		}
+	case discordId != "":
+		log.Printf("DiscordID given, removing discordId")
+		err = db.RemoveDiscordIdByDiscordId(discordId)
+		if err != nil {
+			httpError(w, r, err, http.StatusInternalServerError)
+			return
+		}
 	}
-	
+
 	log.Printf("%s: %s removed discord id %s from username %s", userDiscordId, r.URL.Path, r.Form.Get("discordId"), r.Form.Get("username"))
 
 	w.WriteHeader(http.StatusOK)
@@ -821,7 +820,7 @@ func handleAdminGoogleLink(w http.ResponseWriter, r *http.Request) {
 		httpError(w, r, fmt.Errorf("username does not exist on the server"), http.StatusNotFound)
 		return
 	}
-	
+
 	userUuid, err := db.FetchUUIDFromUsername(username)
 	if err != nil {
 		httpError(w, r, err, http.StatusInternalServerError)
@@ -868,34 +867,34 @@ func handleAdminGoogleUnlink(w http.ResponseWriter, r *http.Request) {
 	googleId := r.Form.Get("googleId")
 
 	switch {
-		case username != "":
-			log.Printf("Username given, removing googleId")
-			// this does a quick call to make sure the username exists on the server before allowing the rest of the code to run
-			// this calls error value 404 (StatusNotFound) if there's no data; this means the username does not exist in the server
-			_, err = db.CheckUsernameExists(username)
-			if err != nil {
-				httpError(w, r, fmt.Errorf("username does not exist on the server"), http.StatusNotFound)
-				return
-			}
+	case username != "":
+		log.Printf("Username given, removing googleId")
+		// this does a quick call to make sure the username exists on the server before allowing the rest of the code to run
+		// this calls error value 404 (StatusNotFound) if there's no data; this means the username does not exist in the server
+		_, err = db.CheckUsernameExists(username)
+		if err != nil {
+			httpError(w, r, fmt.Errorf("username does not exist on the server"), http.StatusNotFound)
+			return
+		}
 
-			userUuid, err := db.FetchUUIDFromUsername(username)
-			if err != nil {
-				httpError(w, r, err, http.StatusInternalServerError)
-				return
-			}
+		userUuid, err := db.FetchUUIDFromUsername(username)
+		if err != nil {
+			httpError(w, r, err, http.StatusInternalServerError)
+			return
+		}
 
-			err = db.RemoveGoogleIdByUUID(userUuid)
-			if err != nil {
-				httpError(w, r, err, http.StatusInternalServerError)
-				return
-			}
-		case googleId != "":
-			log.Printf("DiscordID given, removing googleId")
-			err = db.RemoveGoogleIdByDiscordId(googleId)
-			if err != nil {
-				httpError(w, r, err, http.StatusInternalServerError)
-				return
-			}
+		err = db.RemoveGoogleIdByUUID(userUuid)
+		if err != nil {
+			httpError(w, r, err, http.StatusInternalServerError)
+			return
+		}
+	case googleId != "":
+		log.Printf("DiscordID given, removing googleId")
+		err = db.RemoveGoogleIdByDiscordId(googleId)
+		if err != nil {
+			httpError(w, r, err, http.StatusInternalServerError)
+			return
+		}
 	}
 
 	log.Printf("%s: %s removed google id %s from username %s", userDiscordId, r.URL.Path, r.Form.Get("googleId"), r.Form.Get("username"))

@@ -40,9 +40,8 @@ import (
 const secondsPerDay = 60 * 60 * 24
 
 var (
-	scheduler   = cron.New(cron.WithLocation(time.UTC))
-	s3scheduler = cron.New(cron.WithLocation(time.UTC))
-	secret      []byte
+	scheduler = cron.New(cron.WithLocation(time.UTC))
+	secret    []byte
 )
 
 func Init() error {
@@ -91,21 +90,16 @@ func Init() error {
 
 	scheduler.Start()
 
-	if os.Getenv("AWS_ENDPOINT_URL_S3") == "" {
-		log.Printf("AWS_ENDPOINT_URL_S3 not set, skipping s3 migration")
-		return nil
+	if os.Getenv("AWS_ENDPOINT_URL_S3") != "" {
+		go func() {
+			for {
+				err = S3SaveMigration()
+				if err != nil {
+					return
+				}
+			}
+		}()
 	}
-
-	_, err = s3scheduler.AddFunc("@hourly", func() {
-		time.Sleep(time.Second)
-		S3SaveMigration()
-	})
-
-	if err != nil {
-		return err
-	}
-
-	s3scheduler.Start()
 
 	return nil
 }
@@ -123,38 +117,60 @@ func deriveSeed(seedTime time.Time) []byte {
 	return hashedSeed[:]
 }
 
-func S3SaveMigration() {
+func S3SaveMigration() error {
 	cfg, _ := config.LoadDefaultConfig(context.TODO())
 
 	svc := s3.NewFromConfig(cfg, func(o *s3.Options) {
 		o.BaseEndpoint = aws.String(os.Getenv("AWS_ENDPOINT_URL_S3"))
 	})
-	// retrieve accounts from db
+
 	_, err := svc.CreateBucket(context.Background(), &s3.CreateBucketInput{
 		Bucket: aws.String("pokerogue-system"),
 	})
-
 	if err != nil {
-		log.Printf("error while creating bucket: %s", err)
+		log.Printf("error while creating bucket (already exists?): %s", err)
 	}
 
-	accounts := db.RetrieveOldAccounts()
+	// retrieve accounts from db
+	accounts, err := db.RetrieveOldAccounts()
+	if err != nil {
+		return fmt.Errorf("failed to retrieve old accounts: %s", err)
+	}
+
 	for _, user := range accounts {
-		data, _ := db.ReadSystemSaveData(user)
-		username, _ := db.FetchUsernameFromUUID(user)
-		json, _ := json.Marshal(data)
-		_, err := svc.PutObject(context.Background(), &s3.PutObjectInput{
+		data, err := db.ReadSystemSaveData(user)
+		if err != nil {
+			continue
+		}
+
+		username, err := db.FetchUsernameFromUUID(user)
+		if err != nil {
+			continue
+		}
+
+		json, err := json.Marshal(data)
+		if err != nil {
+			continue
+		}
+
+		_, err = svc.PutObject(context.Background(), &s3.PutObjectInput{
 			Bucket: aws.String("pokerogue-system"),
 			Key:    aws.String(username),
 			Body:   bytes.NewReader(json),
 		})
-
 		if err != nil {
-			log.Printf("error while saving data in s3 for user %s: %s", username, err)
+			log.Printf("error while saving data in S3 for user %s: %s", username, err)
 			continue
 		}
 
-		fmt.Printf("Saved data in s3 for user %s\n", username)
-		db.UpdateLocation(user, username)
+		err = db.UpdateLocation(user, username)
+		if err != nil {
+			log.Printf("failed to update location for user %s: %s", username, err)
+			continue
+		}
+
+		log.Printf("saved data in S3 for user %s", username)
 	}
+
+	return nil
 }

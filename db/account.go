@@ -86,7 +86,6 @@ func AddDiscordIdByUUID(discordId string, uuid []byte) error {
 	return nil
 }
 
-
 func FetchUsernameByDiscordId(discordId string) (string, error) {
 	var username string
 	err := handle.QueryRow("SELECT username FROM accounts WHERE discordId = ?", discordId).Scan(&username)

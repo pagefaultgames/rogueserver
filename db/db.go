@@ -116,5 +116,6 @@ func setupDb(tx *sql.Tx) error {
 			return fmt.Errorf("failed to execute query: %w, query: %s", err, q)
 		}
 	}
+
 	return nil
 }
