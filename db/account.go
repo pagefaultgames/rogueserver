@@ -199,28 +199,28 @@ func FetchLastLoggedInDateByUsername(username string) (string, error) {
 }
 
 type AdminSearchResponse struct {
-	Username     string `json:"username"`
-	DiscordId    string `json:"discordId"`
-	GoogleId     string `json:"googleId"`
-	LastLoggedIn string `json:"lastLoggedIn"`
-	Registered   string `json:"registered"`
+	Username        string `json:"username"`
+	DiscordId       string `json:"discordId"`
+	GoogleId        string `json:"googleId"`
+	LastActivity	string `json:"lastLoggedIn"` // TODO: this is currently lastLoggedIn to match server PR #54 with pokerogue PR #4198. We're hotfixing the server with this PR to return lastActivity, but we're not hotfixing the client, so are leaving this as lastLoggedIn so that it still talks to the client properly
+	Registered		string `json:"registered"`
 }
 
 func FetchAdminDetailsByUsername(dbUsername string) (AdminSearchResponse, error) {
-	var resultUsername, resultDiscordId, resultGoogleId, resultLastLoggedIn, resultRegistered sql.NullString
+	var username, discordId, googleId, lastActivity, registered sql.NullString
 	var adminResponse AdminSearchResponse
 
-	err := handle.QueryRow("SELECT username, discordId, googleId, lastLoggedIn, registered from accounts WHERE username = ?", dbUsername).Scan(&resultUsername, &resultDiscordId, &resultGoogleId, &resultLastLoggedIn, &resultRegistered)
+	err := handle.QueryRow("SELECT username, discordId, googleId, lastActivity, registered from accounts WHERE username = ?", dbUsername).Scan(&username, &discordId, &googleId, &lastActivity, &registered)
 	if err != nil {
 		return adminResponse, err
 	}
 
 	adminResponse = AdminSearchResponse{
-		Username:     resultUsername.String,
-		DiscordId:    resultDiscordId.String,
-		GoogleId:     resultGoogleId.String,
-		LastLoggedIn: resultLastLoggedIn.String,
-		Registered:   resultRegistered.String,
+		Username:        username.String,
+		DiscordId:       discordId.String,
+		GoogleId:        googleId.String,
+		LastActivity:    lastActivity.String,
+		Registered:		 registered.String,
 	}
 
 	return adminResponse, nil
