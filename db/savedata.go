@@ -22,7 +22,7 @@ import (
 	"context"
 	"encoding/gob"
 	"encoding/json"
-	"fmt"
+	"os"
 
 	"github.com/klauspost/compress/zstd"
 	"github.com/pagefaultgames/rogueserver/defs"
@@ -60,21 +60,13 @@ func ReadSeedCompleted(uuid []byte, seed string) (bool, error) {
 }
 
 func ReadSystemSaveData(uuid []byte) (defs.SystemSaveData, error) {
-	var system defs.SystemSaveData
-
-	isLocal, err := isSaveInLocalDb(uuid)
-	if err != nil {
-		return system, err
+	// get and return save from S3
+	system, err := GetSystemSaveFromS3(uuid)
+	if err == nil {
+		return system, nil
 	}
 
-	if !isLocal {
-		// writes the data back into the database
-		err = RetrieveSystemSaveFromS3(uuid)
-		if err != nil {
-			return system, err
-		}
-	}
-
+	// otherwise look in database and try to move it
 	var data []byte
 	err = handle.QueryRow("SELECT data FROM systemSaveData WHERE uuid = ?", uuid).Scan(&data)
 	if err != nil {
@@ -99,24 +91,43 @@ func ReadSystemSaveData(uuid []byte) (defs.SystemSaveData, error) {
 		return system, err
 	}
 
+	// put it in S3
+	err = StoreSystemSaveData(uuid, system)
+	if err != nil {
+		return system, err
+	}
+
+	// delete the one in db
+	err = UpdateSystemSaveLocation(uuid)
+	if err != nil {
+		return system, err
+	}
+
 	return system, nil
 }
 
 func StoreSystemSaveData(uuid []byte, data defs.SystemSaveData) error {
-	var buf bytes.Buffer
-	err := gob.NewEncoder(&buf).Encode(data)
+	cfg, _ := config.LoadDefaultConfig(context.TODO())
+
+	client := s3.NewFromConfig(cfg, func(o *s3.Options) {
+		o.BaseEndpoint = aws.String(os.Getenv("AWS_ENDPOINT_URL_S3"))
+	})
+
+	username, err := FetchUsernameFromUUID(uuid)
 	if err != nil {
 		return err
 	}
 
-	enc, err := zstd.NewWriter(nil)
+	json, err := json.Marshal(data)
 	if err != nil {
 		return err
 	}
 
-	defer enc.Close()
-
-	_, err = handle.Exec("REPLACE INTO systemSaveData (uuid, data, timestamp) VALUES (?, ?, UTC_TIMESTAMP())", uuid, enc.EncodeAll(buf.Bytes(), nil))
+	_, err = client.PutObject(context.Background(), &s3.PutObjectInput{
+		Bucket: aws.String("pokerogue-system"),
+		Key:    aws.String(username),
+		Body:   bytes.NewReader(json),
+	})
 	if err != nil {
 		return err
 	}
@@ -214,25 +225,17 @@ func RetrievePlaytime(uuid []byte) (int, error) {
 	return playtime, nil
 }
 
-func isSaveInLocalDb(uuid []byte) (bool, error) {
-	var isLocal bool
-	err := handle.QueryRow("SELECT isInLocalDb FROM accounts WHERE uuid = ?", uuid).Scan(&isLocal)
-	if err != nil {
-		return false, err
-	}
+func GetSystemSaveFromS3(uuid []byte) (defs.SystemSaveData, error) {
+	var system defs.SystemSaveData
 
-	return isLocal, nil
-}
-
-func RetrieveSystemSaveFromS3(uuid []byte) error {
 	username, err := FetchUsernameFromUUID(uuid)
 	if err != nil {
-		return err
+		return system, err
 	}
 
 	cfg, err := config.LoadDefaultConfig(context.TODO())
 	if err != nil {
-		return err
+		return system, err
 	}
 
 	client := s3.NewFromConfig(cfg)
@@ -244,34 +247,16 @@ func RetrieveSystemSaveFromS3(uuid []byte) error {
 
 	resp, err := client.GetObject(context.TODO(), &s3Object)
 	if err != nil {
-		return err
+		return system, err
 	}
 
 	var session defs.SystemSaveData
 	err = json.NewDecoder(resp.Body).Decode(&session)
 	if err != nil {
-		return err
+		return system, err
 	}
 
-	err = StoreSystemSaveData(uuid, session)
-	if err != nil {
-		return fmt.Errorf("failed to store system save data from S3 for user %s: %s", username, err)
-	}
-
-	_, err = handle.Exec("UPDATE accounts SET isInLocalDb = 1 WHERE uuid = ?", uuid)
-	if err != nil {
-		return err
-	}
-
-	_, err = client.DeleteObject(context.TODO(), &s3.DeleteObjectInput{
-		Bucket: aws.String("pokerogue-system"),
-		Key:    aws.String(username),
-	})
-	if err != nil {
-		return fmt.Errorf("failed to delete object %s from S3: %s", username, err)
-	}
-
-	return nil
+	return session, nil
 }
 
 func RetrieveOldAccounts() ([][]byte, error) {
@@ -296,7 +281,7 @@ func RetrieveOldAccounts() ([][]byte, error) {
 	return users, nil
 }
 
-func UpdateLocation(uuid []byte, username string) error {
+func UpdateSystemSaveLocation(uuid []byte) error {
 	_, err := handle.Exec("UPDATE accounts SET isInLocalDb = 0 WHERE uuid = ?", uuid)
 	if err != nil {
 		return err

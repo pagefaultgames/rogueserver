@@ -163,7 +163,7 @@ func S3SaveMigration() error {
 			continue
 		}
 
-		err = db.UpdateLocation(user, username)
+		err = db.UpdateSystemSaveLocation(user)
 		if err != nil {
 			log.Printf("failed to update location for user %s: %s", username, err)
 			continue
