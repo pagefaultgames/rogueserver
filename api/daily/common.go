@@ -132,7 +132,7 @@ func S3SaveMigration() error {
 	}
 
 	// retrieve accounts from db
-	accounts, err := db.GetLocalAccounts()
+	accounts, err := db.GetLocalSystemAccounts()
 	if err != nil {
 		return fmt.Errorf("failed to retrieve old accounts: %s", err)
 	}
@@ -163,9 +163,9 @@ func S3SaveMigration() error {
 			continue
 		}
 
-		err = db.UpdateSystemSaveLocation(user)
+		err = db.DeleteSystemSaveData(user)
 		if err != nil {
-			log.Printf("failed to update location for user %s: %s", username, err)
+			log.Printf("failed to delete old save for user %s: %s", username, err)
 			continue
 		}
 

@@ -98,7 +98,7 @@ func ReadSystemSaveData(uuid []byte) (defs.SystemSaveData, error) {
 	}
 
 	// delete the one in db
-	err = UpdateSystemSaveLocation(uuid)
+	err = DeleteSystemSaveData(uuid)
 	if err != nil {
 		return system, err
 	}
@@ -259,9 +259,9 @@ func GetSystemSaveFromS3(uuid []byte) (defs.SystemSaveData, error) {
 	return session, nil
 }
 
-func GetLocalAccounts() ([][]byte, error) {
+func GetLocalSystemAccounts() ([][]byte, error) {
 	var users [][]byte
-	rows, err := handle.Query("SELECT uuid FROM accounts WHERE isInLocalDb = 1) LIMIT 3000")
+	rows, err := handle.Query("SELECT uuid FROM systemSaveData LIMIT 3000")
 	if err != nil {
 		return nil, err
 	}
@@ -279,18 +279,4 @@ func GetLocalAccounts() ([][]byte, error) {
 	}
 
 	return users, nil
-}
-
-func UpdateSystemSaveLocation(uuid []byte) error {
-	_, err := handle.Exec("UPDATE accounts SET isInLocalDb = 0 WHERE uuid = ?", uuid)
-	if err != nil {
-		return err
-	}
-
-	err = DeleteSystemSaveData(uuid)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }

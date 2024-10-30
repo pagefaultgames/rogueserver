@@ -108,6 +108,11 @@ func setupDb(tx *sql.Tx) error {
 		// MIGRATION 004
 
 		`ALTER TABLE accounts ADD COLUMN IF NOT EXISTS isInLocalDb TINYINT(1) NOT NULL DEFAULT 1`,
+
+		// ----------------------------------
+		// MIGRATION 005
+
+		`ALTER TABLE accounts DROP COLUMN IF EXISTS isInLocalDb`,
 	}
 
 	for _, q := range queries {
