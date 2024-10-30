@@ -132,7 +132,7 @@ func S3SaveMigration() error {
 	}
 
 	// retrieve accounts from db
-	accounts, err := db.RetrieveOldAccounts()
+	accounts, err := db.GetLocalAccounts()
 	if err != nil {
 		return fmt.Errorf("failed to retrieve old accounts: %s", err)
 	}
