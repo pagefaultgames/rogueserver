@@ -79,4 +79,15 @@ func ProcessSessionMetrics(save defs.SessionSaveData, uuid []byte) {
 	case 4:
 		gameModeCounter.WithLabelValues("challenge").Inc()
 	}
+	if save.WaveIndex == 1 {
+		for i := 0; i < len(save.Party); i++ {
+			formIndex = ""
+			if save.Party[i]["formIndex"] != 0 {
+				formIndex = "-"+save.Party[i]["formIndex"]
+			}
+			key = save.Party[i]["Species"] + formIndex
+			log.Printf("incremented starter %s", key)
+			starterCounter.WithLabelValues(key).Inc()
+		}
+	}
 }
