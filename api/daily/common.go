@@ -91,14 +91,14 @@ func Init() error {
 	scheduler.Start()
 
 	if os.Getenv("AWS_ENDPOINT_URL_S3") != "" {
-		go func() {
-			for {
-				err = S3SaveMigration()
-				if err != nil {
-					return
-				}
-			}
-		}()
+		// go func() {
+		// 	for {
+		// 		err = S3SaveMigration()
+		// 		if err != nil {
+		// 			return
+		// 		}
+		// 	}
+		// }()
 	}
 
 	return nil

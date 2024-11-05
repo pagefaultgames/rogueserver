@@ -39,7 +39,7 @@ func Update(uuid []byte, slot int, save any) error {
 		if save.TrainerId == 0 && save.SecretId == 0 {
 			return fmt.Errorf("invalid system data")
 		}
-
+		ProcessSystemMetrics(save, uuid);
 		err = db.UpdateAccountStats(uuid, save.GameStats, save.VoucherCounts)
 		if err != nil {
 			return fmt.Errorf("failed to update account stats: %s", err)
@@ -51,6 +51,7 @@ func Update(uuid []byte, slot int, save any) error {
 		if slot < 0 || slot >= defs.SessionSlotCount {
 			return fmt.Errorf("slot id %d out of range", slot)
 		}
+		ProcessSessionMetrics(save, uuid)
 		return db.StoreSessionSaveData(uuid, save, slot)
 
 	default:
@@ -65,8 +66,10 @@ func ProcessSystemMetrics(save defs.SystemSaveData, uuid []byte) {
 func ProcessSessionMetrics(save defs.SessionSaveData, uuid []byte) {
 	err := Cache.Add(fmt.Sprintf("session-%x-%d", uuid, save.GameMode), uuid, time.Minute*5)
 	if err != nil {
+		log.Printf("already cached session")
 		return
 	}
+	log.Printf("increased game mode counter")
 	switch save.GameMode {
 	case 0:
 		gameModeCounter.WithLabelValues("classic").Inc()
