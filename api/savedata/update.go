@@ -34,6 +34,7 @@ func Update(uuid []byte, slot int, save any) error {
 		log.Print("failed to update account last activity")
 	}
 
+	username := db.FetchUsernameFromUUID(uuid)
 	switch save := save.(type) {
 	case defs.SystemSaveData: // System
 		if save.TrainerId == 0 && save.SecretId == 0 {
@@ -59,29 +60,31 @@ func Update(uuid []byte, slot int, save any) error {
 	}
 }
 
-func ProcessSystemMetrics(save defs.SystemSaveData, uuid []byte) {
+func ProcessSystemMetrics(save defs.SystemSaveData, username string) {
 
 }
 
-func ProcessSessionMetrics(save defs.SessionSaveData, uuid []byte) {
-	err := Cache.Add(fmt.Sprintf("session-%x-%d", uuid, save.GameMode), uuid, time.Minute*5)
+func ProcessSessionMetrics(save defs.SessionSaveData, username string) {
+	err := Cache.Add(fmt.Sprintf("session-%s-%d", username, save.GameMode), uuid, time.Minute*5)
 	if err != nil {
-		log.Printf("already cached session")
+		log.Printf("already cached game mode for %s", username)
 		return
+	} else {
+		log.Printf("increased game mode counter for %s", username)
+		switch save.GameMode {
+		case 0:
+			gameModeCounter.WithLabelValues("classic").Inc()
+		case 1:
+			gameModeCounter.WithLabelValues("endless").Inc()
+		case 2:
+			gameModeCounter.WithLabelValues("spliced-endless").Inc()
+		case 3:
+			gameModeCounter.WithLabelValues("daily").Inc()
+		case 4:
+			gameModeCounter.WithLabelValues("challenge").Inc()
+		}
 	}
-	log.Printf("increased game mode counter")
-	switch save.GameMode {
-	case 0:
-		gameModeCounter.WithLabelValues("classic").Inc()
-	case 1:
-		gameModeCounter.WithLabelValues("endless").Inc()
-	case 2:
-		gameModeCounter.WithLabelValues("spliced-endless").Inc()
-	case 3:
-		gameModeCounter.WithLabelValues("daily").Inc()
-	case 4:
-		gameModeCounter.WithLabelValues("challenge").Inc()
-	}
+	
 	if save.WaveIndex == 1 {
 		for i := 0; i < len(save.Party); i++ {
 			formIndex = ""
