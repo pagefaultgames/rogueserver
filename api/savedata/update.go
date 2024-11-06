@@ -95,15 +95,16 @@ func ProcessSessionMetrics(save defs.SessionSaveData, username string) {
 			}
 
 			formIndex := ""
-			if formIdx, ok := partyMember["formIndex"].(int); ok && formIdx != 0 {
-				formIndex = fmt.Sprintf("%d", formIdx)
+			if formIdx, ok := partyMember["formIndex"].(float64); ok && formIdx != 0 {
+				formIndex = fmt.Sprintf("%d", int(formIdx))
 			}
 
-			species, ok := partyMember["species"].(int)
+			speciesFloat, ok := partyMember["species"].(float64)
 			if !ok {
 				log.Printf("invalid type for Species at index %d", i)
 				continue
 			}
+			species := int(speciesFloat)
 
 			key := fmt.Sprintf("%d-%s", species, formIndex)
 			party += key + ","
