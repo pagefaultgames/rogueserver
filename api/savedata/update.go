@@ -34,13 +34,13 @@ func Update(uuid []byte, slot int, save any) error {
 		log.Print("failed to update account last activity")
 	}
 
-	username := db.FetchUsernameFromUUID(uuid)
+	username, _ := db.FetchUsernameFromUUID(uuid)
 	switch save := save.(type) {
 	case defs.SystemSaveData: // System
 		if save.TrainerId == 0 && save.SecretId == 0 {
 			return fmt.Errorf("invalid system data")
 		}
-		ProcessSystemMetrics(save, uuid);
+		ProcessSystemMetrics(save, username)
 		err = db.UpdateAccountStats(uuid, save.GameStats, save.VoucherCounts)
 		if err != nil {
 			return fmt.Errorf("failed to update account stats: %s", err)
@@ -52,7 +52,7 @@ func Update(uuid []byte, slot int, save any) error {
 		if slot < 0 || slot >= defs.SessionSlotCount {
 			return fmt.Errorf("slot id %d out of range", slot)
 		}
-		ProcessSessionMetrics(save, uuid)
+		ProcessSessionMetrics(save, username)
 		return db.StoreSessionSaveData(uuid, save, slot)
 
 	default:
@@ -65,7 +65,7 @@ func ProcessSystemMetrics(save defs.SystemSaveData, username string) {
 }
 
 func ProcessSessionMetrics(save defs.SessionSaveData, username string) {
-	err := Cache.Add(fmt.Sprintf("session-%s-%d", username, save.GameMode), uuid, time.Minute*5)
+	err := Cache.Add(fmt.Sprintf("session-%s-%d", username, save.GameMode), username, time.Minute*5)
 	if err != nil {
 		log.Printf("already cached game mode for %s", username)
 		return
@@ -84,14 +84,27 @@ func ProcessSessionMetrics(save defs.SessionSaveData, username string) {
 			gameModeCounter.WithLabelValues("challenge").Inc()
 		}
 	}
-	
+
 	if save.WaveIndex == 1 {
 		for i := 0; i < len(save.Party); i++ {
-			formIndex = ""
-			if save.Party[i]["formIndex"] != 0 {
-				formIndex = "-"+save.Party[i]["formIndex"]
+			partyMember, ok := save.Party[i].(map[string]interface{})
+			if !ok {
+				log.Printf("invalid type for party member at index %d", i)
+				continue
 			}
-			key = save.Party[i]["Species"] + formIndex
+
+			formIndex := ""
+			if formIdx, ok := partyMember["formIndex"].(int); ok && formIdx != 0 {
+				formIndex = fmt.Sprintf("%d", formIdx)
+			}
+
+			species, ok := partyMember["Species"].(int)
+			if !ok {
+				log.Printf("invalid type for Species at index %d", i)
+				continue
+			}
+
+			key := fmt.Sprintf("%d-%s", species, formIndex)
 			log.Printf("incremented starter %s", key)
 			starterCounter.WithLabelValues(key).Inc()
 		}
