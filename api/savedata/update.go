@@ -71,18 +71,7 @@ func ProcessSessionMetrics(save defs.SessionSaveData, username string) {
 		return
 	} else {
 		log.Printf("increased game mode counter for %s", username)
-		switch save.GameMode {
-		case 0:
-			gameModeCounter.WithLabelValues("classic").Inc()
-		case 1:
-			gameModeCounter.WithLabelValues("endless").Inc()
-		case 2:
-			gameModeCounter.WithLabelValues("spliced-endless").Inc()
-		case 3:
-			gameModeCounter.WithLabelValues("daily").Inc()
-		case 4:
-			gameModeCounter.WithLabelValues("challenge").Inc()
-		}
+		gameModeCounter.WithLabelValues(getGameModeKey(save.GameMode)).Inc()
 	}
 
 	if save.WaveIndex == 1 && save.GameMode != 3 {
@@ -108,8 +97,25 @@ func ProcessSessionMetrics(save defs.SessionSaveData, username string) {
 
 			key := fmt.Sprintf("%d%s", species, formIndex)
 			party += key + ","
-			starterCounter.WithLabelValues(key).Inc()
+			starterCounter.WithLabelValues(key, getGameModeKey(save.GameMode)).Inc()
+
 		}
 		log.Printf("Incremented starters %s count for %s", party, username)
 	}
+}
+
+func getGameModeKey(gameMode defs.GameMode) string {
+	switch gameMode {
+	case 0:
+		return "classic"
+	case 1:
+		return "endless"
+	case 2:
+		return "spliced-endless"
+	case 3:
+		return "daily"
+	case 4:
+		return "challenge"
+	}
+	return "none"
 }

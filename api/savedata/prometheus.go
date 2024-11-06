@@ -19,6 +19,6 @@ var (
 			Name: "rogueserver_starter_count",
 			Help: "The total number of times a specific starter was selected",
 		},
-		[]string{"starterKey"},
+		[]string{"starterKey", "gameMode"},
 	)
 )
