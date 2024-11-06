@@ -86,6 +86,7 @@ func ProcessSessionMetrics(save defs.SessionSaveData, username string) {
 	}
 
 	if save.WaveIndex == 1 {
+		party := ""
 		for i := 0; i < len(save.Party); i++ {
 			partyMember, ok := save.Party[i].(map[string]interface{})
 			if !ok {
@@ -98,15 +99,16 @@ func ProcessSessionMetrics(save defs.SessionSaveData, username string) {
 				formIndex = fmt.Sprintf("%d", formIdx)
 			}
 
-			species, ok := partyMember["Species"].(int)
+			species, ok := partyMember["species"].(int)
 			if !ok {
 				log.Printf("invalid type for Species at index %d", i)
 				continue
 			}
 
 			key := fmt.Sprintf("%d-%s", species, formIndex)
-			log.Printf("incremented starter %s", key)
+			party += key + ","
 			starterCounter.WithLabelValues(key).Inc()
 		}
+		log.Printf("Incremented starters %s count for %s", party, username)
 	}
 }
