@@ -24,15 +24,6 @@ import (
 	"github.com/pagefaultgames/rogueserver/defs"
 )
 
-func GetSystem(uuid []byte) (defs.SystemSaveData, error) {
-	system, err := db.ReadSystemSaveData(uuid)
-	if err != nil {
-		return system, err
-	}
-
-	return system, nil
-}
-
 func UpdateSystem(uuid []byte, data defs.SystemSaveData) error {
 	if data.TrainerId == 0 && data.SecretId == 0 {
 		return fmt.Errorf("invalid system data")

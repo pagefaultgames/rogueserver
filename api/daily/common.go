@@ -91,7 +91,7 @@ func Init() error {
 
 	scheduler.Start()
 
-	if os.Getenv("AWS_ENDPOINT_URL_S3") != "" {
+	if os.Getenv("AWS_ENDPOINT_URL_S3") != "" && !db.isLocalInstance() {
 		go func() {
 			for {
 				err = S3SaveMigration()
@@ -139,7 +139,7 @@ func S3SaveMigration() error {
 	}
 
 	for _, user := range accounts {
-		data, err := db.ReadSystemSaveData(user)
+		data, err := db.ReadSystemSaveDataS3(user)
 		if err != nil {
 			continue
 		}

@@ -23,6 +23,7 @@ import (
 	"encoding/gob"
 	"encoding/json"
 	"os"
+	"strconv"
 
 	"github.com/klauspost/compress/zstd"
 	"github.com/pagefaultgames/rogueserver/defs"
@@ -59,7 +60,49 @@ func ReadSeedCompleted(uuid []byte, seed string) (bool, error) {
 	return count > 0, nil
 }
 
+func isLocalInstance() bool {
+	isLocal, _ := strconv.ParseBool(os.Getenv("debug"))
+	return isLocal
+}
+
 func ReadSystemSaveData(uuid []byte) (defs.SystemSaveData, error) {
+	var system defs.SystemSaveData
+	var err error
+	if isLocalInstance() {
+		system, err = ReadSystemSaveDataLocal(uuid)
+	} else {
+		system, err = ReadSystemSaveDataS3(uuid)
+	}
+	if err != nil {
+		return system, err
+	}
+	return system, nil
+}
+
+func ReadSystemSaveDataLocal(uuid []byte) (defs.SystemSaveData, error) {
+	var system defs.SystemSaveData
+	_, err := isSaveInLocalDb(uuid)
+	if err != nil {
+		return system, err
+	}
+	var data []byte
+	err = handle.QueryRow("SELECT data FROM systemSaveData WHERE uuid = ?", uuid).Scan(&data)
+	if err != nil {
+		return system, err
+	}
+	return system, nil
+}
+
+func isSaveInLocalDb(uuid []byte) (bool, error) {
+	var isLocal bool
+	err := handle.QueryRow("SELECT isInLocalDb FROM accounts WHERE uuid = ?", uuid).Scan(&isLocal)
+	if err != nil {
+		return false, err
+	}
+	return isLocal, nil
+}
+
+func ReadSystemSaveDataS3(uuid []byte) (defs.SystemSaveData, error) {
 	// get and return save from S3
 	system, err := GetSystemSaveFromS3(uuid)
 	if err == nil {
