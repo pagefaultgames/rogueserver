@@ -21,4 +21,12 @@ var (
 		},
 		[]string{"starterKey", "gameMode"},
 	)
+
+	runResultCounter = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "rogueserver_run_result_count",
+			Help: "The total number of victories and losses logged",
+		},
+		[]string{"result", "waveIndex", "gameMode"},
+	)
 )

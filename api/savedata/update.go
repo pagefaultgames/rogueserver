@@ -74,7 +74,7 @@ func ProcessSessionMetrics(save defs.SessionSaveData, username string) {
 		gameModeCounter.WithLabelValues(getGameModeKey(save.GameMode)).Inc()
 	}
 
-	if save.WaveIndex == 1 && save.GameMode != 3 {
+	if save.WaveIndex == 1 {
 		party := ""
 		for i := 0; i < len(save.Party); i++ {
 			partyMember, ok := save.Party[i].(map[string]interface{})
