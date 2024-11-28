@@ -124,7 +124,7 @@ func StoreSystemSaveData(uuid []byte, data defs.SystemSaveData) error {
 	}
 
 	_, err = client.PutObject(context.Background(), &s3.PutObjectInput{
-		Bucket: aws.String("pokerogue-system"),
+		Bucket: aws.String(os.Getenv("S3_SYSTEM_BUCKET_NAME")),
 		Key:    aws.String(username),
 		Body:   bytes.NewReader(json),
 	})
@@ -241,7 +241,7 @@ func GetSystemSaveFromS3(uuid []byte) (defs.SystemSaveData, error) {
 	client := s3.NewFromConfig(cfg)
 
 	s3Object := s3.GetObjectInput{
-		Bucket: aws.String("pokerogue-system"),
+		Bucket: aws.String(os.Getenv("S3_SYSTEM_BUCKET_NAME")),
 		Key:    aws.String(username),
 	}
 

@@ -125,7 +125,7 @@ func S3SaveMigration() error {
 	})
 
 	_, err := svc.CreateBucket(context.Background(), &s3.CreateBucketInput{
-		Bucket: aws.String("pokerogue-system"),
+		Bucket: aws.String(os.Getenv("S3_SYSTEM_BUCKET_NAME")),
 	})
 	if err != nil {
 		log.Printf("error while creating bucket (already exists?): %s", err)
@@ -154,7 +154,7 @@ func S3SaveMigration() error {
 		}
 
 		_, err = svc.PutObject(context.Background(), &s3.PutObjectInput{
-			Bucket: aws.String("pokerogue-system"),
+			Bucket: aws.String(os.Getenv("S3_SYSTEM_BUCKET_NAME")),
 			Key:    aws.String(username),
 			Body:   bytes.NewReader(json),
 		})
