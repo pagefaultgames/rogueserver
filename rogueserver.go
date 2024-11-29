@@ -29,6 +29,15 @@ import (
 	"github.com/pagefaultgames/rogueserver/api"
 	"github.com/pagefaultgames/rogueserver/api/account"
 	"github.com/pagefaultgames/rogueserver/db"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+)
+
+var (
+	concurrentRequests = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "rogueserver_concurrent_requests",
+		Help: "The number of concurrent requests being handled",
+	})
 )
 
 func main() {
@@ -141,7 +150,9 @@ func prodHandler(router *http.ServeMux, clienturl string) http.Handler {
 			return
 		}
 
+		concurrentRequests.Inc()
 		router.ServeHTTP(w, r)
+		concurrentRequests.Dec()
 	})
 }
 
@@ -156,7 +167,9 @@ func debugHandler(router *http.ServeMux) http.Handler {
 			return
 		}
 
+		concurrentRequests.Inc()
 		router.ServeHTTP(w, r)
+		concurrentRequests.Dec()
 	})
 }
 

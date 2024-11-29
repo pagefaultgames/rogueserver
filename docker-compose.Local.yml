@@ -1,16 +1,8 @@
 services:
-  server: 
+  server:
+    command: --debug --dbaddr db --dbuser pokerogue --dbpass pokerogue --dbname pokeroguedb
     image: rogueserver:latest
     restart: unless-stopped
-    environment:
-      debug: true
-      dbaddr: db
-      dbuser: pokerogue
-      dbpass: pokerogue
-      dbname: pokeroguedb
-      gameurl: http://localhost:8000
-      callbackurl: http://localhost:8001
-
     depends_on:
       db:
         condition: service_healthy
@@ -38,25 +30,7 @@ services:
       - database:/var/lib/mysql
     networks:
       - internal
-    ports:
-      - "3306:3306"
 
-  # Watchtower is a service that will automatically update your running containers
-  # when a new image is available. This is useful for keeping your server up-to-date.
-  # see https://containrrr.dev/watchtower/ for more information.
-  watchtower:
-    image: containrrr/watchtower
-    container_name: watchtower
-    restart: always
-    security_opt:
-      - no-new-privileges:true
-    environment:
-      WATCHTOWER_CLEANUP: true
-      WATCHTOWER_SCHEDULE: "@midnight"
-    volumes:
-      - /etc/localtime:/etc/localtime:ro
-      - /var/run/docker.sock:/var/run/docker.sock
-      
   # Prometheus monitoring stack for the server and db services above 
   prometheus:
     image: prom/prometheus:latest
