@@ -11,41 +11,55 @@ There is a sample docker-compose file for setting up a docker container to setup
 - npm: [how to install](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm)
 
 ## Installation:
+### First Steps
+- Edit beta.env
+	- Setting VITE_BYPASS_LOGIN to 0 helps provide access to PokeRogue's accounts features
+	- If testing locally without an S3 instance, set local to true. 
+	- gameurl should reference the IP of your development machine
+	- callbackurl should reference the IP of your server
+- Edit docker-compose.Example.yml
+	- Under services->server, add the following lines right above image: rogueserver:latest
+	```
+	env_file:
+		- beta.env
+	```
+	- Under services->db, add the port the database will use.
+	```
+	ports:
+		- "3306:3306"
+	```
+### Booting up Rogueserver
+- First, compile the code with
+```
+go build .
+```
+- Then run the command
+```
+docker build ./ -t rogueserver
+```
+- Finally, run the command with the Docker file you just configured!
+```
+docker-compose -f docker-compose.Example.yml up -d
+```
+### Connecting your PokeRogue to RogueServer
+- Find .env.development in your PokeRogue repo and update it with the following changes
+	- To access PokeRogue's account features, you need to set VITE_BYPASS_LOGIN to 0 here too
+	- Update VITE_SERVER_URL with the correct machine if your server is running on a different machine than your development machine. 
+- In utils.ts, around lines 280-300, remove the Secure headers from the document.cookie variables. For example:
+```
+document.cookie = `${cName}=${cValue};Secure;SameSite=Strict;Domain=${window.location.hostname};Path=/;Expires=${expiration.toUTCString()}`;
+```
+should be changed to
+```
+document.cookie = `${cName}=${cValue};SameSite=Strict;Domain=${window.location.hostname};Path=/;Expires=${expiration.toUTCString()}`;
+``` 
+
 The docker compose file should automatically implement a container with mariadb with an empty database and the default user and password combo of pokerogue:pokerogue
 
-### src/utils.ts:224-225 (in pokerogue)
-Replace both URLs (one on each line) with the local API server address from rogueserver.go (0.0.0.0:8001) (or whatever port you picked)
-
 # If you are on Windows
-
-Now that all of the files are configured: start up powershell as administrator:
-```
-cd C:\api\server\location\
-go build .
-.\rogueserver.exe --debug --dbuser yourusername --dbpass yourpassword 
-```
-The other available flags are located in rogueserver.go:34-43.
-
-Then in another run this the first time then run `npm run start` from the rogueserver location from then on:
-```
-powershell -ep bypass
-cd C:\server\location\
-npm install
-npm run start
-```
 You will need to allow the port youre running the API (8001) on and port 8000 to accept inbound connections through the [Windows Advanced Firewall](https://www.youtube.com/watch?v=9llH5_CON-Y).
 
 # If you are on Linux
-In whatever shell you prefer, run the following:
-```
-cd /api/server/location/
-go build .
-./rogueserver --debug --dbuser yourusername --dbpass yourpassword &
-
-cd /server/location/
-npm run start
-```
-
 If you have a firewall running such as ufw on your linux machine, make sure to allow inbound connections on the ports youre running the API and the pokerogue server (8000,8001).
 An example to allow incoming connections using UFW:
 ```
@@ -79,5 +93,8 @@ in place of the previous 0.0.0.0:8001 address
 Make sure that both 8000 and 8001 are portforwarded on your router.
 
 Test that the server's game and game authentication works from other machines both in and outside of the network. Once this is complete, enjoy!
+
+### Contributors
+- Instructions by Opaquer
 
 

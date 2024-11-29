@@ -21,6 +21,8 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"os"
+	"strconv"
 
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -44,8 +46,8 @@ func Init(username, password, protocol, address, database string) error {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	err = setupDb(tx)
+	local, _ := strconv.ParseBool(os.Getenv("debug"))
+	err = setupDb(tx, local)
 	if err != nil {
 		tx.Rollback()
 		log.Fatal(err)
@@ -59,7 +61,7 @@ func Init(username, password, protocol, address, database string) error {
 	return nil
 }
 
-func setupDb(tx *sql.Tx) error {
+func setupDb(tx *sql.Tx, local bool) error {
 	queries := []string{
 		// MIGRATION 000
 
@@ -108,13 +110,11 @@ func setupDb(tx *sql.Tx) error {
 		// MIGRATION 004
 
 		`ALTER TABLE accounts ADD COLUMN IF NOT EXISTS isInLocalDb TINYINT(1) NOT NULL DEFAULT 1`,
-
-		// ----------------------------------
-		// MIGRATION 005
-
-		`ALTER TABLE accounts DROP COLUMN IF EXISTS isInLocalDb`,
 	}
-
+	if !local {
+		// MIGRATION 005
+		queries = append(queries, `ALTER TABLE accounts DROP COLUMN IF EXISTS isInLocalDb`)
+	}
 	for _, q := range queries {
 		_, err := tx.Exec(q)
 		if err != nil {

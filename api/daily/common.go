@@ -40,8 +40,9 @@ import (
 const secondsPerDay = 60 * 60 * 24
 
 var (
-	scheduler = cron.New(cron.WithLocation(time.UTC))
-	secret    []byte
+	scheduler   = cron.New(cron.WithLocation(time.UTC))
+	s3scheduler = cron.New(cron.WithLocation(time.UTC))
+	secret      []byte
 )
 
 func Init() error {
@@ -90,7 +91,7 @@ func Init() error {
 
 	scheduler.Start()
 
-	if os.Getenv("AWS_ENDPOINT_URL_S3") != "" {
+	if os.Getenv("AWS_ENDPOINT_URL_S3") != "" && !db.isLocalInstance() {
 		go func() {
 			for {
 				err = S3SaveMigration()
@@ -138,7 +139,7 @@ func S3SaveMigration() error {
 	}
 
 	for _, user := range accounts {
-		data, err := db.ReadSystemSaveData(user)
+		data, err := db.ReadSystemSaveDataS3(user)
 		if err != nil {
 			continue
 		}
@@ -158,6 +159,7 @@ func S3SaveMigration() error {
 			Key:    aws.String(username),
 			Body:   bytes.NewReader(json),
 		})
+
 		if err != nil {
 			log.Printf("error while saving data in S3 for user %s: %s", username, err)
 			continue

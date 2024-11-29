@@ -415,14 +415,13 @@ func handleSystem(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		save, err := savedata.GetSystem(uuid)
+		save, err := db.ReadSystemSaveData(uuid)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				http.Error(w, err.Error(), http.StatusNotFound)
 			} else {
 				httpError(w, r, fmt.Errorf("failed to get system save data: %s", err), http.StatusInternalServerError)
 			}
-
 			return
 		}
 
