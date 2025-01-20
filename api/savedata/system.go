@@ -29,7 +29,7 @@ func GetSystem(uuid []byte) (defs.SystemSaveData, error) {
 	var system defs.SystemSaveData
 	var err error
 
-	if os.Getenv("AWS_ENDPOINT_URL_S3") != "" { // use S3
+	if os.Getenv("S3_SYSTEM_BUCKET_NAME") != "" { // use S3
 		system, err = db.GetSystemSaveFromS3(uuid)
 	} else { // use database
 		system, err = db.ReadSystemSaveData(uuid)
@@ -51,7 +51,7 @@ func UpdateSystem(uuid []byte, data defs.SystemSaveData) error {
 		return fmt.Errorf("failed to update account stats: %s", err)
 	}
 
-	if os.Getenv("AWS_ENDPOINT_URL_S3") != "" { // use S3
+	if os.Getenv("S3_SYSTEM_BUCKET_NAME") != "" { // use S3
 		err = db.StoreSystemSaveDataS3(uuid, data)
 	} else {
 		err = db.StoreSystemSaveData(uuid, data)
