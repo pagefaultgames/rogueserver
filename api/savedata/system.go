@@ -19,13 +19,21 @@ package savedata
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/pagefaultgames/rogueserver/db"
 	"github.com/pagefaultgames/rogueserver/defs"
 )
 
 func GetSystem(uuid []byte) (defs.SystemSaveData, error) {
-	system, err := db.ReadSystemSaveData(uuid)
+	var system defs.SystemSaveData
+	var err error
+
+	if os.Getenv("AWS_ENDPOINT_URL_S3") != "" { // use S3
+		system, err = db.GetSystemSaveFromS3(uuid)
+	} else { // use database
+		system, err = db.ReadSystemSaveData(uuid)
+	}
 	if err != nil {
 		return system, err
 	}
@@ -43,7 +51,16 @@ func UpdateSystem(uuid []byte, data defs.SystemSaveData) error {
 		return fmt.Errorf("failed to update account stats: %s", err)
 	}
 
-	return db.StoreSystemSaveData(uuid, data)
+	if os.Getenv("AWS_ENDPOINT_URL_S3") != "" { // use S3
+		err = db.StoreSystemSaveDataS3(uuid, data)
+	} else {
+		err = db.StoreSystemSaveData(uuid, data)
+	}
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func DeleteSystem(uuid []byte) error {

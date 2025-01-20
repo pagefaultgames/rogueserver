@@ -60,45 +60,22 @@ func ReadSeedCompleted(uuid []byte, seed string) (bool, error) {
 }
 
 func ReadSystemSaveData(uuid []byte) (defs.SystemSaveData, error) {
-	// get and return save from S3
-	system, err := GetSystemSaveFromS3(uuid)
-	if err == nil {
-		return system, nil
-	}
+	var system defs.SystemSaveData
 
-	// otherwise look in database and try to move it
 	var data []byte
-	err = handle.QueryRow("SELECT data FROM systemSaveData WHERE uuid = ?", uuid).Scan(&data)
+	err := handle.QueryRow("SELECT data FROM systemSaveData WHERE uuid = ?", uuid).Scan(&data)
 	if err != nil {
 		return system, err
 	}
 
-	dec, err := zstd.NewReader(nil)
+	zr, err := zstd.NewReader(bytes.NewReader(data))
 	if err != nil {
 		return system, err
 	}
 
-	defer dec.Close()
+	defer zr.Close()
 
-	decompressed, err := dec.DecodeAll(data, nil)
-	if err == nil {
-		// replace if it worked, otherwise use the original data
-		data = decompressed
-	}
-
-	err = gob.NewDecoder(bytes.NewReader(data)).Decode(&system)
-	if err != nil {
-		return system, err
-	}
-
-	// put it in S3
-	err = StoreSystemSaveData(uuid, system)
-	if err != nil {
-		return system, err
-	}
-
-	// delete the one in db
-	err = DeleteSystemSaveData(uuid)
+	err = gob.NewDecoder(zr).Decode(&system)
 	if err != nil {
 		return system, err
 	}
@@ -107,6 +84,29 @@ func ReadSystemSaveData(uuid []byte) (defs.SystemSaveData, error) {
 }
 
 func StoreSystemSaveData(uuid []byte, data defs.SystemSaveData) error {
+	buf := new(bytes.Buffer)
+
+	zw, err := zstd.NewWriter(buf)
+	if err != nil {
+		return err
+	}
+
+	defer zw.Close()
+
+	err = gob.NewEncoder(zw).Encode(data)
+	if err != nil {
+		return err
+	}
+
+	_, err = handle.Exec("REPLACE INTO systemSaveData (uuid, data, timestamp) VALUES (?, ?, UTC_TIMESTAMP())", uuid, buf.Bytes())
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func StoreSystemSaveDataS3(uuid []byte, data defs.SystemSaveData) error {
 	cfg, _ := config.LoadDefaultConfig(context.TODO())
 
 	client := s3.NewFromConfig(cfg, func(o *s3.Options) {
@@ -118,7 +118,9 @@ func StoreSystemSaveData(uuid []byte, data defs.SystemSaveData) error {
 		return err
 	}
 
-	json, err := json.Marshal(data)
+	buf := new(bytes.Buffer)
+
+	err = json.NewEncoder(buf).Encode(data)
 	if err != nil {
 		return err
 	}
@@ -126,7 +128,7 @@ func StoreSystemSaveData(uuid []byte, data defs.SystemSaveData) error {
 	_, err = client.PutObject(context.Background(), &s3.PutObjectInput{
 		Bucket: aws.String(os.Getenv("S3_SYSTEM_BUCKET_NAME")),
 		Key:    aws.String(username),
-		Body:   bytes.NewReader(json),
+		Body:   buf,
 	})
 	if err != nil {
 		return err
@@ -153,20 +155,14 @@ func ReadSessionSaveData(uuid []byte, slot int) (defs.SessionSaveData, error) {
 		return session, err
 	}
 
-	dec, err := zstd.NewReader(nil)
+	zr, err := zstd.NewReader(bytes.NewReader(data))
 	if err != nil {
 		return session, err
 	}
 
-	defer dec.Close()
+	defer zr.Close()
 
-	decompressed, err := dec.DecodeAll(data, nil)
-	if err == nil {
-		// replace if it worked, otherwise use the original data
-		data = decompressed
-	}
-
-	err = gob.NewDecoder(bytes.NewReader(data)).Decode(&session)
+	err = gob.NewDecoder(zr).Decode(&session)
 	if err != nil {
 		return session, err
 	}
@@ -185,20 +181,21 @@ func GetLatestSessionSaveDataSlot(uuid []byte) (int, error) {
 }
 
 func StoreSessionSaveData(uuid []byte, data defs.SessionSaveData, slot int) error {
-	var buf bytes.Buffer
-	err := gob.NewEncoder(&buf).Encode(data)
+	buf := new(bytes.Buffer)
+
+	zw, err := zstd.NewWriter(buf)
 	if err != nil {
 		return err
 	}
 
-	enc, err := zstd.NewWriter(nil)
+	defer zw.Close()
+
+	err = gob.NewEncoder(zw).Encode(data)
 	if err != nil {
 		return err
 	}
 
-	defer enc.Close()
-
-	_, err = handle.Exec("REPLACE INTO sessionSaveData (uuid, slot, data, timestamp) VALUES (?, ?, ?, UTC_TIMESTAMP())", uuid, slot, enc.EncodeAll(buf.Bytes(), nil))
+	_, err = handle.Exec("REPLACE INTO sessionSaveData (uuid, slot, data, timestamp) VALUES (?, ?, ?, UTC_TIMESTAMP())", uuid, slot, buf.Bytes())
 	if err != nil {
 		return err
 	}
@@ -250,13 +247,12 @@ func GetSystemSaveFromS3(uuid []byte) (defs.SystemSaveData, error) {
 		return system, err
 	}
 
-	var session defs.SystemSaveData
-	err = json.NewDecoder(resp.Body).Decode(&session)
+	err = json.NewDecoder(resp.Body).Decode(&system)
 	if err != nil {
 		return system, err
 	}
 
-	return session, nil
+	return system, nil
 }
 
 func GetLocalSystemAccounts() ([][]byte, error) {
