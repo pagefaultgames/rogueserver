@@ -254,25 +254,3 @@ func GetSystemSaveFromS3(uuid []byte) (defs.SystemSaveData, error) {
 
 	return system, nil
 }
-
-func GetLocalSystemAccounts() ([][]byte, error) {
-	var users [][]byte
-	rows, err := handle.Query("SELECT uuid FROM systemSaveData LIMIT 3000")
-	if err != nil {
-		return nil, err
-	}
-
-	defer rows.Close()
-
-	for rows.Next() {
-		var uuid []byte
-		err := rows.Scan(&uuid)
-		if err != nil {
-			return nil, err
-		}
-
-		users = append(users, uuid)
-	}
-
-	return users, nil
-}
