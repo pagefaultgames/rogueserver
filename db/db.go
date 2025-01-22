@@ -20,7 +20,6 @@ package db
 import (
 	"database/sql"
 	"fmt"
-	"log"
 
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -40,7 +39,7 @@ func Init(username, password, protocol, address, database string) error {
 	handle.SetMaxOpenConns(conns)
 	handle.SetMaxIdleConns(conns)
 
-	tx, err := handle.Begin()
+	/*tx, err := handle.Begin()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -54,12 +53,12 @@ func Init(username, password, protocol, address, database string) error {
 	err = tx.Commit()
 	if err != nil {
 		log.Fatal(err)
-	}
+	}*/
 
 	return nil
 }
 
-func setupDb(tx *sql.Tx) error {
+/*func setupDb(tx *sql.Tx) error {
 	queries := []string{
 		// MIGRATION 000
 
@@ -123,4 +122,4 @@ func setupDb(tx *sql.Tx) error {
 	}
 
 	return nil
-}
+}*/
