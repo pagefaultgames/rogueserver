@@ -91,9 +91,12 @@ func StoreSystemSaveData(uuid []byte, data defs.SystemSaveData) error {
 		return err
 	}
 
-	defer zw.Close()
-
 	err = gob.NewEncoder(zw).Encode(data)
+	if err != nil {
+		return err
+	}
+
+	err = zw.Close()
 	if err != nil {
 		return err
 	}
@@ -188,9 +191,12 @@ func StoreSessionSaveData(uuid []byte, data defs.SessionSaveData, slot int) erro
 		return err
 	}
 
-	defer zw.Close()
-
 	err = gob.NewEncoder(zw).Encode(data)
+	if err != nil {
+		return err
+	}
+
+	err = zw.Close()
 	if err != nil {
 		return err
 	}
