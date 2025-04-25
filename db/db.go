@@ -18,13 +18,18 @@
 package db
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
+	"os"
 
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	_ "github.com/go-sql-driver/mysql"
 )
 
 var handle *sql.DB
+var s3client *s3.Client
 
 func Init(username, password, protocol, address, database string) error {
 	var err error
@@ -32,6 +37,15 @@ func Init(username, password, protocol, address, database string) error {
 	handle, err = sql.Open("mysql", username+":"+password+"@"+protocol+"("+address+")/"+database)
 	if err != nil {
 		return fmt.Errorf("failed to open database connection: %s", err)
+	}
+
+	if os.Getenv("AWS_ENDPOINT_URL_S3") != "" {
+		cfg, err := config.LoadDefaultConfig(context.TODO())
+		if err != nil {
+			return err
+		}
+
+		s3client = s3.NewFromConfig(cfg)
 	}
 
 	/*conns := 64

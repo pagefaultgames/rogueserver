@@ -28,7 +28,6 @@ import (
 	"github.com/pagefaultgames/rogueserver/defs"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
@@ -110,12 +109,6 @@ func StoreSystemSaveData(uuid []byte, data defs.SystemSaveData) error {
 }
 
 func StoreSystemSaveDataS3(uuid []byte, data defs.SystemSaveData) error {
-	cfg, _ := config.LoadDefaultConfig(context.TODO())
-
-	client := s3.NewFromConfig(cfg, func(o *s3.Options) {
-		o.BaseEndpoint = aws.String(os.Getenv("AWS_ENDPOINT_URL_S3"))
-	})
-
 	username, err := FetchUsernameFromUUID(uuid)
 	if err != nil {
 		return err
@@ -128,7 +121,7 @@ func StoreSystemSaveDataS3(uuid []byte, data defs.SystemSaveData) error {
 		return err
 	}
 
-	_, err = client.PutObject(context.Background(), &s3.PutObjectInput{
+	_, err = s3client.PutObject(context.Background(), &s3.PutObjectInput{
 		Bucket: aws.String(os.Getenv("S3_SYSTEM_BUCKET_NAME")),
 		Key:    aws.String(username),
 		Body:   buf,
@@ -235,19 +228,10 @@ func GetSystemSaveFromS3(uuid []byte) (defs.SystemSaveData, error) {
 		return system, err
 	}
 
-	cfg, err := config.LoadDefaultConfig(context.TODO())
-	if err != nil {
-		return system, err
-	}
-
-	client := s3.NewFromConfig(cfg)
-
-	s3Object := s3.GetObjectInput{
+	resp, err := s3client.GetObject(context.TODO(), &s3.GetObjectInput{
 		Bucket: aws.String(os.Getenv("S3_SYSTEM_BUCKET_NAME")),
 		Key:    aws.String(username),
-	}
-
-	resp, err := client.GetObject(context.TODO(), &s3Object)
+	})
 	if err != nil {
 		return system, err
 	}
