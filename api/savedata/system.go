@@ -18,12 +18,17 @@
 package savedata
 
 import (
+	"database/sql"
+	"errors"
 	"fmt"
 	"os"
 
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/pagefaultgames/rogueserver/db"
 	"github.com/pagefaultgames/rogueserver/defs"
 )
+
+var ErrSaveNotExist = errors.New("save does not exist")
 
 func GetSystem(uuid []byte) (defs.SystemSaveData, error) {
 	var system defs.SystemSaveData
@@ -31,8 +36,15 @@ func GetSystem(uuid []byte) (defs.SystemSaveData, error) {
 
 	if os.Getenv("S3_SYSTEM_BUCKET_NAME") != "" { // use S3
 		system, err = db.GetSystemSaveFromS3(uuid)
+		var nokey *types.NoSuchKey
+		if errors.As(err, &nokey) {
+			err = ErrSaveNotExist
+		}
 	} else { // use database
 		system, err = db.ReadSystemSaveData(uuid)
+		if errors.Is(err, sql.ErrNoRows) {
+			err = ErrSaveNotExist
+		}
 	}
 	if err != nil {
 		return system, err

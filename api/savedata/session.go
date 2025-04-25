@@ -18,6 +18,9 @@
 package savedata
 
 import (
+	"database/sql"
+	"errors"
+
 	"github.com/pagefaultgames/rogueserver/db"
 	"github.com/pagefaultgames/rogueserver/defs"
 )
@@ -25,6 +28,10 @@ import (
 func GetSession(uuid []byte, slot int) (defs.SessionSaveData, error) {
 	session, err := db.ReadSessionSaveData(uuid, slot)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			err = ErrSaveNotExist
+		}
+
 		return session, err
 	}
 

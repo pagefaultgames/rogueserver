@@ -200,7 +200,7 @@ func handleSession(w http.ResponseWriter, r *http.Request) {
 	switch r.PathValue("action") {
 	case "get":
 		save, err := savedata.GetSession(uuid, slot)
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, savedata.ErrSaveNotExist) {
 			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		}
@@ -220,7 +220,7 @@ func handleSession(w http.ResponseWriter, r *http.Request) {
 		}
 
 		existingSave, err := savedata.GetSession(uuid, slot)
-		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		if err != nil && !errors.Is(err, savedata.ErrSaveNotExist) {
 			httpError(w, r, fmt.Errorf("failed to retrieve session save data: %s", err), http.StatusInternalServerError)
 			return
 		} else {
@@ -339,7 +339,7 @@ func handleUpdateAll(w http.ResponseWriter, r *http.Request) {
 	}
 
 	existingPlaytime, err := savedata.GetPlaytime(uuid)
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+	if err != nil && !errors.Is(err, savedata.ErrSaveNotExist) {
 		httpError(w, r, fmt.Errorf("failed to retrieve playtime: %s", err), http.StatusInternalServerError)
 		return
 	} else {
@@ -356,7 +356,7 @@ func handleUpdateAll(w http.ResponseWriter, r *http.Request) {
 	}
 
 	existingSave, err := savedata.GetSession(uuid, data.SessionSlotId)
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+	if err != nil && !errors.Is(err, savedata.ErrSaveNotExist) {
 		httpError(w, r, fmt.Errorf("failed to retrieve session save data: %s", err), http.StatusInternalServerError)
 		return
 	} else {
@@ -417,7 +417,7 @@ func handleSystem(w http.ResponseWriter, r *http.Request) {
 
 		save, err := savedata.GetSystem(uuid)
 		if err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
+			if errors.Is(err, savedata.ErrSaveNotExist) {
 				http.Error(w, err.Error(), http.StatusNotFound)
 			} else {
 				httpError(w, r, fmt.Errorf("failed to get system save data: %s", err), http.StatusInternalServerError)
@@ -441,7 +441,7 @@ func handleSystem(w http.ResponseWriter, r *http.Request) {
 		}
 
 		existingPlaytime, err := savedata.GetPlaytime(uuid)
-		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		if err != nil && !errors.Is(err, savedata.ErrSaveNotExist) {
 			httpError(w, r, fmt.Errorf("failed to retrieve playtime: %s", err), http.StatusInternalServerError)
 			return
 		} else {
