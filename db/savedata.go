@@ -211,15 +211,6 @@ func DeleteSessionSaveData(uuid []byte, slot int) error {
 	return nil
 }
 
-func RetrievePlaytime(uuid []byte) (int, error) {
-	system, err := ReadSystemSaveData(uuid)
-	if err != nil {
-		return 0, err
-	}
-
-	return int(system.GameStats.(map[string]interface{})["playTime"].(float64)), nil
-}
-
 func GetSystemSaveFromS3(uuid []byte) (defs.SystemSaveData, error) {
 	var system defs.SystemSaveData
 

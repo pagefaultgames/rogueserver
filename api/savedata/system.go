@@ -71,3 +71,12 @@ func DeleteSystem(uuid []byte) error {
 
 	return nil
 }
+
+func GetPlaytime(uuid []byte) (int, error) {
+	system, err := GetSystem(uuid)
+	if err != nil {
+		return 0, err
+	}
+
+	return int(system.GameStats.(map[string]interface{})["playTime"].(float64)), nil
+}

@@ -338,7 +338,7 @@ func handleUpdateAll(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	existingPlaytime, err := db.RetrievePlaytime(uuid)
+	existingPlaytime, err := savedata.GetPlaytime(uuid)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		httpError(w, r, fmt.Errorf("failed to retrieve playtime: %s", err), http.StatusInternalServerError)
 		return
@@ -440,7 +440,7 @@ func handleSystem(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		existingPlaytime, err := db.RetrievePlaytime(uuid)
+		existingPlaytime, err := savedata.GetPlaytime(uuid)
 		if err != nil && !errors.Is(err, sql.ErrNoRows) {
 			httpError(w, r, fmt.Errorf("failed to retrieve playtime: %s", err), http.StatusInternalServerError)
 			return
