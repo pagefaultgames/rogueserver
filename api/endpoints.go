@@ -56,18 +56,14 @@ func handleAccountInfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	discordId, err := db.FetchDiscordIdByUsername(username)
-	if err != nil {
-		if !errors.Is(err, sql.ErrNoRows) {
-			httpError(w, r, err, http.StatusInternalServerError)
-			return
-		}
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		httpError(w, r, err, http.StatusInternalServerError)
+		return
 	}
 	googleId, err := db.FetchGoogleIdByUsername(username)
-	if err != nil {
-		if !errors.Is(err, sql.ErrNoRows) {
-			httpError(w, r, err, http.StatusInternalServerError)
-			return
-		}
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		httpError(w, r, err, http.StatusInternalServerError)
+		return
 	}
 
 	var hasAdminRole bool
@@ -80,6 +76,7 @@ func handleAccountInfo(w http.ResponseWriter, r *http.Request) {
 		httpError(w, r, err, http.StatusInternalServerError)
 		return
 	}
+
 	writeJSON(w, r, response)
 }
 
