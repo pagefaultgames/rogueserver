@@ -81,13 +81,7 @@ func handleAccountInfo(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleAccountRegister(w http.ResponseWriter, r *http.Request) {
-	err := r.ParseForm()
-	if err != nil {
-		httpError(w, r, fmt.Errorf("failed to parse request form: %s", err), http.StatusBadRequest)
-		return
-	}
-
-	err = account.Register(r.Form.Get("username"), r.Form.Get("password"))
+	err := account.Register(r.PostFormValue("username"), r.PostFormValue("password"))
 	if err != nil {
 		httpError(w, r, err, http.StatusInternalServerError)
 		return
@@ -97,13 +91,7 @@ func handleAccountRegister(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleAccountLogin(w http.ResponseWriter, r *http.Request) {
-	err := r.ParseForm()
-	if err != nil {
-		httpError(w, r, fmt.Errorf("failed to parse request form: %s", err), http.StatusBadRequest)
-		return
-	}
-
-	response, err := account.Login(r.Form.Get("username"), r.Form.Get("password"))
+	response, err := account.Login(r.PostFormValue("username"), r.PostFormValue("password"))
 	if err != nil {
 		httpError(w, r, err, http.StatusInternalServerError)
 		return
@@ -113,19 +101,13 @@ func handleAccountLogin(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleAccountChangePW(w http.ResponseWriter, r *http.Request) {
-	err := r.ParseForm()
-	if err != nil {
-		httpError(w, r, fmt.Errorf("failed to parse request form: %s", err), http.StatusBadRequest)
-		return
-	}
-
 	uuid, err := uuidFromRequest(r)
 	if err != nil {
 		httpError(w, r, err, http.StatusUnauthorized)
 		return
 	}
 
-	err = account.ChangePW(uuid, r.Form.Get("password"))
+	err = account.ChangePW(uuid, r.PostFormValue("password"))
 	if err != nil {
 		httpError(w, r, err, http.StatusInternalServerError)
 		return
@@ -666,12 +648,6 @@ func handleProviderLogout(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleAdminDiscordLink(w http.ResponseWriter, r *http.Request) {
-	err := r.ParseForm()
-	if err != nil {
-		httpError(w, r, fmt.Errorf("failed to parse request form: %s", err), http.StatusBadRequest)
-		return
-	}
-
 	uuid, err := uuidFromRequest(r)
 	if err != nil {
 		httpError(w, r, err, http.StatusUnauthorized)
@@ -690,8 +666,8 @@ func handleAdminDiscordLink(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	username := r.Form.Get("username")
-	discordId := r.Form.Get("discordId")
+	username := r.PostFormValue("username")
+	discordId := r.PostFormValue("discordId")
 
 	// this does a quick call to make sure the username exists on the server before allowing the rest of the code to run
 	// this calls error value 404 (StatusNotFound) if there's no data; this means the username does not exist in the server
@@ -719,12 +695,6 @@ func handleAdminDiscordLink(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleAdminDiscordUnlink(w http.ResponseWriter, r *http.Request) {
-	err := r.ParseForm()
-	if err != nil {
-		httpError(w, r, fmt.Errorf("failed to parse request form: %s", err), http.StatusBadRequest)
-		return
-	}
-
 	uuid, err := uuidFromRequest(r)
 	if err != nil {
 		httpError(w, r, err, http.StatusUnauthorized)
@@ -743,8 +713,8 @@ func handleAdminDiscordUnlink(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	username := r.Form.Get("username")
-	discordId := r.Form.Get("discordId")
+	username := r.PostFormValue("username")
+	discordId := r.PostFormValue("discordId")
 
 	switch {
 	case username != "":
@@ -783,12 +753,6 @@ func handleAdminDiscordUnlink(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleAdminGoogleLink(w http.ResponseWriter, r *http.Request) {
-	err := r.ParseForm()
-	if err != nil {
-		httpError(w, r, fmt.Errorf("failed to parse request form: %s", err), http.StatusBadRequest)
-		return
-	}
-
 	uuid, err := uuidFromRequest(r)
 	if err != nil {
 		httpError(w, r, err, http.StatusUnauthorized)
@@ -807,8 +771,8 @@ func handleAdminGoogleLink(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	username := r.Form.Get("username")
-	googleId := r.Form.Get("googleId")
+	username := r.PostFormValue("username")
+	googleId := r.PostFormValue("googleId")
 
 	// this does a quick call to make sure the username exists on the server before allowing the rest of the code to run
 	// this calls error value 404 (StatusNotFound) if there's no data; this means the username does not exist in the server
@@ -836,12 +800,6 @@ func handleAdminGoogleLink(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleAdminGoogleUnlink(w http.ResponseWriter, r *http.Request) {
-	err := r.ParseForm()
-	if err != nil {
-		httpError(w, r, fmt.Errorf("failed to parse request form: %s", err), http.StatusBadRequest)
-		return
-	}
-
 	uuid, err := uuidFromRequest(r)
 	if err != nil {
 		httpError(w, r, err, http.StatusUnauthorized)
@@ -860,8 +818,8 @@ func handleAdminGoogleUnlink(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	username := r.Form.Get("username")
-	googleId := r.Form.Get("googleId")
+	username := r.PostFormValue("username")
+	googleId := r.PostFormValue("googleId")
 
 	switch {
 	case username != "":
@@ -900,12 +858,6 @@ func handleAdminGoogleUnlink(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleAdminSearch(w http.ResponseWriter, r *http.Request) {
-	err := r.ParseForm()
-	if err != nil {
-		httpError(w, r, fmt.Errorf("failed to parse request form: %s", err), http.StatusBadRequest)
-		return
-	}
-
 	uuid, err := uuidFromRequest(r)
 	if err != nil {
 		httpError(w, r, err, http.StatusUnauthorized)
@@ -924,7 +876,7 @@ func handleAdminSearch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	username := r.Form.Get("username")
+	username := r.PostFormValue("username")
 
 	// this does a quick call to make sure the username exists on the server before allowing the rest of the code to run
 	// this calls error value 404 (StatusNotFound) if there's no data; this means the username does not exist in the server
