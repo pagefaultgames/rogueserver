@@ -144,7 +144,7 @@ func handleGameTitleStats(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleGameClassicSessionCount(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte(strconv.Itoa(classicSessionCount)))
+	fmt.Fprint(w, classicSessionCount)
 }
 
 func handleSession(w http.ResponseWriter, r *http.Request) {
@@ -179,12 +179,12 @@ func handleSession(w http.ResponseWriter, r *http.Request) {
 	switch r.PathValue("action") {
 	case "get":
 		save, err := savedata.GetSession(uuid, slot)
-		if errors.Is(err, savedata.ErrSaveNotExist) {
-			http.Error(w, err.Error(), http.StatusNotFound)
-			return
-		}
-
 		if err != nil {
+			if errors.Is(err, savedata.ErrSaveNotExist) {
+				http.Error(w, err.Error(), http.StatusNotFound)
+				return
+			}
+
 			httpError(w, r, err, http.StatusInternalServerError)
 			return
 		}
@@ -398,10 +398,10 @@ func handleSystem(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			if errors.Is(err, savedata.ErrSaveNotExist) {
 				http.Error(w, err.Error(), http.StatusNotFound)
-			} else {
-				httpError(w, r, fmt.Errorf("failed to get system save data: %s", err), http.StatusInternalServerError)
+				return
 			}
 
+			httpError(w, r, fmt.Errorf("failed to get system save data: %s", err), http.StatusInternalServerError)
 			return
 		}
 
@@ -489,10 +489,7 @@ func handleDailySeed(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = w.Write([]byte(seed))
-	if err != nil {
-		httpError(w, r, fmt.Errorf("failed to write seed: %s", err), http.StatusInternalServerError)
-	}
+	fmt.Fprint(w, seed)
 }
 
 func handleDailyRankings(w http.ResponseWriter, r *http.Request) {
@@ -541,7 +538,7 @@ func handleDailyRankingPageCount(w http.ResponseWriter, r *http.Request) {
 		httpError(w, r, err, http.StatusInternalServerError)
 	}
 
-	w.Write([]byte(strconv.Itoa(count)))
+	fmt.Fprint(w, count)
 }
 
 // redirect link after authorizing application link
