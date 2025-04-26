@@ -38,19 +38,13 @@ func Update(uuid []byte, slot int, save any) error {
 			return fmt.Errorf("invalid system data")
 		}
 
-		err = db.UpdateAccountStats(uuid, save.GameStats, save.VoucherCounts)
-		if err != nil {
-			return fmt.Errorf("failed to update account stats: %s", err)
-		}
-
-		return db.StoreSystemSaveData(uuid, save)
-
+		return UpdateSystem(uuid, save)
 	case defs.SessionSaveData: // Session
 		if slot < 0 || slot >= defs.SessionSlotCount {
 			return fmt.Errorf("slot id %d out of range", slot)
 		}
-		return db.StoreSessionSaveData(uuid, save, slot)
 
+		return UpdateSession(uuid, slot, save)
 	default:
 		return fmt.Errorf("invalid data type")
 	}
