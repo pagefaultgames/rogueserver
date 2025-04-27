@@ -890,7 +890,7 @@ func handleAdminSearch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	username := r.PostFormValue("username")
+	username := r.URL.Query().Get("username")
 
 	// this does a quick call to make sure the username exists on the server before allowing the rest of the code to run
 	// this calls error value 404 (StatusNotFound) if there's no data; this means the username does not exist in the server
