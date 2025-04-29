@@ -1,66 +1,53 @@
 # rogueserver
+Backend Golang server & API for [PokéRogue](https://github.com/pagefaultgames/pokerogue).
 
-# Hosting in Docker
-It is advised that you host this in a docker container as it will be much easier to manage. 
-There is a sample docker-compose file for setting up a docker container to setup this server.
+# Building
+There are 2 main methods to host a local instance of the server: via Docker and as a local install.
+
+## Docker
+### Requirements:
+- Docker Desktop (downloadable [from their website](https://www.docker.com/products/docker-desktop/)).
+
+Use the [sample docker-compose file](./docker-compose.Development.yml) to set up a docker container to run the server.
+On initialization, this will create an empty `mariadb` database with the default username/password combo of pokerogue:pokerogue.
 
 # Self Hosting outside of Docker:
 ## Required Tools:
-- Golang
-- Node: **18.3.0**
+- Golang 1.22 or higher (downloadable [here](https://go.dev/dl/))
+- Node: **18.3.0** or higher
 - npm: [how to install](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm)
+- Both this repository and the [main repo](https://github.com/pagefaultgames/pokerogue) cloned on your device
 
-## Installation:
-The docker compose file should automatically implement a container with mariadb with an empty database and the default user and password combo of pokerogue:pokerogue
-
-### src/utils.ts:224-225 (in pokerogue)
-Replace both URLs (one on each line) with the local API server address from rogueserver.go (0.0.0.0:8001) (or whatever port you picked)
-
-# If you are on Windows
-
-Now that all of the files are configured: start up powershell as administrator:
-```
-cd C:\api\server\location\
+## Building
+Running the server requires only the `rogueserver` executable (compiled from this repo).
+Run the following code from the repository root to create and run it[^1]:
+```bash
 go build .
-.\rogueserver.exe --debug --dbuser yourusername --dbpass yourpassword 
+./rogueserver --debug --dbuser yourusername --dbpass yourpassword
 ```
-The other available flags are located in rogueserver.go:34-43.
+(If on windows, replace `rogueserver` with `rogueserver.exe`.)
 
-Then in another run this the first time then run `npm run start` from the rogueserver location from then on:
-```
-powershell -ep bypass
-cd C:\server\location\
-npm install
-npm run start
-```
-You will need to allow the port youre running the API (8001) on and port 8000 to accept inbound connections through the [Windows Advanced Firewall](https://www.youtube.com/watch?v=9llH5_CON-Y).
+Now, go to the main repo root and run `npm run start` to boot it up. With some luck, the frontend should connect to the local backend and run smoothly!
 
-# If you are on Linux
-In whatever shell you prefer, run the following:
-```
-cd /api/server/location/
-go build .
-./rogueserver --debug --dbuser yourusername --dbpass yourpassword &
+[^1]: After doing this, you shouldn't have to re-build it again unless making changes to backend code.
 
-cd /server/location/
-npm run start
-```
-
-If you have a firewall running such as ufw on your linux machine, make sure to allow inbound connections on the ports youre running the API and the pokerogue server (8000,8001).
-An example to allow incoming connections using UFW:
-```
+### Hosting for other computers
+Now, if you want to access your local server from _other_ machines using localhost, you will need to configure your device's firewalls to allow inbound connections for the ports running the API and server (8000 & 8001).
+An example to allow incoming connections using UFW on Linux:
+```bash
 sudo ufw allow 8000,8001/tcp
 ```
 
-This should allow you to reach the game from other computers on the same network. 
+This should allow you to reach the game from other computers on the same network.
 
 ## Tying to a Domain
 
-If you want to tie it to a domain like I did and make it publicly accessible, there is some extra work to be done.
+If you want to tie the local instance to a _domain_ and make it publicly accessible, there are a few extra steps to be done.
 
-I setup caddy and would recommend using it as a reverse proxy. 
-[caddy installation](https://caddyserver.com/docs/install)
-once its installed setup a config file for caddy:
+**This is FULLY OPTIONAL.** The first 2 steps should be enough for most users merely wanting to test stuff out.
+
+[Caddy](https://caddyserver.com/docs/install) is recommended for use as a reverse proxy.
+After installing it, set up a config file like so:
 
 ```
 pokerogue.exampledomain.com {
@@ -68,16 +55,13 @@ pokerogue.exampledomain.com {
 }
 pokeapi.exampledomain.com {
 	reverse_proxy localhost:8001
-} 
+}
 ```
-Preferably set up caddy as a service from [here.](https://caddyserver.com/docs/running)
+(Replace the URLs with whatever domain name you want to tie the server to.)
+Then, set up caddy as a service [as shown here](https://caddyserver.com/docs/running).
 
-Once this is good to go, take your API url (https://pokeapi.exampledomain.com) and paste it on 
-### src/utils.ts:224-225 
-in place of the previous 0.0.0.0:8001 address
+Once this is good to go, take your API url (https://pokeapi.exampledomain.com) and paste it into **.env.development** inside the main repo, replacing the prior `0.0.0.0:8001` address.
 
-Make sure that both 8000 and 8001 are portforwarded on your router.
+Make sure that ports 8000 and 8001 are both portforwarded on your router.
 
-Test that the server's game and game authentication works from other machines both in and outside of the network. Once this is complete, enjoy!
-
-
+Enjoy!
