@@ -405,6 +405,15 @@ func RemoveSessionFromToken(token []byte) error {
 	return nil
 }
 
+func RemoveSessionsFromUUID(uuid []byte) error {
+	_, err := handle.Exec("DELETE FROM sessions WHERE uuid = ?", uuid)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func FetchUsernameFromUUID(uuid []byte) (string, error) {
 	var username string
 	err := handle.QueryRow("SELECT username FROM accounts WHERE uuid = ?", uuid).Scan(&username)

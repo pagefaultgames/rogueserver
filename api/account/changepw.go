@@ -35,6 +35,11 @@ func ChangePW(uuid []byte, password string) error {
 		return fmt.Errorf("failed to generate salt: %s", err)
 	}
 
+	err = db.RemoveSessionsFromUUID(uuid)
+	if err != nil {
+		return fmt.Errorf("failed to remove sessions: %s", err)
+	}
+
 	err = db.UpdateAccountPassword(uuid, deriveArgon2IDKey([]byte(password), salt), salt)
 	if err != nil {
 		return fmt.Errorf("failed to add account record: %s", err)
