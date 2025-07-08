@@ -113,7 +113,20 @@ func handleAccountChangePW(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	username, err := db.FetchUsernameFromUUID(uuid)
+	if err != nil {
+		httpError(w, r, err, http.StatusInternalServerError)
+		return
+	}
+
+	// create a new session with these credentials
+	response, err := account.Login(username, r.Form.Get("password"))
+	if err != nil {
+		httpError(w, r, err, http.StatusInternalServerError)
+		return
+	}
+
+	writeJSON(w, r, response)
 }
 
 func handleAccountLogout(w http.ResponseWriter, r *http.Request) {
