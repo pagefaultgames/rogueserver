@@ -117,6 +117,7 @@ type SessionSaveData struct {
 	Challenges               []ChallengeData          `json:"challenges"`
 	MysteryEncounterType     MysteryEncounterType     `json:"mysteryEncounterType"`
 	MysteryEncounterSaveData MysteryEncounterSaveData `json:"mysteryEncounterSaveData"`
+	Name                     string                   `json:"name,omitempty"`
 }
 
 type ChallengeData struct {
