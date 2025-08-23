@@ -49,6 +49,7 @@ type DexEntry struct {
 	CaughtCount  int         `json:"caughtCount"`
 	HatchedCount int         `json:"hatchedCount"`
 	Ivs          []int       `json:"ivs"`
+	Ribbons      string      `json:"ribbons"`
 }
 
 type StarterData map[int]StarterEntry
