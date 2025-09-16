@@ -20,12 +20,15 @@ package account
 import (
 	"crypto/rand"
 	"fmt"
-
-	"github.com/pagefaultgames/rogueserver/db"
 )
 
+// Interface for database operations needed for registration.
+type RegisterStore interface {
+	AddAccountRecord(uuid []byte, username string, passwordHash []byte, salt []byte) error
+}
+
 // /account/register - register account
-func Register(username, password string) error {
+func Register[T RegisterStore](store T, username, password string) error {
 	if !isValidUsername(username) {
 		return fmt.Errorf("invalid username")
 	}
@@ -46,7 +49,7 @@ func Register(username, password string) error {
 		return fmt.Errorf("failed to generate salt: %s", err)
 	}
 
-	err = db.AddAccountRecord(uuid, username, deriveArgon2IDKey([]byte(password), salt), salt)
+	err = store.AddAccountRecord(uuid, username, deriveArgon2IDKey([]byte(password), salt), salt)
 	if err != nil {
 		return fmt.Errorf("failed to add account record: %s", err)
 	}

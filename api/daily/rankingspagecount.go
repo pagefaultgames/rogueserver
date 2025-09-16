@@ -17,13 +17,13 @@
 
 package daily
 
-import (
-	"github.com/pagefaultgames/rogueserver/db"
-)
+type RankingPageCountStore interface {
+	FetchRankingPageCount(category int) (int, error)
+}
 
 // /daily/rankingpagecount - fetch daily ranking page count
-func RankingPageCount(category int) (int, error) {
-	pageCount, err := db.FetchRankingPageCount(category)
+func RankingPageCount[T RankingPageCountStore](store T, category int) (int, error) {
+	pageCount, err := store.FetchRankingPageCount(category)
 	if err != nil {
 		return pageCount, err
 	}

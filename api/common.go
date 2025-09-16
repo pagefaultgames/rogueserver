@@ -30,7 +30,7 @@ import (
 )
 
 func Init(mux *http.ServeMux) error {
-	err := scheduleStatRefresh()
+	err := scheduleStatRefresh(db.Store)
 	if err != nil {
 		return err
 	}
@@ -109,7 +109,7 @@ func tokenAndUuidFromRequest(r *http.Request) ([]byte, []byte, error) {
 		return nil, nil, err
 	}
 
-	uuid, err := db.FetchUUIDFromToken(token)
+	uuid, err := db.Store.FetchUUIDFromToken(token)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to validate token: %s", err)
 	}

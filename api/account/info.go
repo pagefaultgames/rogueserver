@@ -17,10 +17,6 @@
 
 package account
 
-import (
-	"github.com/pagefaultgames/rogueserver/db"
-)
-
 type InfoResponse struct {
 	Username        string `json:"username"`
 	DiscordId       string `json:"discordId"`
@@ -29,9 +25,13 @@ type InfoResponse struct {
 	HasAdminRole    bool   `json:"hasAdminRole"`
 }
 
+type InfoStore interface {
+	GetLatestSessionSaveDataSlot(uuid []byte) (int, error)
+}
+
 // /account/info - get account info
-func Info(username string, discordId string, googleId string, uuid []byte, hasAdminRole bool) (InfoResponse, error) {
-	slot, _ := db.GetLatestSessionSaveDataSlot(uuid)
+func Info[T InfoStore](store T, username string, discordId string, googleId string, uuid []byte, hasAdminRole bool) (InfoResponse, error) {
+	slot, _ := store.GetLatestSessionSaveDataSlot(uuid)
 	response := InfoResponse{
 		Username:        username,
 		LastSessionSlot: slot,

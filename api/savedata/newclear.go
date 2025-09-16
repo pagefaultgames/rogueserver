@@ -20,22 +20,26 @@ package savedata
 import (
 	"fmt"
 
-	"github.com/pagefaultgames/rogueserver/db"
 	"github.com/pagefaultgames/rogueserver/defs"
 )
 
+type NewClearStore interface {
+	ReadSessionSaveData(uuid []byte, slot int) (defs.SessionSaveData, error)
+	ReadSeedCompleted(uuid []byte, seed string) (bool, error)
+}
+
 // /savedata/newclear - return whether a session is a new clear for its seed
-func NewClear(uuid []byte, slot int) (bool, error) {
+func NewClear[T NewClearStore](store T, uuid []byte, slot int) (bool, error) {
 	if slot < 0 || slot >= defs.SessionSlotCount {
 		return false, fmt.Errorf("slot id %d out of range", slot)
 	}
 
-	session, err := db.ReadSessionSaveData(uuid, slot)
+	session, err := store.ReadSessionSaveData(uuid, slot)
 	if err != nil {
 		return false, err
 	}
 
-	completed, err := db.ReadSeedCompleted(uuid, session.Seed)
+	completed, err := store.ReadSeedCompleted(uuid, session.Seed)
 	if err != nil {
 		return false, fmt.Errorf("failed to read seed completed: %s", err)
 	}

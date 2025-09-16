@@ -24,24 +24,28 @@ import (
 	"os"
 
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
-	"github.com/pagefaultgames/rogueserver/db"
 	"github.com/pagefaultgames/rogueserver/defs"
 )
 
 var ErrSaveNotExist = errors.New("save does not exist")
 
-func GetSystem(uuid []byte) (defs.SystemSaveData, error) {
+type GetSystemStore interface {
+	GetSystemSaveFromS3(uuid []byte) (defs.SystemSaveData, error)
+	ReadSystemSaveData(uuid []byte) (defs.SystemSaveData, error)
+}
+
+func GetSystem[T GetSystemStore](store T, uuid []byte) (defs.SystemSaveData, error) {
 	var system defs.SystemSaveData
 	var err error
 
 	if os.Getenv("S3_SYSTEM_BUCKET_NAME") != "" { // use S3
-		system, err = db.GetSystemSaveFromS3(uuid)
+		system, err = store.GetSystemSaveFromS3(uuid)
 		var nokey *types.NoSuchKey
 		if errors.As(err, &nokey) {
 			err = ErrSaveNotExist
 		}
 	} else { // use database
-		system, err = db.ReadSystemSaveData(uuid)
+		system, err = store.ReadSystemSaveData(uuid)
 		if errors.Is(err, sql.ErrNoRows) {
 			err = ErrSaveNotExist
 		}
@@ -53,20 +57,27 @@ func GetSystem(uuid []byte) (defs.SystemSaveData, error) {
 	return system, nil
 }
 
-func UpdateSystem(uuid []byte, data defs.SystemSaveData) error {
+// Interface for database operations needed for updating system data.
+type UpdateSystemStore interface {
+	UpdateAccountStats(uuid []byte, stats defs.GameStats, voucherCounts map[string]int) error
+	StoreSystemSaveDataS3(uuid []byte, data defs.SystemSaveData) error
+	StoreSystemSaveData(uuid []byte, data defs.SystemSaveData) error
+}
+
+func UpdateSystem[T UpdateSystemStore](store T, uuid []byte, data defs.SystemSaveData) error {
 	if data.TrainerId == 0 && data.SecretId == 0 {
 		return fmt.Errorf("invalid system data")
 	}
 
-	err := db.UpdateAccountStats(uuid, data.GameStats, data.VoucherCounts)
+	err := store.UpdateAccountStats(uuid, data.GameStats, data.VoucherCounts)
 	if err != nil {
 		return fmt.Errorf("failed to update account stats: %s", err)
 	}
 
 	if os.Getenv("S3_SYSTEM_BUCKET_NAME") != "" { // use S3
-		err = db.StoreSystemSaveDataS3(uuid, data)
+		err = store.StoreSystemSaveDataS3(uuid, data)
 	} else {
-		err = db.StoreSystemSaveData(uuid, data)
+		err = store.StoreSystemSaveData(uuid, data)
 	}
 	if err != nil {
 		return err
@@ -75,8 +86,12 @@ func UpdateSystem(uuid []byte, data defs.SystemSaveData) error {
 	return nil
 }
 
-func DeleteSystem(uuid []byte) error {
-	err := db.DeleteSystemSaveData(uuid)
+type DeleteSystemStore interface {
+	DeleteSystemSaveData(uuid []byte) error
+}
+
+func DeleteSystem[T DeleteSystemStore](store T, uuid []byte) error {
+	err := store.DeleteSystemSaveData(uuid)
 	if err != nil {
 		return err
 	}

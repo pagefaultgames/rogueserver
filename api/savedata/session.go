@@ -21,12 +21,15 @@ import (
 	"database/sql"
 	"errors"
 
-	"github.com/pagefaultgames/rogueserver/db"
 	"github.com/pagefaultgames/rogueserver/defs"
 )
 
-func GetSession(uuid []byte, slot int) (defs.SessionSaveData, error) {
-	session, err := db.ReadSessionSaveData(uuid, slot)
+type GetSessionStore interface {
+	ReadSessionSaveData(uuid []byte, slot int) (defs.SessionSaveData, error)
+}
+
+func GetSession[T GetSessionStore](store T, uuid []byte, slot int) (defs.SessionSaveData, error) {
+	session, err := store.ReadSessionSaveData(uuid, slot)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			err = ErrSaveNotExist
@@ -38,8 +41,13 @@ func GetSession(uuid []byte, slot int) (defs.SessionSaveData, error) {
 	return session, nil
 }
 
-func UpdateSession(uuid []byte, slot int, data defs.SessionSaveData) error {
-	err := db.StoreSessionSaveData(uuid, data, slot)
+type UpdateSessionStore interface {
+	StoreSessionSaveData(uuid []byte, data defs.SessionSaveData, slot int) error
+	DeleteSessionSaveData(uuid []byte, slot int) error
+}
+
+func UpdateSession[T UpdateSessionStore](store T, uuid []byte, slot int, data defs.SessionSaveData) error {
+	err := store.StoreSessionSaveData(uuid, data, slot)
 	if err != nil {
 		return err
 	}
@@ -47,8 +55,12 @@ func UpdateSession(uuid []byte, slot int, data defs.SessionSaveData) error {
 	return nil
 }
 
-func DeleteSession(uuid []byte, slot int) error {
-	err := db.DeleteSessionSaveData(uuid, slot)
+type DeleteSessionStore interface {
+	DeleteSessionSaveData(uuid []byte, slot int) error
+}
+
+func DeleteSession[T DeleteSessionStore](store T, uuid []byte, slot int) error {
+	err := store.DeleteSessionSaveData(uuid, slot)
 	if err != nil {
 		return err
 	}

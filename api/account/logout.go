@@ -21,13 +21,17 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-
-	"github.com/pagefaultgames/rogueserver/db"
 )
 
 // /account/logout - log out of account
-func Logout(token []byte) error {
-	err := db.RemoveSessionFromToken(token)
+
+// Interface for database operations needed for logout.
+type LogoutStore interface {
+	RemoveSessionFromToken(token []byte) error
+}
+
+func Logout[T LogoutStore](store T, token []byte) error {
+	err := store.RemoveSessionFromToken(token)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return fmt.Errorf("token not found")

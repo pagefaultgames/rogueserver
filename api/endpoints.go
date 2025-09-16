@@ -50,17 +50,17 @@ func handleAccountInfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	username, err := db.FetchUsernameFromUUID(uuid)
+	username, err := db.Store.FetchUsernameFromUUID(uuid)
 	if err != nil {
 		httpError(w, r, err, http.StatusInternalServerError)
 		return
 	}
-	discordId, err := db.FetchDiscordIdByUsername(username)
+	discordId, err := db.Store.FetchDiscordIdByUsername(username)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		httpError(w, r, err, http.StatusInternalServerError)
 		return
 	}
-	googleId, err := db.FetchGoogleIdByUsername(username)
+	googleId, err := db.Store.FetchGoogleIdByUsername(username)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		httpError(w, r, err, http.StatusInternalServerError)
 		return
@@ -68,10 +68,10 @@ func handleAccountInfo(w http.ResponseWriter, r *http.Request) {
 
 	var hasAdminRole bool
 	if discordId != "" {
-		hasAdminRole, _ = account.IsUserDiscordAdmin(discordId, account.DiscordGuildID)
+		hasAdminRole, _ = account.Discord.IsUserDiscordAdmin(discordId, account.DiscordGuildID)
 	}
 
-	response, err := account.Info(username, discordId, googleId, uuid, hasAdminRole)
+	response, err := account.Info(db.Store, username, discordId, googleId, uuid, hasAdminRole)
 	if err != nil {
 		httpError(w, r, err, http.StatusInternalServerError)
 		return
@@ -81,7 +81,7 @@ func handleAccountInfo(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleAccountRegister(w http.ResponseWriter, r *http.Request) {
-	err := account.Register(r.PostFormValue("username"), r.PostFormValue("password"))
+	err := account.Register(db.Store, r.PostFormValue("username"), r.PostFormValue("password"))
 	if err != nil {
 		httpError(w, r, err, http.StatusInternalServerError)
 		return
@@ -91,7 +91,7 @@ func handleAccountRegister(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleAccountLogin(w http.ResponseWriter, r *http.Request) {
-	response, err := account.Login(r.PostFormValue("username"), r.PostFormValue("password"))
+	response, err := account.Login(db.Store, r.PostFormValue("username"), r.PostFormValue("password"))
 	if err != nil {
 		httpError(w, r, err, http.StatusInternalServerError)
 		return
@@ -107,20 +107,20 @@ func handleAccountChangePW(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = account.ChangePW(uuid, r.PostFormValue("password"))
+	err = account.ChangePW(db.Store, uuid, r.PostFormValue("password"))
 	if err != nil {
 		httpError(w, r, err, http.StatusInternalServerError)
 		return
 	}
 
-	username, err := db.FetchUsernameFromUUID(uuid)
+	username, err := db.Store.FetchUsernameFromUUID(uuid)
 	if err != nil {
 		httpError(w, r, err, http.StatusInternalServerError)
 		return
 	}
 
 	// create a new session with these credentials
-	response, err := account.Login(username, r.Form.Get("password"))
+	response, err := account.Login(db.Store, username, r.Form.Get("password"))
 	if err != nil {
 		httpError(w, r, err, http.StatusInternalServerError)
 		return
@@ -136,7 +136,7 @@ func handleAccountLogout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = account.Logout(token)
+	err = account.Logout(db.Store, token)
 	if err != nil {
 		// also possible for InternalServerError but that's unlikely unless the server blew up
 		httpError(w, r, err, http.StatusUnauthorized)
@@ -183,7 +183,7 @@ func handleSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = db.UpdateActiveSession(uuid, r.URL.Query().Get("clientSessionId"))
+	err = db.Store.UpdateActiveSession(uuid, r.URL.Query().Get("clientSessionId"))
 	if err != nil {
 		httpError(w, r, fmt.Errorf("failed to update active session: %s", err), http.StatusBadRequest)
 		return
@@ -191,7 +191,7 @@ func handleSession(w http.ResponseWriter, r *http.Request) {
 
 	switch r.PathValue("action") {
 	case "get":
-		save, err := savedata.GetSession(uuid, slot)
+		save, err := savedata.GetSession(db.Store, uuid, slot)
 		if err != nil {
 			if errors.Is(err, savedata.ErrSaveNotExist) {
 				http.Error(w, err.Error(), http.StatusNotFound)
@@ -211,7 +211,7 @@ func handleSession(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		existingSave, err := savedata.GetSession(uuid, slot)
+		existingSave, err := savedata.GetSession(db.Store, uuid, slot)
 		if err != nil {
 			if !errors.Is(err, savedata.ErrSaveNotExist) {
 				httpError(w, r, fmt.Errorf("failed to retrieve session save data: %s", err), http.StatusInternalServerError)
@@ -224,7 +224,7 @@ func handleSession(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		err = savedata.UpdateSession(uuid, slot, session)
+		err = savedata.UpdateSession(db.Store, uuid, slot, session)
 		if err != nil {
 			httpError(w, r, fmt.Errorf("failed to put session data: %s", err), http.StatusInternalServerError)
 			return
@@ -239,13 +239,13 @@ func handleSession(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		seed, err := db.GetDailyRunSeed()
+		seed, err := db.Store.GetDailyRunSeed()
 		if err != nil {
 			httpError(w, r, err, http.StatusInternalServerError)
 			return
 		}
 
-		resp, err := savedata.Clear(uuid, slot, seed, session)
+		resp, err := savedata.Clear(db.Store, uuid, slot, seed, session)
 		if err != nil {
 			httpError(w, r, err, http.StatusInternalServerError)
 			return
@@ -253,7 +253,7 @@ func handleSession(w http.ResponseWriter, r *http.Request) {
 
 		writeJSON(w, r, resp)
 	case "newclear":
-		resp, err := savedata.NewClear(uuid, slot)
+		resp, err := savedata.NewClear(db.Store, uuid, slot)
 		if err != nil {
 			httpError(w, r, fmt.Errorf("failed to read new clear: %s", err), http.StatusInternalServerError)
 			return
@@ -261,7 +261,7 @@ func handleSession(w http.ResponseWriter, r *http.Request) {
 
 		writeJSON(w, r, resp)
 	case "delete":
-		err := savedata.DeleteSession(uuid, slot)
+		err := savedata.DeleteSession(db.Store, uuid, slot)
 		if err != nil {
 			httpError(w, r, err, http.StatusInternalServerError)
 			return
@@ -301,7 +301,7 @@ func handleUpdateAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	active, err := db.IsActiveSession(uuid, data.ClientSessionId)
+	active, err := db.Store.IsActiveSession(uuid, data.ClientSessionId)
 	if err != nil {
 		httpError(w, r, fmt.Errorf("failed to check active session: %s", err), http.StatusBadRequest)
 		return
@@ -312,7 +312,7 @@ func handleUpdateAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	storedTrainerId, storedSecretId, err := db.FetchTrainerIds(uuid)
+	storedTrainerId, storedSecretId, err := db.Store.FetchTrainerIds(uuid)
 	if err != nil {
 		httpError(w, r, err, http.StatusInternalServerError)
 		return
@@ -324,14 +324,14 @@ func handleUpdateAll(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else {
-		err = db.UpdateTrainerIds(data.System.TrainerId, data.System.SecretId, uuid)
+		err = db.Store.UpdateTrainerIds(data.System.TrainerId, data.System.SecretId, uuid)
 		if err != nil {
 			httpError(w, r, err, http.StatusInternalServerError)
 			return
 		}
 	}
 
-	oldSystem, err := savedata.GetSystem(uuid)
+	oldSystem, err := savedata.GetSystem(db.Store, uuid)
 	if err != nil {
 		if !errors.Is(err, savedata.ErrSaveNotExist) {
 			httpError(w, r, fmt.Errorf("failed to retrieve playtime: %s", err), http.StatusInternalServerError)
@@ -356,7 +356,7 @@ func handleUpdateAll(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	existingSave, err := savedata.GetSession(uuid, data.SessionSlotId)
+	existingSave, err := savedata.GetSession(db.Store, uuid, data.SessionSlotId)
 	if err != nil {
 		if !errors.Is(err, savedata.ErrSaveNotExist) {
 			httpError(w, r, fmt.Errorf("failed to retrieve session save data: %s", err), http.StatusInternalServerError)
@@ -369,13 +369,13 @@ func handleUpdateAll(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	err = savedata.Update(uuid, data.SessionSlotId, data.Session)
+	err = savedata.Update(db.Store, uuid, data.SessionSlotId, data.Session)
 	if err != nil {
 		httpError(w, r, err, http.StatusInternalServerError)
 		return
 	}
 
-	err = savedata.Update(uuid, 0, data.System)
+	err = savedata.Update(db.Store, uuid, 0, data.System)
 	if err != nil {
 		httpError(w, r, err, http.StatusInternalServerError)
 		return
@@ -401,7 +401,7 @@ func handleSystem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	active, err := db.IsActiveSession(uuid, r.URL.Query().Get("clientSessionId"))
+	active, err := db.Store.IsActiveSession(uuid, r.URL.Query().Get("clientSessionId"))
 	if err != nil {
 		httpError(w, r, fmt.Errorf("failed to check active session: %s", err), http.StatusBadRequest)
 		return
@@ -410,14 +410,14 @@ func handleSystem(w http.ResponseWriter, r *http.Request) {
 	switch r.PathValue("action") {
 	case "get":
 		if !active {
-			err = db.UpdateActiveSession(uuid, r.URL.Query().Get("clientSessionId"))
+			err = db.Store.UpdateActiveSession(uuid, r.URL.Query().Get("clientSessionId"))
 			if err != nil {
 				httpError(w, r, fmt.Errorf("failed to update active session: %s", err), http.StatusBadRequest)
 				return
 			}
 		}
 
-		save, err := savedata.GetSystem(uuid)
+		save, err := savedata.GetSystem(db.Store, uuid)
 		if err != nil {
 			if errors.Is(err, savedata.ErrSaveNotExist) {
 				http.Error(w, err.Error(), http.StatusNotFound)
@@ -442,7 +442,7 @@ func handleSystem(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		oldSystem, err := savedata.GetSystem(uuid)
+		oldSystem, err := savedata.GetSystem(db.Store, uuid)
 		if err != nil {
 			if !errors.Is(err, savedata.ErrSaveNotExist) {
 				httpError(w, r, fmt.Errorf("failed to retrieve playtime: %s", err), http.StatusInternalServerError)
@@ -467,7 +467,7 @@ func handleSystem(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		err = savedata.UpdateSystem(uuid, system)
+		err = savedata.UpdateSystem(db.Store, uuid, system)
 		if err != nil {
 			httpError(w, r, fmt.Errorf("failed to put system data: %s", err), http.StatusInternalServerError)
 			return
@@ -481,13 +481,13 @@ func handleSystem(w http.ResponseWriter, r *http.Request) {
 
 		// not valid, send server state
 		if !active {
-			err := db.UpdateActiveSession(uuid, r.URL.Query().Get("clientSessionId"))
+			err := db.Store.UpdateActiveSession(uuid, r.URL.Query().Get("clientSessionId"))
 			if err != nil {
 				httpError(w, r, fmt.Errorf("failed to update active session: %s", err), http.StatusBadRequest)
 				return
 			}
 
-			storedSaveData, err := db.ReadSystemSaveData(uuid)
+			storedSaveData, err := db.Store.ReadSystemSaveData(uuid)
 			if err != nil {
 				httpError(w, r, fmt.Errorf("failed to read session save data: %s", err), http.StatusInternalServerError)
 				return
@@ -498,7 +498,7 @@ func handleSystem(w http.ResponseWriter, r *http.Request) {
 
 		writeJSON(w, r, response)
 	case "delete":
-		err := savedata.DeleteSystem(uuid)
+		err := savedata.DeleteSystem(db.Store, uuid)
 		if err != nil {
 			httpError(w, r, err, http.StatusInternalServerError)
 			return
@@ -511,15 +511,25 @@ func handleSystem(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// Interface providing database operations needed for getting daily seed.
+type HandleDailySeedStore interface {
+	GetDailyRunSeed() (string, error)
+}
+
 // daily
 func handleDailySeed(w http.ResponseWriter, r *http.Request) {
-	seed, err := db.GetDailyRunSeed()
+	seed, err := db.Store.GetDailyRunSeed()
 	if err != nil {
 		httpError(w, r, err, http.StatusInternalServerError)
 		return
 	}
 
 	fmt.Fprint(w, seed)
+}
+
+// Interface for database operations needed for getting daily rankings.
+type HandleDailyRankingsStore interface {
+	daily.RankingsStore
 }
 
 func handleDailyRankings(w http.ResponseWriter, r *http.Request) {
@@ -543,13 +553,17 @@ func handleDailyRankings(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	rankings, err := daily.Rankings(category, page)
+	rankings, err := daily.Rankings(db.Store, category, page)
 	if err != nil {
 		httpError(w, r, err, http.StatusInternalServerError)
 		return
 	}
 
 	writeJSON(w, r, rankings)
+}
+
+type HandleDailyRankingsPageCountStore interface {
+	daily.RankingPageCountStore
 }
 
 func handleDailyRankingPageCount(w http.ResponseWriter, r *http.Request) {
@@ -563,7 +577,7 @@ func handleDailyRankingPageCount(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	count, err := daily.RankingPageCount(category)
+	count, err := daily.RankingPageCount(db.Store, category)
 	if err != nil {
 		httpError(w, r, err, http.StatusInternalServerError)
 	}
@@ -579,9 +593,9 @@ func handleProviderCallback(w http.ResponseWriter, r *http.Request) {
 	var err error
 	switch provider {
 	case "discord":
-		externalAuthId, err = account.HandleDiscordCallback(w, r)
+		externalAuthId, err = account.Discord.HandleDiscordCallback(w, r)
 	case "google":
-		externalAuthId, err = account.HandleGoogleCallback(w, r)
+		externalAuthId, err = account.Google.HandleGoogleCallback(w, r)
 	default:
 		http.Error(w, "invalid provider", http.StatusBadRequest)
 		return
@@ -600,7 +614,7 @@ func handleProviderCallback(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		userName, err := db.FetchUsernameBySessionToken(stateByte)
+		userName, err := db.Store.FetchUsernameBySessionToken(stateByte)
 		if err != nil {
 			http.Redirect(w, r, account.GameURL, http.StatusSeeOther)
 			return
@@ -608,9 +622,9 @@ func handleProviderCallback(w http.ResponseWriter, r *http.Request) {
 
 		switch provider {
 		case "discord":
-			err = db.AddDiscordIdByUsername(externalAuthId, userName)
+			err = db.Store.AddDiscordIdByUsername(externalAuthId, userName)
 		case "google":
-			err = db.AddGoogleIdByUsername(externalAuthId, userName)
+			err = db.Store.AddGoogleIdByUsername(externalAuthId, userName)
 		}
 
 		if err != nil {
@@ -622,16 +636,16 @@ func handleProviderCallback(w http.ResponseWriter, r *http.Request) {
 		var userName string
 		switch provider {
 		case "discord":
-			userName, err = db.FetchUsernameByDiscordId(externalAuthId)
+			userName, err = db.Store.FetchUsernameByDiscordId(externalAuthId)
 		case "google":
-			userName, err = db.FetchUsernameByGoogleId(externalAuthId)
+			userName, err = db.Store.FetchUsernameByGoogleId(externalAuthId)
 		}
 		if err != nil {
 			http.Redirect(w, r, account.GameURL, http.StatusSeeOther)
 			return
 		}
 
-		sessionToken, err := account.GenerateTokenForUsername(userName)
+		sessionToken, err := account.GenerateTokenForUsername(db.Store, userName)
 		if err != nil {
 			http.Redirect(w, r, account.GameURL, http.StatusSeeOther)
 			return
@@ -651,6 +665,11 @@ func handleProviderCallback(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, account.GameURL, http.StatusSeeOther)
 }
 
+type HandleProviderLogoutStore interface {
+	RemoveDiscordIdByUUID(uuid []byte) error
+	RemoveGoogleIdByUUID(uuid []byte) error
+}
+
 func handleProviderLogout(w http.ResponseWriter, r *http.Request) {
 	uuid, err := uuidFromRequest(r)
 	if err != nil {
@@ -660,9 +679,9 @@ func handleProviderLogout(w http.ResponseWriter, r *http.Request) {
 
 	switch r.PathValue("provider") {
 	case "discord":
-		err = db.RemoveDiscordIdByUUID(uuid)
+		err = db.Store.RemoveDiscordIdByUUID(uuid)
 	case "google":
-		err = db.RemoveGoogleIdByUUID(uuid)
+		err = db.Store.RemoveGoogleIdByUUID(uuid)
 	default:
 		http.Error(w, "invalid provider", http.StatusBadRequest)
 		return
@@ -681,13 +700,13 @@ func handleAdminDiscordLink(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userDiscordId, err := db.FetchDiscordIdByUUID(uuid)
+	userDiscordId, err := db.Store.FetchDiscordIdByUUID(uuid)
 	if err != nil {
 		httpError(w, r, err, http.StatusUnauthorized)
 		return
 	}
 
-	hasRole, err := account.IsUserDiscordAdmin(userDiscordId, account.DiscordGuildID)
+	hasRole, err := account.Discord.IsUserDiscordAdmin(userDiscordId, account.DiscordGuildID)
 	if !hasRole || err != nil {
 		httpError(w, r, fmt.Errorf("user does not have the required role"), http.StatusForbidden)
 		return
@@ -698,19 +717,19 @@ func handleAdminDiscordLink(w http.ResponseWriter, r *http.Request) {
 
 	// this does a quick call to make sure the username exists on the server before allowing the rest of the code to run
 	// this calls error value 404 (StatusNotFound) if there's no data; this means the username does not exist in the server
-	_, err = db.CheckUsernameExists(username)
+	_, err = db.Store.CheckUsernameExists(username)
 	if err != nil {
 		httpError(w, r, fmt.Errorf("username does not exist on the server"), http.StatusNotFound)
 		return
 	}
 
-	userUuid, err := db.FetchUUIDFromUsername(username)
+	userUuid, err := db.Store.FetchUUIDFromUsername(username)
 	if err != nil {
 		httpError(w, r, err, http.StatusInternalServerError)
 		return
 	}
 
-	err = db.AddDiscordIdByUUID(discordId, userUuid)
+	err = db.Store.AddDiscordIdByUUID(discordId, userUuid)
 	if err != nil {
 		httpError(w, r, err, http.StatusInternalServerError)
 		return
@@ -728,13 +747,13 @@ func handleAdminDiscordUnlink(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userDiscordId, err := db.FetchDiscordIdByUUID(uuid)
+	userDiscordId, err := db.Store.FetchDiscordIdByUUID(uuid)
 	if err != nil {
 		httpError(w, r, err, http.StatusUnauthorized)
 		return
 	}
 
-	hasRole, err := account.IsUserDiscordAdmin(userDiscordId, account.DiscordGuildID)
+	hasRole, err := account.Discord.IsUserDiscordAdmin(userDiscordId, account.DiscordGuildID)
 	if !hasRole || err != nil {
 		httpError(w, r, fmt.Errorf("user does not have the required role"), http.StatusForbidden)
 		return
@@ -748,26 +767,26 @@ func handleAdminDiscordUnlink(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Username given, removing discordId")
 		// this does a quick call to make sure the username exists on the server before allowing the rest of the code to run
 		// this calls error value 404 (StatusNotFound) if there's no data; this means the username does not exist in the server
-		_, err = db.CheckUsernameExists(username)
+		_, err = db.Store.CheckUsernameExists(username)
 		if err != nil {
 			httpError(w, r, fmt.Errorf("username does not exist on the server"), http.StatusNotFound)
 			return
 		}
 
-		userUuid, err := db.FetchUUIDFromUsername(username)
+		userUuid, err := db.Store.FetchUUIDFromUsername(username)
 		if err != nil {
 			httpError(w, r, err, http.StatusInternalServerError)
 			return
 		}
 
-		err = db.RemoveDiscordIdByUUID(userUuid)
+		err = db.Store.RemoveDiscordIdByUUID(userUuid)
 		if err != nil {
 			httpError(w, r, err, http.StatusInternalServerError)
 			return
 		}
 	case discordId != "":
 		log.Printf("DiscordID given, removing discordId")
-		err = db.RemoveDiscordIdByDiscordId(discordId)
+		err = db.Store.RemoveDiscordIdByDiscordId(discordId)
 		if err != nil {
 			httpError(w, r, err, http.StatusInternalServerError)
 			return
@@ -786,13 +805,13 @@ func handleAdminGoogleLink(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userDiscordId, err := db.FetchDiscordIdByUUID(uuid)
+	userDiscordId, err := db.Store.FetchDiscordIdByUUID(uuid)
 	if err != nil {
 		httpError(w, r, err, http.StatusUnauthorized)
 		return
 	}
 
-	hasRole, err := account.IsUserDiscordAdmin(userDiscordId, account.DiscordGuildID)
+	hasRole, err := account.Discord.IsUserDiscordAdmin(userDiscordId, account.DiscordGuildID)
 	if !hasRole || err != nil {
 		httpError(w, r, fmt.Errorf("user does not have the required role"), http.StatusForbidden)
 		return
@@ -803,19 +822,19 @@ func handleAdminGoogleLink(w http.ResponseWriter, r *http.Request) {
 
 	// this does a quick call to make sure the username exists on the server before allowing the rest of the code to run
 	// this calls error value 404 (StatusNotFound) if there's no data; this means the username does not exist in the server
-	_, err = db.CheckUsernameExists(username)
+	_, err = db.Store.CheckUsernameExists(username)
 	if err != nil {
 		httpError(w, r, fmt.Errorf("username does not exist on the server"), http.StatusNotFound)
 		return
 	}
 
-	userUuid, err := db.FetchUUIDFromUsername(username)
+	userUuid, err := db.Store.FetchUUIDFromUsername(username)
 	if err != nil {
 		httpError(w, r, err, http.StatusInternalServerError)
 		return
 	}
 
-	err = db.AddGoogleIdByUUID(googleId, userUuid)
+	err = db.Store.AddGoogleIdByUUID(googleId, userUuid)
 	if err != nil {
 		httpError(w, r, err, http.StatusInternalServerError)
 		return
@@ -833,13 +852,13 @@ func handleAdminGoogleUnlink(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userDiscordId, err := db.FetchDiscordIdByUUID(uuid)
+	userDiscordId, err := db.Store.FetchDiscordIdByUUID(uuid)
 	if err != nil {
 		httpError(w, r, err, http.StatusUnauthorized)
 		return
 	}
 
-	hasRole, err := account.IsUserDiscordAdmin(userDiscordId, account.DiscordGuildID)
+	hasRole, err := account.Discord.IsUserDiscordAdmin(userDiscordId, account.DiscordGuildID)
 	if !hasRole || err != nil {
 		httpError(w, r, fmt.Errorf("user does not have the required role"), http.StatusForbidden)
 		return
@@ -853,26 +872,26 @@ func handleAdminGoogleUnlink(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Username given, removing googleId")
 		// this does a quick call to make sure the username exists on the server before allowing the rest of the code to run
 		// this calls error value 404 (StatusNotFound) if there's no data; this means the username does not exist in the server
-		_, err = db.CheckUsernameExists(username)
+		_, err = db.Store.CheckUsernameExists(username)
 		if err != nil {
 			httpError(w, r, fmt.Errorf("username does not exist on the server"), http.StatusNotFound)
 			return
 		}
 
-		userUuid, err := db.FetchUUIDFromUsername(username)
+		userUuid, err := db.Store.FetchUUIDFromUsername(username)
 		if err != nil {
 			httpError(w, r, err, http.StatusInternalServerError)
 			return
 		}
 
-		err = db.RemoveGoogleIdByUUID(userUuid)
+		err = db.Store.RemoveGoogleIdByUUID(userUuid)
 		if err != nil {
 			httpError(w, r, err, http.StatusInternalServerError)
 			return
 		}
 	case googleId != "":
 		log.Printf("DiscordID given, removing googleId")
-		err = db.RemoveGoogleIdByDiscordId(googleId)
+		err = db.Store.RemoveGoogleIdByDiscordId(googleId)
 		if err != nil {
 			httpError(w, r, err, http.StatusInternalServerError)
 			return
@@ -891,13 +910,13 @@ func handleAdminSearch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userDiscordId, err := db.FetchDiscordIdByUUID(uuid)
+	userDiscordId, err := db.Store.FetchDiscordIdByUUID(uuid)
 	if err != nil {
 		httpError(w, r, err, http.StatusUnauthorized)
 		return
 	}
 
-	hasRole, err := account.IsUserDiscordAdmin(userDiscordId, account.DiscordGuildID)
+	hasRole, err := account.Discord.IsUserDiscordAdmin(userDiscordId, account.DiscordGuildID)
 	if !hasRole || err != nil {
 		httpError(w, r, fmt.Errorf("user does not have the required role"), http.StatusForbidden)
 		return
@@ -907,14 +926,14 @@ func handleAdminSearch(w http.ResponseWriter, r *http.Request) {
 
 	// this does a quick call to make sure the username exists on the server before allowing the rest of the code to run
 	// this calls error value 404 (StatusNotFound) if there's no data; this means the username does not exist in the server
-	_, err = db.CheckUsernameExists(username)
+	_, err = db.Store.CheckUsernameExists(username)
 	if err != nil {
 		httpError(w, r, fmt.Errorf("username does not exist on the server"), http.StatusNotFound)
 		return
 	}
 
 	// this does a single call that does a query for multiple columns from our database and makes an object out of it, which is returned to us
-	adminSearchResult, err := db.FetchAdminDetailsByUsername(username)
+	adminSearchResult, err := db.Store.FetchAdminDetailsByUsername(username)
 	if err != nil {
 		httpError(w, r, err, http.StatusInternalServerError)
 		return

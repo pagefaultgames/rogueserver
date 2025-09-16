@@ -21,7 +21,6 @@ import (
 	"log"
 	"time"
 
-	"github.com/pagefaultgames/rogueserver/db"
 	"github.com/robfig/cron/v3"
 )
 
@@ -32,9 +31,9 @@ var (
 	classicSessionCount int
 )
 
-func scheduleStatRefresh() error {
+func scheduleStatRefresh[T updateStatsStore](store T) error {
 	_, err := scheduler.AddFunc("@every 30s", func() {
-		err := updateStats()
+		err := updateStats(store)
 		if err != nil {
 			log.Printf("failed to update stats: %s", err)
 		}
@@ -47,19 +46,25 @@ func scheduleStatRefresh() error {
 	return nil
 }
 
-func updateStats() error {
+type updateStatsStore interface {
+	FetchPlayerCount() (int, error)
+	FetchBattleCount() (int, error)
+	FetchClassicSessionCount() (int, error)
+}
+
+func updateStats[T updateStatsStore](store T) error {
 	var err error
-	playerCount, err = db.FetchPlayerCount()
+	playerCount, err = store.FetchPlayerCount()
 	if err != nil {
 		return err
 	}
 
-	battleCount, err = db.FetchBattleCount()
+	battleCount, err = store.FetchBattleCount()
 	if err != nil {
 		return err
 	}
 
-	classicSessionCount, err = db.FetchClassicSessionCount()
+	classicSessionCount, err = store.FetchClassicSessionCount()
 	if err != nil {
 		return err
 	}

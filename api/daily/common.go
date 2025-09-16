@@ -61,7 +61,7 @@ func Init() error {
 		secret = newSecret
 	}
 
-	seed, err := db.TryAddDailyRun(Seed())
+	seed, err := db.Store.TryAddDailyRun(Seed())
 	if err != nil {
 		log.Print(err)
 	}
@@ -71,7 +71,7 @@ func Init() error {
 	_, err = scheduler.AddFunc("@daily", func() {
 		time.Sleep(time.Second)
 
-		seed, err = db.TryAddDailyRun(Seed())
+		seed, err = db.Store.TryAddDailyRun(Seed())
 		if err != nil {
 			log.Printf("error while recording new daily: %s", err)
 		} else {

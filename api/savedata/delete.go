@@ -21,13 +21,19 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/pagefaultgames/rogueserver/db"
 	"github.com/pagefaultgames/rogueserver/defs"
 )
 
+// Interface for database operations needed for delete.
+// This is to allow easier testing and less coupling.
+type DeleteStore interface {
+	UpdateAccountLastActivity(uuid []byte) error
+	DeleteSessionSaveData(uuid []byte, slot int) error
+}
+
 // /savedata/delete - delete save data
-func Delete(uuid []byte, datatype, slot int) error {
-	err := db.UpdateAccountLastActivity(uuid)
+func Delete[T DeleteStore](store T, uuid []byte, datatype, slot int) error {
+	err := store.UpdateAccountLastActivity(uuid)
 	if err != nil {
 		log.Print("failed to update account last activity")
 	}
@@ -39,7 +45,7 @@ func Delete(uuid []byte, datatype, slot int) error {
 			break
 		}
 
-		err = db.DeleteSessionSaveData(uuid, slot)
+		err = store.DeleteSessionSaveData(uuid, slot)
 	default:
 		err = fmt.Errorf("invalid data type")
 	}

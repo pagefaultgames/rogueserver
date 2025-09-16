@@ -23,7 +23,7 @@ import (
 	"github.com/pagefaultgames/rogueserver/defs"
 )
 
-func TryAddDailyRun(seed string) (string, error) {
+func (s *store) TryAddDailyRun(seed string) (string, error) {
 	var actualSeed string
 	err := handle.QueryRow("INSERT INTO dailyRuns (seed, date) VALUES (?, UTC_DATE()) ON DUPLICATE KEY UPDATE date = date RETURNING seed", seed).Scan(&actualSeed)
 	if err != nil {
@@ -33,7 +33,7 @@ func TryAddDailyRun(seed string) (string, error) {
 	return actualSeed, nil
 }
 
-func GetDailyRunSeed() (string, error) {
+func (s *store) GetDailyRunSeed() (string, error) {
 	var seed string
 	err := handle.QueryRow("SELECT seed FROM dailyRuns WHERE date = UTC_DATE()").Scan(&seed)
 	if err != nil {
@@ -43,7 +43,7 @@ func GetDailyRunSeed() (string, error) {
 	return seed, nil
 }
 
-func AddOrUpdateAccountDailyRun(uuid []byte, score int, wave int) error {
+func (s *store) AddOrUpdateAccountDailyRun(uuid []byte, score int, wave int) error {
 	_, err := handle.Exec("INSERT INTO accountDailyRuns (uuid, date, score, wave, timestamp) VALUES (?, UTC_DATE(), ?, ?, UTC_TIMESTAMP()) ON DUPLICATE KEY UPDATE score = GREATEST(score, ?), wave = GREATEST(wave, ?), timestamp = IF(score < ?, UTC_TIMESTAMP(), timestamp)", uuid, score, wave, score, wave, score)
 	if err != nil {
 		return err
@@ -52,7 +52,7 @@ func AddOrUpdateAccountDailyRun(uuid []byte, score int, wave int) error {
 	return nil
 }
 
-func FetchRankings(category int, page int) ([]defs.DailyRanking, error) {
+func (s *store) FetchRankings(category int, page int) ([]defs.DailyRanking, error) {
 	var rankings []defs.DailyRanking
 
 	offset := (page - 1) * 10
@@ -85,7 +85,7 @@ func FetchRankings(category int, page int) ([]defs.DailyRanking, error) {
 	return rankings, nil
 }
 
-func FetchRankingPageCount(category int) (int, error) {
+func (s *store) FetchRankingPageCount(category int) (int, error) {
 	var query string
 	switch category {
 	case 0:
