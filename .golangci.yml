@@ -1,7 +1,8 @@
+version: "2"
 run:
   timeout: 10m
 severity:
-  default-severity: error
+  default: error
   rules:
     - linters:
         - unused
