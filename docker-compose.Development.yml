@@ -1,14 +1,60 @@
 services:
+  server:
+    image: rogueserver:dev
+    restart: unless-stopped
+    environment:
+      debug: true
+      dbaddr: db
+      dbuser: pokerogue
+      dbpass: pokerogue
+      dbname: pokeroguedb
+      gameurl: http://localhost:8000
+      callbackurl: http://localhost:8001
+      # Uncomment these to use AWS S3 for storage in development
+      # AWS_ACCESS_KEY_ID: <access>
+      # AWS_SECRET_ACCESS_KEY: <secret>
+      # AWS_REGION: <region>
+      # AWS_ENDPOINT_URL_S3: <endpoint>
+
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - internal
+    ports:
+      - "8001:8001"
+
   db:
-    image: mariadb:11
-    container_name: pokerogue-db-local
-    restart: on-failure
+    image: docker.io/library/mariadb:11
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "healthcheck.sh",
+          "--su-mysql",
+          "--connect",
+          "--innodb_initialized",
+        ]
+      start_period: 10s
+      start_interval: 10s
+      interval: 1m
+      timeout: 5s
+      retries: 3
     environment:
       MYSQL_ROOT_PASSWORD: admin
       MYSQL_DATABASE: pokeroguedb
       MYSQL_USER: pokerogue
       MYSQL_PASSWORD: pokerogue
+    volumes:
+      - database:/var/lib/mysql
+    networks:
+      - internal
     ports:
       - "3306:3306"
-    volumes:
-      - ./.data/db:/var/lib/mysql
+
+volumes:
+  database:
+
+networks:
+  internal:
