@@ -1,0 +1,36 @@
+# SPDX-CopyrightText: 2024-2025 Pagefault Games
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+version = 1
+
+[[annotations]] # files of insignificant originality
+path = [
+    ".gitignore",
+    ".dockerignore",
+    "go.sum",
+    "beta.env",
+    "go.sum",
+    "go.mod",
+    ".github/FUNDING.yml",
+]
+SPDX-FileCopyrightText = "NONE"
+SPDX-License-Identifier = "CC0-1.0"
+
+
+[[annotations]] # source files
+path = ["**/*.go", "**/*.toml", ".github/workflows/*.yml"]
+SPDX-FileCopyrightText = "2024-2025 Pagefault Games"
+SPDX-License-Identifier = "AGPL-3.0-or-later"
+
+
+[[annotations]] # documentation files
+path = ["**/*.md"]
+SPDX-FileCopyrightText = "2024-2025 Pagefault Games"
+SPDX-License-Identifier = "CC-BY-NC-SA-4.0"
+
+# REUSE lint will fail if any file (other than those in the LICENSES/ directory) is not explicitly licensed.
+# We have a LICENSE file at the root of the repository so that GitHub can detect the license, but we also explicitly license it here
+# Note that this is JUST to make REUSE lint happy. It is not intended to be a license for the actual file
+[[annotations]]
+path = "LICENSE"
+SPDX-License-Identifier = "CC0-1.0.txt"

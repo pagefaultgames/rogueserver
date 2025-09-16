@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2024-2025 Pagefault Games
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
 ARG GO_VERSION=1.22
 
 FROM docker.io/library/golang:${GO_VERSION} AS builder
