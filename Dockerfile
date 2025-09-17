@@ -1,6 +1,6 @@
 ARG GO_VERSION=1.22
 
-FROM golang:${GO_VERSION} AS builder
+FROM docker.io/library/golang:${GO_VERSION} AS builder
 
 WORKDIR /src
 
@@ -12,7 +12,7 @@ RUN go mod download && go mod verify
 COPY . /src/
 
 RUN CGO_ENABLED=0 \
-    go build -o rogueserver
+    go build -tags=devsetup -o rogueserver
 
 RUN chmod +x /src/rogueserver
 
