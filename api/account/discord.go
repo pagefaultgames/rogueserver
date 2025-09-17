@@ -35,14 +35,24 @@ var (
 	DiscordGuildID string
 )
 
-func HandleDiscordCallback(w http.ResponseWriter, r *http.Request) (string, error) {
+type DiscordProvider interface {
+	HandleDiscordCallback(w http.ResponseWriter, r *http.Request) (string, error)
+	RetrieveDiscordId(code string) (string, error)
+	IsUserDiscordAdmin(discordId string, discordGuildID string) (bool, error)
+}
+
+type discordProvider struct{}
+
+var Discord = &discordProvider{}
+
+func (s *discordProvider) HandleDiscordCallback(w http.ResponseWriter, r *http.Request) (string, error) {
 	code := r.URL.Query().Get("code")
 	if code == "" {
 		http.Redirect(w, r, GameURL, http.StatusSeeOther)
 		return "", errors.New("code is empty")
 	}
 
-	discordId, err := RetrieveDiscordId(code)
+	discordId, err := s.RetrieveDiscordId(code)
 	if err != nil {
 		http.Redirect(w, r, GameURL, http.StatusSeeOther)
 		return "", err
@@ -51,7 +61,7 @@ func HandleDiscordCallback(w http.ResponseWriter, r *http.Request) (string, erro
 	return discordId, nil
 }
 
-func RetrieveDiscordId(code string) (string, error) {
+func (s *discordProvider) RetrieveDiscordId(code string) (string, error) {
 	v := make(url.Values)
 	v.Set("client_id", DiscordClientID)
 	v.Set("client_secret", DiscordClientSecret)
@@ -112,7 +122,7 @@ func RetrieveDiscordId(code string) (string, error) {
 	return user.Id, nil
 }
 
-func IsUserDiscordAdmin(discordId string, discordGuildID string) (bool, error) {
+func (s *discordProvider) IsUserDiscordAdmin(discordId string, discordGuildID string) (bool, error) {
 	// fetch all roles from discord
 	roles, err := DiscordSession.GuildRoles(discordGuildID)
 	if err != nil {

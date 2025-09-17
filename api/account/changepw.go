@@ -20,11 +20,15 @@ package account
 import (
 	"crypto/rand"
 	"fmt"
-
-	"github.com/pagefaultgames/rogueserver/db"
 )
 
-func ChangePW(uuid []byte, password string) error {
+// Interface for database operations needed for changing password.
+type ChangePWStore interface {
+	RemoveSessionsFromUUID(uuid []byte) error
+	UpdateAccountPassword(uuid []byte, newKey []byte, newSalt []byte) error
+}
+
+func ChangePW[T ChangePWStore](store T, uuid []byte, password string) error {
 	if len(password) < 6 {
 		return fmt.Errorf("invalid password")
 	}
@@ -35,12 +39,12 @@ func ChangePW(uuid []byte, password string) error {
 		return fmt.Errorf("failed to generate salt: %s", err)
 	}
 
-	err = db.RemoveSessionsFromUUID(uuid)
+	err = store.RemoveSessionsFromUUID(uuid)
 	if err != nil {
 		return fmt.Errorf("failed to remove sessions: %s", err)
 	}
 
-	err = db.UpdateAccountPassword(uuid, deriveArgon2IDKey([]byte(password), salt), salt)
+	err = store.UpdateAccountPassword(uuid, deriveArgon2IDKey([]byte(password), salt), salt)
 	if err != nil {
 		return fmt.Errorf("failed to add account record: %s", err)
 	}

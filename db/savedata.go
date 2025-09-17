@@ -19,19 +19,13 @@ package db
 
 import (
 	"bytes"
-	"context"
 	"encoding/gob"
-	"encoding/json"
-	"os"
 
 	"github.com/klauspost/compress/zstd"
 	"github.com/pagefaultgames/rogueserver/defs"
-
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
-func TryAddSeedCompletion(uuid []byte, seed string, mode int) (bool, error) {
+func (s *store) TryAddSeedCompletion(uuid []byte, seed string, mode int) (bool, error) {
 	var count int
 	err := handle.QueryRow("SELECT COUNT(*) FROM dailyRunCompletions WHERE uuid = ? AND seed = ?", uuid, seed).Scan(&count)
 	if err != nil {
@@ -48,7 +42,7 @@ func TryAddSeedCompletion(uuid []byte, seed string, mode int) (bool, error) {
 	return true, nil
 }
 
-func ReadSeedCompleted(uuid []byte, seed string) (bool, error) {
+func (s *store) ReadSeedCompleted(uuid []byte, seed string) (bool, error) {
 	var count int
 	err := handle.QueryRow("SELECT COUNT(*) FROM dailyRunCompletions WHERE uuid = ? AND seed = ?", uuid, seed).Scan(&count)
 	if err != nil {
@@ -58,7 +52,7 @@ func ReadSeedCompleted(uuid []byte, seed string) (bool, error) {
 	return count > 0, nil
 }
 
-func ReadSystemSaveData(uuid []byte) (defs.SystemSaveData, error) {
+func (s *store) ReadSystemSaveData(uuid []byte) (defs.SystemSaveData, error) {
 	var system defs.SystemSaveData
 
 	var data []byte
@@ -82,7 +76,7 @@ func ReadSystemSaveData(uuid []byte) (defs.SystemSaveData, error) {
 	return system, nil
 }
 
-func StoreSystemSaveData(uuid []byte, data defs.SystemSaveData) error {
+func (s *store) StoreSystemSaveData(uuid []byte, data defs.SystemSaveData) error {
 	buf := new(bytes.Buffer)
 
 	zw, err := zstd.NewWriter(buf)
@@ -108,32 +102,7 @@ func StoreSystemSaveData(uuid []byte, data defs.SystemSaveData) error {
 	return nil
 }
 
-func StoreSystemSaveDataS3(uuid []byte, data defs.SystemSaveData) error {
-	username, err := FetchUsernameFromUUID(uuid)
-	if err != nil {
-		return err
-	}
-
-	buf := new(bytes.Buffer)
-
-	err = json.NewEncoder(buf).Encode(data)
-	if err != nil {
-		return err
-	}
-
-	_, err = s3client.PutObject(context.Background(), &s3.PutObjectInput{
-		Bucket: aws.String(os.Getenv("S3_SYSTEM_BUCKET_NAME")),
-		Key:    aws.String(username),
-		Body:   buf,
-	})
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func DeleteSystemSaveData(uuid []byte) error {
+func (s *store) DeleteSystemSaveData(uuid []byte) error {
 	_, err := handle.Exec("DELETE FROM systemSaveData WHERE uuid = ?", uuid)
 	if err != nil {
 		return err
@@ -142,7 +111,7 @@ func DeleteSystemSaveData(uuid []byte) error {
 	return nil
 }
 
-func ReadSessionSaveData(uuid []byte, slot int) (defs.SessionSaveData, error) {
+func (s *store) ReadSessionSaveData(uuid []byte, slot int) (defs.SessionSaveData, error) {
 	var session defs.SessionSaveData
 
 	var data []byte
@@ -166,7 +135,7 @@ func ReadSessionSaveData(uuid []byte, slot int) (defs.SessionSaveData, error) {
 	return session, nil
 }
 
-func GetLatestSessionSaveDataSlot(uuid []byte) (int, error) {
+func (s *store) GetLatestSessionSaveDataSlot(uuid []byte) (int, error) {
 	var slot int
 	err := handle.QueryRow("SELECT slot FROM sessionSaveData WHERE uuid = ? ORDER BY timestamp DESC, slot ASC LIMIT 1", uuid).Scan(&slot)
 	if err != nil {
@@ -176,7 +145,7 @@ func GetLatestSessionSaveDataSlot(uuid []byte) (int, error) {
 	return slot, nil
 }
 
-func StoreSessionSaveData(uuid []byte, data defs.SessionSaveData, slot int) error {
+func (s *store) StoreSessionSaveData(uuid []byte, data defs.SessionSaveData, slot int) error {
 	buf := new(bytes.Buffer)
 
 	zw, err := zstd.NewWriter(buf)
@@ -202,35 +171,11 @@ func StoreSessionSaveData(uuid []byte, data defs.SessionSaveData, slot int) erro
 	return nil
 }
 
-func DeleteSessionSaveData(uuid []byte, slot int) error {
+func (s *store) DeleteSessionSaveData(uuid []byte, slot int) error {
 	_, err := handle.Exec("DELETE FROM sessionSaveData WHERE uuid = ? AND slot = ?", uuid, slot)
 	if err != nil {
 		return err
 	}
 
 	return nil
-}
-
-func GetSystemSaveFromS3(uuid []byte) (defs.SystemSaveData, error) {
-	var system defs.SystemSaveData
-
-	username, err := FetchUsernameFromUUID(uuid)
-	if err != nil {
-		return system, err
-	}
-
-	resp, err := s3client.GetObject(context.TODO(), &s3.GetObjectInput{
-		Bucket: aws.String(os.Getenv("S3_SYSTEM_BUCKET_NAME")),
-		Key:    aws.String(username),
-	})
-	if err != nil {
-		return system, err
-	}
-
-	err = json.NewDecoder(resp.Body).Decode(&system)
-	if err != nil {
-		return system, err
-	}
-
-	return system, nil
 }

@@ -24,14 +24,18 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-
-	"github.com/pagefaultgames/rogueserver/db"
 )
 
 type LoginResponse GenericAuthResponse
 
+// Interface for database operations needed for login.
+type LoginStore interface {
+	FetchAccountKeySaltFromUsername(username string) (key, salt []byte, err error)
+	AddAccountSession(username string, token []byte) error
+}
+
 // /account/login - log into account
-func Login(username, password string) (LoginResponse, error) {
+func Login[T LoginStore](store T, username, password string) (LoginResponse, error) {
 	var response LoginResponse
 
 	if !isValidUsername(username) {
@@ -42,12 +46,11 @@ func Login(username, password string) (LoginResponse, error) {
 		return response, fmt.Errorf("invalid password")
 	}
 
-	key, salt, err := db.FetchAccountKeySaltFromUsername(username)
+	key, salt, err := store.FetchAccountKeySaltFromUsername(username)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return response, fmt.Errorf("account doesn't exist")
 		}
-
 		return response, err
 	}
 
@@ -55,8 +58,7 @@ func Login(username, password string) (LoginResponse, error) {
 		return response, fmt.Errorf("password doesn't match")
 	}
 
-	response.Token, err = GenerateTokenForUsername(username)
-
+	response.Token, err = GenerateTokenForUsername(store, username)
 	if err != nil {
 		return response, fmt.Errorf("failed to generate token: %s", err)
 	}
@@ -64,14 +66,19 @@ func Login(username, password string) (LoginResponse, error) {
 	return response, nil
 }
 
-func GenerateTokenForUsername(username string) (string, error) {
+type GenerateTokenForUsernameStore interface {
+	AddAccountSession(username string, token []byte) error
+}
+
+// GenerateTokenForUsername generates a session token and stores it using the provided DBAccountStore.
+func GenerateTokenForUsername[T GenerateTokenForUsernameStore](store T, username string) (string, error) {
 	token := make([]byte, TokenSize)
 	_, err := rand.Read(token)
 	if err != nil {
 		return "", fmt.Errorf("failed to generate token: %s", err)
 	}
 
-	err = db.AddAccountSession(username, token)
+	err = store.AddAccountSession(username, token)
 	if err != nil {
 		return "", fmt.Errorf("failed to add account session")
 	}

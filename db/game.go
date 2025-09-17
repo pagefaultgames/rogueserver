@@ -17,7 +17,7 @@
 
 package db
 
-func FetchPlayerCount() (int, error) {
+func (s *store) FetchPlayerCount() (int, error) {
 	var playerCount int
 	err := handle.QueryRow("SELECT COUNT(*) FROM accounts WHERE lastActivity > DATE_SUB(UTC_TIMESTAMP(), INTERVAL 5 MINUTE)").Scan(&playerCount)
 	if err != nil {
@@ -27,7 +27,7 @@ func FetchPlayerCount() (int, error) {
 	return playerCount, nil
 }
 
-func FetchBattleCount() (int, error) {
+func (s *store) FetchBattleCount() (int, error) {
 	var battleCount int
 	err := handle.QueryRow("SELECT COALESCE(SUM(s.battles), 0) FROM accountStats s JOIN accounts a ON a.uuid = s.uuid WHERE a.banned = 0").Scan(&battleCount)
 	if err != nil {
@@ -37,7 +37,7 @@ func FetchBattleCount() (int, error) {
 	return battleCount, nil
 }
 
-func FetchClassicSessionCount() (int, error) {
+func (s *store) FetchClassicSessionCount() (int, error) {
 	var classicSessionCount int
 	err := handle.QueryRow("SELECT COALESCE(SUM(s.classicSessionsPlayed), 0) FROM accountStats s JOIN accounts a ON a.uuid = s.uuid WHERE a.banned = 0").Scan(&classicSessionCount)
 	if err != nil {

@@ -1,18 +1,18 @@
 /*
-	Copyright (C) 2024 - 2025  Pagefault Games
+   Copyright (C) 2024 - 2025  Pagefault Games
 
-	This program is free software: you can redistribute it and/or modify
-	it under the terms of the GNU Affero General Public License as published by
-	the Free Software Foundation, either version 3 of the License, or
-	(at your option) any later version.
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU Affero General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
 
-	This program is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY; without even the implied warranty of
-	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-	GNU Affero General Public License for more details.
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU Affero General Public License for more details.
 
-	You should have received a copy of the GNU Affero General Public License
-	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   You should have received a copy of the GNU Affero General Public License
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 package db
@@ -27,30 +27,30 @@ import (
 	"github.com/pagefaultgames/rogueserver/defs"
 )
 
-func AddAccountRecord(uuid []byte, username string, key, salt []byte) error {
-	_, err := handle.Exec("INSERT INTO accounts (uuid, username, hash, salt, registered) VALUES (?, ?, ?, ?, UTC_TIMESTAMP())", uuid, username, key, salt)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func AddAccountSession(username string, token []byte) error {
+func (s *store) AddAccountSession(username string, token []byte) error {
 	_, err := handle.Exec("INSERT INTO sessions (uuid, token, expire) SELECT a.uuid, ?, DATE_ADD(UTC_TIMESTAMP(), INTERVAL 1 WEEK) FROM accounts a WHERE a.username = ?", token, username)
 	if err != nil {
 		return err
 	}
-
 	_, err = handle.Exec("UPDATE accounts SET lastLoggedIn = UTC_TIMESTAMP() WHERE username = ?", username)
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
 
-func AddDiscordIdByUsername(discordId string, username string) error {
+// (removed, now a method on store)
+func (s *store) FetchAccountKeySaltFromUsername(username string) ([]byte, []byte, error) {
+	var key, salt []byte
+	err := handle.QueryRow("SELECT hash, salt FROM accounts WHERE username = ?", username).Scan(&key, &salt)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return key, salt, nil
+}
+
+func (s *store) AddDiscordIdByUsername(discordId string, username string) error {
 	_, err := handle.Exec("UPDATE accounts SET discordId = ? WHERE username = ?", discordId, username)
 	if err != nil {
 		return err
@@ -59,7 +59,7 @@ func AddDiscordIdByUsername(discordId string, username string) error {
 	return nil
 }
 
-func AddGoogleIdByUsername(googleId string, username string) error {
+func (s *store) AddGoogleIdByUsername(googleId string, username string) error {
 	_, err := handle.Exec("UPDATE accounts SET googleId = ? WHERE username = ?", googleId, username)
 	if err != nil {
 		return err
@@ -68,7 +68,7 @@ func AddGoogleIdByUsername(googleId string, username string) error {
 	return nil
 }
 
-func AddGoogleIdByUUID(googleId string, uuid []byte) error {
+func (s *store) AddGoogleIdByUUID(googleId string, uuid []byte) error {
 	_, err := handle.Exec("UPDATE accounts SET googleId = ? WHERE uuid = ?", googleId, uuid)
 	if err != nil {
 		return err
@@ -77,7 +77,7 @@ func AddGoogleIdByUUID(googleId string, uuid []byte) error {
 	return nil
 }
 
-func AddDiscordIdByUUID(discordId string, uuid []byte) error {
+func (s *store) AddDiscordIdByUUID(discordId string, uuid []byte) error {
 	_, err := handle.Exec("UPDATE accounts SET discordId = ? WHERE uuid = ?", discordId, uuid)
 	if err != nil {
 		return err
@@ -86,7 +86,7 @@ func AddDiscordIdByUUID(discordId string, uuid []byte) error {
 	return nil
 }
 
-func FetchUsernameByDiscordId(discordId string) (string, error) {
+func (s *store) FetchUsernameByDiscordId(discordId string) (string, error) {
 	var username string
 	err := handle.QueryRow("SELECT username FROM accounts WHERE discordId = ?", discordId).Scan(&username)
 	if err != nil {
@@ -96,7 +96,7 @@ func FetchUsernameByDiscordId(discordId string) (string, error) {
 	return username, nil
 }
 
-func FetchUsernameByGoogleId(googleId string) (string, error) {
+func (s *store) FetchUsernameByGoogleId(googleId string) (string, error) {
 	var username string
 	err := handle.QueryRow("SELECT username FROM accounts WHERE googleId = ?", googleId).Scan(&username)
 	if err != nil {
@@ -106,7 +106,7 @@ func FetchUsernameByGoogleId(googleId string) (string, error) {
 	return username, nil
 }
 
-func FetchDiscordIdByUsername(username string) (string, error) {
+func (s *store) FetchDiscordIdByUsername(username string) (string, error) {
 	var discordId sql.NullString
 	err := handle.QueryRow("SELECT discordId FROM accounts WHERE username = ?", username).Scan(&discordId)
 	if err != nil {
@@ -120,7 +120,7 @@ func FetchDiscordIdByUsername(username string) (string, error) {
 	return discordId.String, nil
 }
 
-func FetchGoogleIdByUsername(username string) (string, error) {
+func (s *store) FetchGoogleIdByUsername(username string) (string, error) {
 	var googleId sql.NullString
 	err := handle.QueryRow("SELECT googleId FROM accounts WHERE username = ?", username).Scan(&googleId)
 	if err != nil {
@@ -134,7 +134,7 @@ func FetchGoogleIdByUsername(username string) (string, error) {
 	return googleId.String, nil
 }
 
-func FetchDiscordIdByUUID(uuid []byte) (string, error) {
+func (s *store) FetchDiscordIdByUUID(uuid []byte) (string, error) {
 	var discordId sql.NullString
 	err := handle.QueryRow("SELECT discordId FROM accounts WHERE uuid = ?", uuid).Scan(&discordId)
 	if err != nil {
@@ -148,7 +148,7 @@ func FetchDiscordIdByUUID(uuid []byte) (string, error) {
 	return discordId.String, nil
 }
 
-func FetchGoogleIdByUUID(uuid []byte) (string, error) {
+func (s *store) FetchGoogleIdByUUID(uuid []byte) (string, error) {
 	var googleId sql.NullString
 	err := handle.QueryRow("SELECT googleId FROM accounts WHERE uuid = ?", uuid).Scan(&googleId)
 	if err != nil {
@@ -162,7 +162,7 @@ func FetchGoogleIdByUUID(uuid []byte) (string, error) {
 	return googleId.String, nil
 }
 
-func FetchUsernameBySessionToken(token []byte) (string, error) {
+func (s *store) FetchUsernameBySessionToken(token []byte) (string, error) {
 	var username string
 	err := handle.QueryRow("SELECT a.username FROM accounts a JOIN sessions s ON a.uuid = s.uuid WHERE s.token = ?", token).Scan(&username)
 	if err != nil {
@@ -172,7 +172,7 @@ func FetchUsernameBySessionToken(token []byte) (string, error) {
 	return username, nil
 }
 
-func CheckUsernameExists(username string) (string, error) {
+func (s *store) CheckUsernameExists(username string) (string, error) {
 	var dbUsername sql.NullString
 	err := handle.QueryRow("SELECT username FROM accounts WHERE username = ?", username).Scan(&dbUsername)
 	if err != nil {
@@ -185,7 +185,7 @@ func CheckUsernameExists(username string) (string, error) {
 	return dbUsername.String, nil
 }
 
-func FetchLastLoggedInDateByUsername(username string) (string, error) {
+func (s *store) FetchLastLoggedInDateByUsername(username string) (string, error) {
 	var lastLoggedIn sql.NullString
 	err := handle.QueryRow("SELECT lastLoggedIn FROM accounts WHERE username = ?", username).Scan(&lastLoggedIn)
 	if err != nil {
@@ -206,7 +206,7 @@ type AdminSearchResponse struct {
 	Registered   string `json:"registered"`
 }
 
-func FetchAdminDetailsByUsername(dbUsername string) (AdminSearchResponse, error) {
+func (s *store) FetchAdminDetailsByUsername(dbUsername string) (AdminSearchResponse, error) {
 	var username, discordId, googleId, lastActivity, registered sql.NullString
 	var adminResponse AdminSearchResponse
 
@@ -226,7 +226,7 @@ func FetchAdminDetailsByUsername(dbUsername string) (AdminSearchResponse, error)
 	return adminResponse, nil
 }
 
-func UpdateAccountPassword(uuid, key, salt []byte) error {
+func (s *store) UpdateAccountPassword(uuid, key, salt []byte) error {
 	_, err := handle.Exec("UPDATE accounts SET hash = ?, salt = ? WHERE uuid = ?", key, salt, uuid)
 	if err != nil {
 		return err
@@ -235,7 +235,7 @@ func UpdateAccountPassword(uuid, key, salt []byte) error {
 	return nil
 }
 
-func UpdateAccountLastActivity(uuid []byte) error {
+func (s *store) UpdateAccountLastActivity(uuid []byte) error {
 	_, err := handle.Exec("UPDATE accounts SET lastActivity = UTC_TIMESTAMP() WHERE uuid = ?", uuid)
 	if err != nil {
 		return err
@@ -244,7 +244,7 @@ func UpdateAccountLastActivity(uuid []byte) error {
 	return nil
 }
 
-func UpdateAccountStats(uuid []byte, stats defs.GameStats, voucherCounts map[string]int) error {
+func (s *store) UpdateAccountStats(uuid []byte, stats defs.GameStats, voucherCounts map[string]int) error {
 	var columns = []string{"playTime", "battles", "classicSessionsPlayed", "sessionsWon", "highestEndlessWave", "highestLevel", "pokemonSeen", "pokemonDefeated", "pokemonCaught", "pokemonHatched", "eggsPulled", "regularVouchers", "plusVouchers", "premiumVouchers", "goldenVouchers"}
 
 	var statCols []string
@@ -321,7 +321,7 @@ func UpdateAccountStats(uuid []byte, stats defs.GameStats, voucherCounts map[str
 	return nil
 }
 
-func SetAccountBanned(uuid []byte, banned bool) error {
+func (s *store) SetAccountBanned(uuid []byte, banned bool) error {
 	_, err := handle.Exec("UPDATE accounts SET banned = ? WHERE uuid = ?", banned, uuid)
 	if err != nil {
 		return err
@@ -330,17 +330,16 @@ func SetAccountBanned(uuid []byte, banned bool) error {
 	return nil
 }
 
-func FetchAccountKeySaltFromUsername(username string) ([]byte, []byte, error) {
-	var key, salt []byte
-	err := handle.QueryRow("SELECT hash, salt FROM accounts WHERE username = ?", username).Scan(&key, &salt)
+func (s *store) AddAccountRecord(uuid []byte, username string, key, salt []byte) error {
+	_, err := handle.Exec("INSERT INTO accounts (uuid, username, hash, salt, registered) VALUES (?, ?, ?, ?, UTC_TIMESTAMP())", uuid, username, key, salt)
 	if err != nil {
-		return nil, nil, err
+		return err
 	}
 
-	return key, salt, nil
+	return nil
 }
 
-func FetchTrainerIds(uuid []byte) (trainerId, secretId int, err error) {
+func (s *store) FetchTrainerIds(uuid []byte) (trainerId, secretId int, err error) {
 	err = handle.QueryRow("SELECT trainerId, secretId FROM accounts WHERE uuid = ?", uuid).Scan(&trainerId, &secretId)
 	if err != nil {
 		return 0, 0, err
@@ -349,7 +348,7 @@ func FetchTrainerIds(uuid []byte) (trainerId, secretId int, err error) {
 	return trainerId, secretId, nil
 }
 
-func UpdateTrainerIds(trainerId, secretId int, uuid []byte) error {
+func (s *store) UpdateTrainerIds(trainerId, secretId int, uuid []byte) error {
 	_, err := handle.Exec("UPDATE accounts SET trainerId = ?, secretId = ? WHERE uuid = ?", trainerId, secretId, uuid)
 	if err != nil {
 		return err
@@ -358,12 +357,12 @@ func UpdateTrainerIds(trainerId, secretId int, uuid []byte) error {
 	return nil
 }
 
-func IsActiveSession(uuid []byte, sessionId string) (bool, error) {
+func (s *store) IsActiveSession(uuid []byte, sessionId string) (bool, error) {
 	var id string
 	err := handle.QueryRow("SELECT clientSessionId FROM activeClientSessions WHERE uuid = ?", uuid).Scan(&id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			err = UpdateActiveSession(uuid, sessionId)
+			err = s.UpdateActiveSession(uuid, sessionId)
 			if err != nil {
 				return false, err
 			}
@@ -377,7 +376,7 @@ func IsActiveSession(uuid []byte, sessionId string) (bool, error) {
 	return id == "" || id == sessionId, nil
 }
 
-func UpdateActiveSession(uuid []byte, clientSessionId string) error {
+func (s *store) UpdateActiveSession(uuid []byte, clientSessionId string) error {
 	_, err := handle.Exec("INSERT INTO activeClientSessions (uuid, clientSessionId) VALUES (?, ?) ON DUPLICATE KEY UPDATE clientSessionId = ?", uuid, clientSessionId, clientSessionId)
 	if err != nil {
 		return err
@@ -386,7 +385,7 @@ func UpdateActiveSession(uuid []byte, clientSessionId string) error {
 	return nil
 }
 
-func FetchUUIDFromToken(token []byte) ([]byte, error) {
+func (s *store) FetchUUIDFromToken(token []byte) ([]byte, error) {
 	var uuid []byte
 	err := handle.QueryRow("SELECT uuid FROM sessions WHERE token = ?", token).Scan(&uuid)
 	if err != nil {
@@ -396,7 +395,7 @@ func FetchUUIDFromToken(token []byte) ([]byte, error) {
 	return uuid, nil
 }
 
-func RemoveSessionFromToken(token []byte) error {
+func (s *store) RemoveSessionFromToken(token []byte) error {
 	_, err := handle.Exec("DELETE FROM sessions WHERE token = ?", token)
 	if err != nil {
 		return err
@@ -405,7 +404,7 @@ func RemoveSessionFromToken(token []byte) error {
 	return nil
 }
 
-func RemoveSessionsFromUUID(uuid []byte) error {
+func (s *store) RemoveSessionsFromUUID(uuid []byte) error {
 	_, err := handle.Exec("DELETE FROM sessions WHERE uuid = ?", uuid)
 	if err != nil {
 		return err
@@ -414,7 +413,7 @@ func RemoveSessionsFromUUID(uuid []byte) error {
 	return nil
 }
 
-func FetchUsernameFromUUID(uuid []byte) (string, error) {
+func (s *store) FetchUsernameFromUUID(uuid []byte) (string, error) {
 	var username string
 	err := handle.QueryRow("SELECT username FROM accounts WHERE uuid = ?", uuid).Scan(&username)
 	if err != nil {
@@ -424,7 +423,7 @@ func FetchUsernameFromUUID(uuid []byte) (string, error) {
 	return username, nil
 }
 
-func FetchUUIDFromUsername(username string) ([]byte, error) {
+func (s *store) FetchUUIDFromUsername(username string) ([]byte, error) {
 	var uuid []byte
 	err := handle.QueryRow("SELECT uuid FROM accounts WHERE username = ?", username).Scan(&uuid)
 	if err != nil {
@@ -434,7 +433,7 @@ func FetchUUIDFromUsername(username string) ([]byte, error) {
 	return uuid, nil
 }
 
-func RemoveDiscordIdByUUID(uuid []byte) error {
+func (s *store) RemoveDiscordIdByUUID(uuid []byte) error {
 	_, err := handle.Exec("UPDATE accounts SET discordId = NULL WHERE uuid = ?", uuid)
 	if err != nil {
 		return err
@@ -443,7 +442,7 @@ func RemoveDiscordIdByUUID(uuid []byte) error {
 	return nil
 }
 
-func RemoveGoogleIdByUUID(uuid []byte) error {
+func (s *store) RemoveGoogleIdByUUID(uuid []byte) error {
 	_, err := handle.Exec("UPDATE accounts SET googleId = NULL WHERE uuid = ?", uuid)
 	if err != nil {
 		return err
@@ -452,7 +451,7 @@ func RemoveGoogleIdByUUID(uuid []byte) error {
 	return nil
 }
 
-func RemoveGoogleIdByUsername(username string) error {
+func (s *store) RemoveGoogleIdByUsername(username string) error {
 	_, err := handle.Exec("UPDATE accounts SET googleId = NULL WHERE username = ?", username)
 	if err != nil {
 		return err
@@ -461,7 +460,7 @@ func RemoveGoogleIdByUsername(username string) error {
 	return nil
 }
 
-func RemoveDiscordIdByUsername(username string) error {
+func (s *store) RemoveDiscordIdByUsername(username string) error {
 	_, err := handle.Exec("UPDATE accounts SET discordId = NULL WHERE username = ?", username)
 	if err != nil {
 		return err
@@ -470,7 +469,7 @@ func RemoveDiscordIdByUsername(username string) error {
 	return nil
 }
 
-func RemoveDiscordIdByDiscordId(discordId string) error {
+func (s *store) RemoveDiscordIdByDiscordId(discordId string) error {
 	_, err := handle.Exec("UPDATE accounts SET discordId = NULL WHERE discordId = ?", discordId)
 	if err != nil {
 		return err
@@ -479,7 +478,7 @@ func RemoveDiscordIdByDiscordId(discordId string) error {
 	return nil
 }
 
-func RemoveGoogleIdByDiscordId(discordId string) error {
+func (s *store) RemoveGoogleIdByDiscordId(discordId string) error {
 	_, err := handle.Exec("UPDATE accounts SET googleId = NULL WHERE discordId = ?", discordId)
 	if err != nil {
 		return err

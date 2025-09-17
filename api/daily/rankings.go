@@ -22,9 +22,14 @@ import (
 	"github.com/pagefaultgames/rogueserver/defs"
 )
 
+// Interface for database operations needed for fetching rankings.
+type RankingsStore interface {
+	FetchRankings(category, page int) ([]defs.DailyRanking, error)
+}
+
 // /daily/rankings - fetch daily rankings
-func Rankings(category, page int) ([]defs.DailyRanking, error) {
-	rankings, err := db.FetchRankings(category, page)
+func Rankings[T RankingsStore](store T, category, page int) ([]defs.DailyRanking, error) {
+	rankings, err := db.Store.FetchRankings(category, page)
 	if err != nil {
 		return rankings, err
 	}

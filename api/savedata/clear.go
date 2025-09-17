@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/pagefaultgames/rogueserver/db"
 	"github.com/pagefaultgames/rogueserver/defs"
 )
 
@@ -30,10 +29,20 @@ type ClearResponse struct {
 	Error   string `json:"error"`
 }
 
+// Interface for database operations needed for `Clear`
+// Helps with testing and reduces coupling.
+type ClearStore interface {
+	UpdateAccountLastActivity(uuid []byte) error
+	TryAddSeedCompletion(uuid []byte, seed string, mode int) (bool, error)
+	DeleteSessionSaveData(uuid []byte, slot int) error
+	AddOrUpdateAccountDailyRun(uuid []byte, score int, waveCompleted int) error
+	SetAccountBanned(uuid []byte, banned bool) error
+}
+
 // /savedata/clear - mark session save data as cleared and delete
-func Clear(uuid []byte, slot int, seed string, save defs.SessionSaveData) (ClearResponse, error) {
+func Clear[T ClearStore](store T, uuid []byte, slot int, seed string, save defs.SessionSaveData) (ClearResponse, error) {
 	var response ClearResponse
-	err := db.UpdateAccountLastActivity(uuid)
+	err := store.UpdateAccountLastActivity(uuid)
 	if err != nil {
 		log.Print("failed to update account last activity")
 	}
@@ -51,23 +60,23 @@ func Clear(uuid []byte, slot int, seed string, save defs.SessionSaveData) (Clear
 		}
 
 		if save.Score >= 20000 {
-			db.SetAccountBanned(uuid, true)
+			store.SetAccountBanned(uuid, true)
 		}
 
-		err = db.AddOrUpdateAccountDailyRun(uuid, save.Score, waveCompleted)
+		err = store.AddOrUpdateAccountDailyRun(uuid, save.Score, waveCompleted)
 		if err != nil {
 			log.Printf("failed to add or update daily run record: %s", err)
 		}
 	}
 
 	if sessionCompleted {
-		response.Success, err = db.TryAddSeedCompletion(uuid, save.Seed, int(save.GameMode))
+		response.Success, err = store.TryAddSeedCompletion(uuid, save.Seed, int(save.GameMode))
 		if err != nil {
 			log.Printf("failed to mark seed as completed: %s", err)
 		}
 	}
 
-	err = db.DeleteSessionSaveData(uuid, slot)
+	err = store.DeleteSessionSaveData(uuid, slot)
 	if err != nil {
 		log.Printf("failed to delete session save data: %s", err)
 	}

@@ -32,7 +32,16 @@ var (
 	GoogleCallbackURL  string
 )
 
-func HandleGoogleCallback(w http.ResponseWriter, r *http.Request) (string, error) {
+type GoogleProvider interface {
+	HandleGoogleCallback(w http.ResponseWriter, r *http.Request) (string, error)
+	RetrieveGoogleId(code string) (string, error)
+}
+
+type googleProvider struct{}
+
+var Google = &googleProvider{}
+
+func (g *googleProvider) HandleGoogleCallback(w http.ResponseWriter, r *http.Request) (string, error) {
 	code := r.URL.Query().Get("code")
 	if code == "" {
 		http.Redirect(w, r, GameURL, http.StatusSeeOther)

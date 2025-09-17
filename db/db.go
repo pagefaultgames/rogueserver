@@ -31,6 +31,12 @@ import (
 var handle *sql.DB
 var s3client *s3.Client
 
+// internal type used to implement the Store interface
+type store struct{}
+
+// Store is the global instance for DB access.
+var Store = &store{}
+
 func Init(username, password, protocol, address, database string) error {
 	var err error
 
