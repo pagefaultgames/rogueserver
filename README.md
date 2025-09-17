@@ -6,9 +6,8 @@
 - [Quickstart (Linux, Podman/Docker)](#quickstart-linuxwsl-podmandocker)
 - [Quickstart (Windows, Podman)](#quickstart-windows-podman)
 - [Running without Podman/Docker](#running-without-podmandocker)
-- [On Linux](#on-linux)
 - [Self Hosting](#self-hosting)
-- [Podman/Docker Mini Primer](#primer-images-containers-and-compose)
+- [Podman/Docker Mini Primer](#podmandocker-mini-primer)
 
 ## Quickstart (Linux/WSL, Podman/Docker)
 
@@ -290,8 +289,11 @@ Test that the server's game and game authentication works from other machines bo
 ### Which steps do I repeat?
 
 - **Daily development:**
-  - Run `podman-compose up` to start, and `podman-compose down` to stop.
+  - Run `podman-compose -f path/to/compose-file.yml up` to start
+    - You can pass the `-d` flag to allow it to run in the background
+  - Run `podman-compose -f /path/to/compose-file.yml down` to stop
 - **If rogueserver changes:**
+  - Pull the latest changes from rogueserver via git.
   - Rebuild the image (`podman build -t rogueserver:dev .`), then restart the environment.
 - **If you want to reset everything:**
   - See below for clearing out all Podman data.
