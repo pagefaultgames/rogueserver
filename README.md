@@ -4,7 +4,7 @@
 ## Table of Contents
 
 - [Quickstart (Linux, Podman/Docker)](#quickstart-linuxwsl-podmandocker)
-- [Quickstart (Windows, Podman)](#quickstart-windows-podman)
+- [Quickstart (Windows, Podman)](#quickstart-windows-podmandocker)
 - [Running without Podman/Docker](#running-without-podmandocker)
 - [Self Hosting](#self-hosting)
 - [Podman/Docker Mini Primer](#podmandocker-mini-primer)
