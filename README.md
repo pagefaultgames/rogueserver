@@ -4,7 +4,14 @@ SPDX-FileCopyrightText: 2024-2025 Pagefault Games
 SPDX-License-Identifier: CC-BY-NC-SA-4.0
 -->
 
+
+<div align="center">
+
 # rogueserver
+
+[![REUSE status](https://api.reuse.software/badge/github.com/pagefaultgames/rogueserver)](https://api.reuse.software/info/github.com/pagefaultgames/rogueserver) [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
+
+</div>
 
 ## Table of Contents
 
