@@ -199,11 +199,12 @@ func (s *store) FetchLastLoggedInDateByUsername(username string) (string, error)
 }
 
 type AdminSearchResponse struct {
-	Username     string `json:"username"`
-	DiscordId    string `json:"discordId"`
-	GoogleId     string `json:"googleId"`
-	LastActivity string `json:"lastLoggedIn"` // TODO: this is currently lastLoggedIn to match server PR #54 with pokerogue PR #4198. We're hotfixing the server with this PR to return lastActivity, but we're not hotfixing the client, so are leaving this as lastLoggedIn so that it still talks to the client properly
-	Registered   string `json:"registered"`
+	Username     string               `json:"username"`
+	DiscordId    string               `json:"discordId"`
+	GoogleId     string               `json:"googleId"`
+	LastActivity string               `json:"lastLoggedIn"` // TODO: this is currently lastLoggedIn to match server PR #54 with pokerogue PR #4198. We're hotfixing the server with this PR to return lastActivity, but we're not hotfixing the client, so are leaving this as lastLoggedIn so that it still talks to the client properly
+	Registered   string               `json:"registered"`
+	SystemData   *defs.SystemSaveData `json:"systemData,omitzero"`
 }
 
 func (s *store) FetchAdminDetailsByUsername(dbUsername string) (AdminSearchResponse, error) {
