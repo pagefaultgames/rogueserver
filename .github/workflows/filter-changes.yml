@@ -19,6 +19,10 @@ jobs:
       ci: ${{ steps.filter.outputs.ci }}
       ghcr: ${{ steps.filter.outputs.ghcr }}
     steps:
+      - if: ${{ github.event_name != 'pull_request' }}
+        uses: actions/checkout@v4
+        # Only checkout code if not a pull request
+
       # For pull requests it's not necessary to checkout the code
       - uses: dorny/paths-filter@v3
         id: filter
