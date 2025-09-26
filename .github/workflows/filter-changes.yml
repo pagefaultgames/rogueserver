@@ -1,0 +1,38 @@
+name: Path Filters
+
+on:
+  workflow_call:
+
+permissions:
+  pull-requests: read
+  contents: read
+
+jobs:
+  # JOB to run change detection
+  changes:
+    runs-on: ubuntu-latest
+    # Required permissions
+    permissions:
+      pull-requests: read
+    # Set job outputs to values from filter step
+    outputs:
+      ci: ${{ steps.filter.outputs.ci }}
+      ghcr: ${{ steps.filter.outputs.ghcr }}
+    steps:
+      # For pull requests it's not necessary to checkout the code
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            common: &common
+              - '**/*.go'
+              - go.mod
+              - go.sum
+            ghcr:
+              - *common
+              - .dockerignore
+              - Dockerfile
+              - docker-compose.Development.yml
+            ci:
+              - *common
+              - .golangci.yml

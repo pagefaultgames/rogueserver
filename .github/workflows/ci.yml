@@ -8,7 +8,14 @@ permissions:
   contents: read
 
 jobs:
+  changes:
+    uses: ./.github/workflows/filter-changes.yml
+    permissions:
+      pull-requests: read
+      contents: read
   build:
+    needs: changes
+    if: ${{ needs.changes.outputs.ci == 'true' }} && github.repository == 'pagefaultgames/rogueserver'
     name: Build (${{ matrix.os_name }})
     env:
       GO_VERSION: 1.22
@@ -25,9 +32,9 @@ jobs:
           - os: windows-latest
             os_name: windows
             arch: amd64
-# TODO macos needs universal binary!
-#          - os: macos-latest
-#            os_name: macos
+    # TODO macos needs universal binary!
+    #          - os: macos-latest
+    #            os_name: macos
     steps:
       - uses: actions/checkout@v4
       - name: Set up Go ${{ env.GO_VERSION }}
@@ -43,7 +50,7 @@ jobs:
           version: latest
           args: --config .golangci.yml
       - name: Test
-        run: go test -v
+        run: go test -v ./...
       - name: Build
         run: go build -v
       - name: Upload artifact

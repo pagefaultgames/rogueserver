@@ -10,9 +10,16 @@ permissions:
   packages: write
 
 jobs:
+  changes:
+    uses: ./.github/workflows/filter-changes.yml
+    permissions:
+      pull-requests: read
+      contents: read
+
   build:
+    needs: changes
     name: Build and publish to GHCR
-    if: github.repository == 'pagefaultgames/rogueserver'
+    if: ${{ needs.changes.outputs.ghcr == 'true' }} && github.repository == 'pagefaultgames/rogueserver'
     env:
       GO_VERSION: 1.22
     runs-on: ubuntu-latest

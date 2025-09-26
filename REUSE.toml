@@ -12,6 +12,7 @@ path = [
     "go.sum",
     "go.mod",
     ".github/FUNDING.yml",
+    "**/*.editorconfig",
 ]
 SPDX-FileCopyrightText = "NONE"
 SPDX-License-Identifier = "CC0-1.0"
