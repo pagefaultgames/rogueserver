@@ -938,6 +938,13 @@ func handleAdminSearch(w http.ResponseWriter, r *http.Request) {
 		httpError(w, r, err, http.StatusInternalServerError)
 		return
 	}
+	uuid, err = db.Store.FetchUUIDFromUsername(username)
+	if err == nil {
+		systemData, err := savedata.GetSystem(db.Store, uuid)
+		if err == nil {
+			adminSearchResult.SystemData = &systemData
+		}
+	}
 
 	writeJSON(w, r, adminSearchResult)
 	log.Printf("%s: %s searched for username %s", userDiscordId, r.URL.Path, username)
