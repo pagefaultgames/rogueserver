@@ -18,8 +18,8 @@
 package account
 
 import (
-	"bytes"
 	"crypto/rand"
+	"crypto/subtle"
 	"database/sql"
 	"encoding/base64"
 	"errors"
@@ -54,7 +54,7 @@ func Login[T LoginStore](store T, username, password string) (LoginResponse, err
 		return response, err
 	}
 
-	if !bytes.Equal(key, deriveArgon2IDKey([]byte(password), salt)) {
+	if subtle.ConstantTimeCompare(key, deriveArgon2IDKey([]byte(password), salt)) == 0 {
 		return response, fmt.Errorf("password doesn't match")
 	}
 
