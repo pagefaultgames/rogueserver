@@ -18,7 +18,6 @@
 package api
 
 import (
-	"log"
 	"time"
 
 	"github.com/robfig/cron/v3"
@@ -32,17 +31,23 @@ var (
 )
 
 func scheduleStatRefresh[T updateStatsStore](store T) error {
-	_, err := scheduler.AddFunc("@every 30s", func() {
-		err := updateStats(store)
-		if err != nil {
-			log.Printf("failed to update stats: %s", err)
-		}
-	})
+	_, err := scheduler.AddFunc("@every 1m", func() { playerCount, _ = store.FetchPlayerCount() })
+	if err != nil {
+		return err
+	}
+
+	_, err = scheduler.AddFunc("@every 1h", func() { battleCount, _ = store.FetchBattleCount() })
+	if err != nil {
+		return err
+	}
+
+	_, err = scheduler.AddFunc("@every 1h", func() { classicSessionCount, _ = store.FetchClassicSessionCount() })
 	if err != nil {
 		return err
 	}
 
 	scheduler.Start()
+
 	return nil
 }
 
@@ -50,24 +55,4 @@ type updateStatsStore interface {
 	FetchPlayerCount() (int, error)
 	FetchBattleCount() (int, error)
 	FetchClassicSessionCount() (int, error)
-}
-
-func updateStats[T updateStatsStore](store T) error {
-	var err error
-	playerCount, err = store.FetchPlayerCount()
-	if err != nil {
-		return err
-	}
-
-	battleCount, err = store.FetchBattleCount()
-	if err != nil {
-		return err
-	}
-
-	classicSessionCount, err = store.FetchClassicSessionCount()
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
