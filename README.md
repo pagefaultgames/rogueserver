@@ -120,6 +120,41 @@ Docker can also be used instead of Podman.
 - **Podman Desktop** ([download here](https://podman-desktop.io/))
 - **podman-compose** (included with Podman Desktop, or install via pipx/pip if needed)
 
+##### 1a. Make sure WSL is up to date
+
+Podman makes use of `wsl` under the hood in order to run things. We noticed issues with Podman when it was not up to date. You can check your wsl version with ``wsl --version``. You'll want to make sure your wsl is at least version 2.6.3. For example, the following output of `wsl --version` was tested with this README's instructions to ensure the steps worked properly.
+
+```
+WSL version: 2.6.3.0
+Kernel version: 6.6.87.2-1
+WSLg version: 1.0.71
+```
+
+##### 1b. Smoke test podman (optional)
+
+You can verify that podman is working properly by running a smoke test. After installing podman and running `podman machine start`, ensure that everything is working smoothly. This can be tested via running a small image and testing the date command: `podman run ubi8-micro date`.
+
+It's sample output might be:
+```
+Mon Dec 22 00:19:01 UTC 2025
+```
+
+##### If something isn't working
+
+If there were errors during `podman machine start`, you can try to reset the VM  by resetting the install via `podman machine reset`. You might get a confirmation prompt, so type `Y` to continue. Then, redo the  the steps: `podman machine init`, `podman machine start`, and `podman run ubi8-micro-date`.
+
+If `podman machine-start` works, but the smoke test fails, try making sure you can `ssh` into podman.
+
+First, restart the machine: `podman machine stop`, and `podman machine start`. Then, `ssh` into podman via `podman machine ssh`.  (This will only work if `podman machine start` worked successfully.).
+
+Once logged in, try running the podman service and observing the errors: `podman --log-level=debug system service --time=0 &`.
+
+This should print a stream of log messages to the console. If there are any obvious errors, try searching them on the web to find a solution. (Generative AI agents may also help pintpoint the issue if you feed them the output).
+
+If nothing looks amiss, with the `ssh` connection still active, open another powershell terminal and run `podman run ubi8-micro-date`. Sometimes, manually `ssh`ing into `podman` caused errors to resolve themselves, so it's possible this command now works. If so, proceed to step 2 and continue.
+
+If you still can't Podman working, try reaching out in the dev-corner channel in the PokéRogue Discord.
+
 #### 2. Clone the Repository
 
 Open PowerShell or Command Prompt and run:
@@ -127,6 +162,10 @@ Open PowerShell or Command Prompt and run:
 git clone <this-repo-url>
 cd rogueserver
 ```
+
+#### 3. Ensure Podman is running
+
+You need to make sure that podman is 
 
 #### 3. Build the Go Server Image
 
