@@ -165,7 +165,9 @@ cd rogueserver
 
 #### 3. Ensure Podman is running
 
-You need to make sure that podman is 
+You need to make sure that the WSL machine with podman is running before trying to build the image. To do this, run `podman machine info` in the command line. If it's running, you should see a line that reads `machinestate: Running`.
+
+If it is not running, then do `podman machine start` before proceeding to the next step.
 
 #### 3. Build the Go Server Image
 
@@ -173,6 +175,8 @@ Open a terminal in the project directory and run:
 ```powershell
 podman build -t rogueserver:dev .
 ```
+
+ℹ️ Note: When changes to rogueserver are made, you will need to run the above command again to update the binary that the container will use.
 
 #### 4. Start the Development Environment
 
