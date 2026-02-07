@@ -99,7 +99,7 @@ type SessionSaveData struct {
 	Seed                     string                   `json:"seed"`
 	PlayTime                 int                      `json:"playTime"`
 	GameMode                 GameMode                 `json:"gameMode"`
-	DailyConfig              DailyConfig              `json:"dailyConfig"`
+	DailyConfig              DailyConfig              `json:"dailyConfig,omitempty"`
 	Party                    []PokemonData            `json:"party"`
 	EnemyParty               []PokemonData            `json:"enemyParty"`
 	Modifiers                []PersistentModifierData `json:"modifiers"`
