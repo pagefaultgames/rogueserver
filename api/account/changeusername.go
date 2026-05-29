@@ -1,7 +1,10 @@
 package account
 
 import (
+	"errors"
 	"fmt"
+
+	"github.com/pagefaultgames/rogueserver/db"
 )
 
 // Interface for database operations needed for changing username.
@@ -16,6 +19,9 @@ func ChangeUsername[T ChangeUsernameStore](store T, uuid []byte, newUsername str
 
 	err := store.UpdateAccountUsername(uuid, newUsername)
 	if err != nil {
+		if errors.Is(err, db.ErrNoDiscord) {
+			return err
+		}
 		return fmt.Errorf("failed to change username: %s", err)
 	}
 

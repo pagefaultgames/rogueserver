@@ -27,6 +27,8 @@ import (
 	"github.com/pagefaultgames/rogueserver/defs"
 )
 
+var ErrNoDiscord = errors.New("no linked discord")
+
 func (s *store) AddAccountSession(username string, token []byte) error {
 	_, err := handle.Exec("INSERT INTO sessions (uuid, token, expire) SELECT a.uuid, ?, DATE_ADD(UTC_TIMESTAMP(), INTERVAL 1 WEEK) FROM accounts a WHERE a.username = ?", token, username)
 	if err != nil {
@@ -346,7 +348,7 @@ func (s *store) UpdateAccountUsername(uuid []byte, newUsername string) error {
 		return err
 	}
 	if discordId == "" {
-		return errors.New("no linked discord")
+		return ErrNoDiscord
 	}
 
 	_, err = handle.Exec("UPDATE accounts SET username = ? WHERE uuid = ?", newUsername, uuid)
