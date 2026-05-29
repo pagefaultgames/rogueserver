@@ -341,7 +341,15 @@ func (s *store) AddAccountRecord(uuid []byte, username string, key, salt []byte)
 }
 
 func (s *store) UpdateAccountUsername(uuid []byte, newUsername string) error {
-	_, err := handle.Exec("UPDATE accounts SET username = ? WHERE uuid = ?", newUsername, uuid)
+	discordId, err := s.FetchDiscordIdByUUID(uuid)
+	if err != nil {
+		return err
+	}
+	if discordId == "" {
+		return errors.New("no linked discord")
+	}
+
+	_, err = handle.Exec("UPDATE accounts SET username = ? WHERE uuid = ?", newUsername, uuid)
 	return err
 }
 
