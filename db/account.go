@@ -340,6 +340,11 @@ func (s *store) AddAccountRecord(uuid []byte, username string, key, salt []byte)
 	return nil
 }
 
+func (s *store) UpdateAccountUsername(uuid []byte, newUsername string) error {
+	_, err := handle.Exec("UPDATE accounts SET username = ? WHERE uuid = ?", newUsername, uuid)
+	return err
+}
+
 func (s *store) FetchTrainerIds(uuid []byte) (trainerId, secretId int, err error) {
 	err = handle.QueryRow("SELECT trainerId, secretId FROM accounts WHERE uuid = ?", uuid).Scan(&trainerId, &secretId)
 	if err != nil {

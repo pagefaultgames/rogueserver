@@ -129,6 +129,28 @@ func handleAccountChangePW(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, r, response)
 }
 
+func handleAccountChangeUsername(w http.ResponseWriter, r *http.Request) {
+	uuid, err := uuidFromRequest(r)
+	if err != nil {
+		httpError(w, r, err, http.StatusUnauthorized)
+		return
+	}
+
+	newUsername := r.PostFormValue("username")
+
+	err = account.ChangeUsername(db.Store, uuid, newUsername)
+	if err != nil {
+		if strings.Contains(err.Error(), "invalid username") {
+			httpError(w, r, err, http.StatusBadRequest)
+			return
+		}
+		httpError(w, r, err, http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
 func handleAccountLogout(w http.ResponseWriter, r *http.Request) {
 	token, err := tokenFromRequest(r)
 	if err != nil {
