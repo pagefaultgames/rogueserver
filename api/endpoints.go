@@ -141,7 +141,11 @@ func handleAccountChangeUsername(w http.ResponseWriter, r *http.Request) {
 	err = account.ChangeUsername(db.Store, uuid, newUsername)
 	if err != nil {
 		status := http.StatusInternalServerError
-		if errors.Is(err, db.ErrNoDiscord) || strings.Contains(err.Error(), "invalid username") {
+		if errors.Is(err, db.ErrNoDiscord) ||
+			errors.Is(err, db.ErrUsernameCooldown) ||
+			errors.Is(err, db.ErrUsernameReserved) ||
+			errors.Is(err, db.ErrInvalidUsername) ||
+			errors.Is(err, db.ErrSameUsername) {
 			status = http.StatusBadRequest
 		}
 		httpError(w, r, err, status)

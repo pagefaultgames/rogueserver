@@ -116,6 +116,16 @@ func setupDb(tx *sql.Tx) error {
 		       clientSessionId VARCHAR(32) NOT NULL,
 		       FOREIGN KEY (uuid) REFERENCES accounts (uuid) ON DELETE CASCADE ON UPDATE CASCADE
 	       )`,
+		`CREATE TABLE IF NOT EXISTS usernameChanges (
+		       id BIGINT AUTO_INCREMENT PRIMARY KEY,
+		       uuid BINARY(16) NOT NULL,
+		       old_username VARCHAR(16) NOT NULL,
+		       new_username VARCHAR(16) NOT NULL,
+		       changed_at TIMESTAMP NOT NULL,
+		       CONSTRAINT usernameChanges_ibfk_1 FOREIGN KEY (uuid) REFERENCES accounts (uuid) ON DELETE CASCADE ON UPDATE CASCADE
+	       )`,
+		`CREATE INDEX IF NOT EXISTS usernameChangesByUuid ON usernameChanges (uuid, changed_at)`,
+		`CREATE INDEX IF NOT EXISTS usernameChangesByOldUsername ON usernameChanges (old_username, uuid, changed_at)`,
 	}
 
 	// Conditionally add systemSaveData table if AWS_ENDPOINT_URL_S3 is not set
