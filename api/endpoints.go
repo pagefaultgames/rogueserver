@@ -331,6 +331,7 @@ func handleUpdateAll(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	biomeReset := r.URL.Query().Get("reset") == "true"
 	oldSystem, err := savedata.GetSystem(db.Store, uuid)
 	if err != nil {
 		if !errors.Is(err, savedata.ErrSaveNotExist) {
@@ -349,12 +350,13 @@ func handleUpdateAll(w http.ResponseWriter, r *http.Request) {
 			httpError(w, r, fmt.Errorf("no playtime found"), http.StatusBadRequest)
 			return
 		}
-
-		if playtime < oldPlaytime {
+		if !biomeReset && playtime < oldPlaytime {
+			log.Printf("[Sync] Rejecting save for user %x: playtime rollback (incoming %.0f < existing %.0f)", uuid, playtime, oldPlaytime)
 			httpError(w, r, fmt.Errorf("session out of date: existing playtime is greater"), http.StatusBadRequest)
 			return
 		}
 	}
+
 
 	existingSave, err := savedata.GetSession(db.Store, uuid, data.SessionSlotId)
 	if err != nil {
@@ -363,7 +365,8 @@ func handleUpdateAll(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else {
-		if existingSave.Seed == data.Session.Seed && existingSave.WaveIndex > data.Session.WaveIndex {
+		if !biomeReset && existingSave.Seed == data.Session.Seed && existingSave.WaveIndex > data.Session.WaveIndex {
+			log.Printf("[Sync] Rejecting rollback for user %x: Existing Wave %d > Incoming Wave %d", uuid, existingSave.WaveIndex, data.Session.WaveIndex)
 			httpError(w, r, fmt.Errorf("session out of date: existing wave index is greater"), http.StatusBadRequest)
 			return
 		}
