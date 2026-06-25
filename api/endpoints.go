@@ -43,15 +43,13 @@ import (
 */
 // account
 
-func blockIfOldOverwriteNew(oldVersion string, newVersion string) error {
+func shouldOverwriteVersion(oldVersion string, newVersion string) (bool, error) {
 	cmp, err := savedata.CompareGameVersion(oldVersion, newVersion)
 	if err != nil {
-		return fmt.Errorf("failed to compare versions: %s", err)
+		return false, fmt.Errorf("failed to compare versions: %s", err)
 	}
-	if cmp < 0 {
-		return fmt.Errorf("session out of date: existing version is greater")
-	}
-	return nil
+
+	return cmp >= 0, nil
 }
 
 func handleAccountInfo(w http.ResponseWriter, r *http.Request) {
@@ -370,14 +368,19 @@ func handleUpdateAll(w http.ResponseWriter, r *http.Request) {
 		newVersion, newOk := data.System.GameStats.(map[string]interface{})["version"].(string)
 
 		if oldOk && newOk {
-			err := blockIfOldOverwriteNew(oldVersion, newVersion)
+			overwrite, err := shouldOverwriteVersion(oldVersion, newVersion)
 			if err != nil {
 				httpError(w, r, err, http.StatusBadRequest)
+				return
+			}
+			if !overwrite {
+				httpError(w, r, fmt.Errorf("session out of date: existing version is greater"), http.StatusBadRequest)
+				return
 			}
 		} else if !oldOk {
 			httpError(w, r, fmt.Errorf("existing system save data has no version"), http.StatusBadRequest)
+			return
 		}
-
 	}
 
 	existingSave, err := savedata.GetSession(db.Store, uuid, data.SessionSlotId)
@@ -494,12 +497,18 @@ func handleSystem(w http.ResponseWriter, r *http.Request) {
 			newVersion, newOk := system.GameStats.(map[string]interface{})["version"].(string)
 
 			if oldOk && newOk {
-				err := blockIfOldOverwriteNew(oldVersion, newVersion)
+				overwrite, err := shouldOverwriteVersion(oldVersion, newVersion)
 				if err != nil {
 					httpError(w, r, err, http.StatusBadRequest)
+					return
+				}
+				if !overwrite {
+					httpError(w, r, fmt.Errorf("session out of date: existing version is greater"), http.StatusBadRequest)
+					return
 				}
 			} else if !oldOk {
 				httpError(w, r, fmt.Errorf("existing system save data has no version"), http.StatusBadRequest)
+				return
 			}
 		}
 
