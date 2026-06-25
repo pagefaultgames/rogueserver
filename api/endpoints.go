@@ -43,6 +43,17 @@ import (
 */
 // account
 
+func blockIfOldOverwriteNew(oldVersion string, newVersion string) error {
+	cmp, err := savedata.CompareGameVersion(oldVersion, newVersion)
+	if err != nil {
+		return fmt.Errorf("failed to compare versions: %s", err)
+	}
+	if cmp < 0 {
+		return fmt.Errorf("session out of date: existing version is greater")
+	}
+	return nil
+}
+
 func handleAccountInfo(w http.ResponseWriter, r *http.Request) {
 	uuid, err := uuidFromRequest(r)
 	if err != nil {
@@ -354,6 +365,19 @@ func handleUpdateAll(w http.ResponseWriter, r *http.Request) {
 			httpError(w, r, fmt.Errorf("session out of date: existing playtime is greater"), http.StatusBadRequest)
 			return
 		}
+
+		oldVersion, oldOk := oldSystem.GameStats.(map[string]interface{})["version"].(string)
+		newVersion, newOk := data.System.GameStats.(map[string]interface{})["version"].(string)
+
+		if oldOk && newOk {
+			err := blockIfOldOverwriteNew(oldVersion, newVersion)
+			if err != nil {
+				httpError(w, r, err, http.StatusBadRequest)
+			}
+		} else if !oldOk {
+			httpError(w, r, fmt.Errorf("existing system save data has no version"), http.StatusBadRequest)
+		}
+
 	}
 
 	existingSave, err := savedata.GetSession(db.Store, uuid, data.SessionSlotId)
@@ -464,6 +488,18 @@ func handleSystem(w http.ResponseWriter, r *http.Request) {
 			if playtime < oldPlaytime {
 				httpError(w, r, fmt.Errorf("session out of date: existing playtime is greater"), http.StatusBadRequest)
 				return
+			}
+
+			oldVersion, oldOk := oldSystem.GameStats.(map[string]interface{})["version"].(string)
+			newVersion, newOk := system.GameStats.(map[string]interface{})["version"].(string)
+
+			if oldOk && newOk {
+				err := blockIfOldOverwriteNew(oldVersion, newVersion)
+				if err != nil {
+					httpError(w, r, err, http.StatusBadRequest)
+				}
+			} else if !oldOk {
+				httpError(w, r, fmt.Errorf("existing system save data has no version"), http.StatusBadRequest)
 			}
 		}
 
