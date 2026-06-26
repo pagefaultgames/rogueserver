@@ -120,6 +120,7 @@ type SessionSaveData struct {
 	MysteryEncounterType     MysteryEncounterType     `json:"mysteryEncounterType"`
 	MysteryEncounterSaveData MysteryEncounterSaveData `json:"mysteryEncounterSaveData"`
 	Name                     string                   `json:"name,omitempty"`
+	BiomeCheckpoint          *SessionSaveData         `json:"biomeCheckpoint,omitempty"`
 }
 
 type ChallengeData struct {
