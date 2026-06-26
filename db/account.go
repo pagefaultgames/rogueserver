@@ -27,6 +27,14 @@ import (
 	"github.com/pagefaultgames/rogueserver/defs"
 )
 
+var (
+	ErrNoDiscord        = errors.New("no linked discord")
+	ErrUsernameCooldown = errors.New("username was changed within the last 30 days")
+	ErrUsernameReserved = errors.New("username is temporarily reserved by a previous owner")
+	ErrInvalidUsername  = errors.New("invalid username")
+	ErrSameUsername     = errors.New("username not changed")
+)
+
 func (s *store) AddAccountSession(username string, token []byte) error {
 	_, err := handle.Exec("INSERT INTO sessions (uuid, token, expire) SELECT a.uuid, ?, DATE_ADD(UTC_TIMESTAMP(), INTERVAL 1 WEEK) FROM accounts a WHERE a.username = ?", token, username)
 	if err != nil {
@@ -338,6 +346,53 @@ func (s *store) AddAccountRecord(uuid []byte, username string, key, salt []byte)
 	}
 
 	return nil
+}
+
+func (s *store) UpdateAccountUsername(uuid []byte, oldUsername, newUsername string) error {
+	tx, err := handle.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	_, err = tx.Exec("UPDATE accounts SET username = ? WHERE uuid = ?", newUsername, uuid)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec(
+		"INSERT INTO usernameChanges (uuid, old_username, new_username, changed_at) VALUES (?, ?, ?, UTC_TIMESTAMP())",
+		uuid, oldUsername, newUsername,
+	)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit()
+}
+
+func (s *store) HasChangedUsernameRecently(uuid []byte) (bool, error) {
+	var count int
+	err := handle.QueryRow(
+		"SELECT COUNT(*) FROM usernameChanges WHERE uuid = ? AND changed_at > DATE_SUB(UTC_TIMESTAMP(), INTERVAL 30 DAY)",
+		uuid,
+	).Scan(&count)
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
+func (s *store) IsUsernameReserved(uuid []byte, username string) (bool, error) {
+	var count int
+	err := handle.QueryRow(
+		"SELECT COUNT(*) FROM usernameChanges WHERE old_username = ? AND (? IS NULL OR uuid != ?) AND changed_at > DATE_SUB(UTC_TIMESTAMP(), INTERVAL 37 DAY)",
+		username, uuid, uuid,
+	).Scan(&count)
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
 }
 
 func (s *store) FetchTrainerIds(uuid []byte) (trainerId, secretId int, err error) {
