@@ -43,15 +43,6 @@ import (
 */
 // account
 
-func shouldOverwriteVersion(oldVersion string, newVersion string) (bool, error) {
-	cmp, err := savedata.CompareGameVersion(oldVersion, newVersion)
-	if err != nil {
-		return false, fmt.Errorf("failed to compare versions: %s", err)
-	}
-
-	return cmp >= 0, nil
-}
-
 func handleAccountInfo(w http.ResponseWriter, r *http.Request) {
 	uuid, err := uuidFromRequest(r)
 	if err != nil {
@@ -364,21 +355,13 @@ func handleUpdateAll(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		oldVersion, oldOk := oldSystem.GameStats.(map[string]interface{})["version"].(string)
-		newVersion, newOk := data.System.GameStats.(map[string]interface{})["version"].(string)
-
-		if oldOk && newOk {
-			overwrite, err := shouldOverwriteVersion(oldVersion, newVersion)
-			if err != nil {
-				httpError(w, r, err, http.StatusBadRequest)
-				return
-			}
-			if !overwrite {
-				httpError(w, r, fmt.Errorf("session out of date: existing version is greater"), http.StatusBadRequest)
-				return
-			}
-		} else if !oldOk {
-			httpError(w, r, fmt.Errorf("existing system save data has no version"), http.StatusBadRequest)
+		cmp, err := savedata.CompareGameVersion(oldSystem.GameVersion, data.System.GameVersion)
+		if err != nil {
+			httpError(w, r, fmt.Errorf("failed to compare versions: %s", err), http.StatusBadRequest)
+			return
+		}
+		if cmp > 0 {
+			httpError(w, r, fmt.Errorf("session out of date: existing version is greater"), http.StatusBadRequest)
 			return
 		}
 	}
@@ -493,21 +476,13 @@ func handleSystem(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			oldVersion, oldOk := oldSystem.GameStats.(map[string]interface{})["version"].(string)
-			newVersion, newOk := system.GameStats.(map[string]interface{})["version"].(string)
-
-			if oldOk && newOk {
-				overwrite, err := shouldOverwriteVersion(oldVersion, newVersion)
-				if err != nil {
-					httpError(w, r, err, http.StatusBadRequest)
-					return
-				}
-				if !overwrite {
-					httpError(w, r, fmt.Errorf("session out of date: existing version is greater"), http.StatusBadRequest)
-					return
-				}
-			} else if !oldOk {
-				httpError(w, r, fmt.Errorf("existing system save data has no version"), http.StatusBadRequest)
+			cmp, err := savedata.CompareGameVersion(oldSystem.GameVersion, system.GameVersion)
+			if err != nil {
+				httpError(w, r, fmt.Errorf("failed to compare versions: %s", err), http.StatusBadRequest)
+				return
+			}
+			if cmp > 0 {
+				httpError(w, r, fmt.Errorf("session out of date: existing version is greater"), http.StatusBadRequest)
 				return
 			}
 		}

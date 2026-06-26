@@ -2,6 +2,7 @@ package savedata
 
 import (
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -23,32 +24,7 @@ func CompareGameVersion(left string, right string) (int, error) {
 		return 0, err
 	}
 
-	maxLen := len(leftTuple)
-	if len(rightTuple) > maxLen {
-		maxLen = len(rightTuple)
-	}
-
-	for i := 0; i < maxLen; i++ {
-		leftPart := 0
-		if i < len(leftTuple) {
-			leftPart = leftTuple[i]
-		}
-
-		rightPart := 0
-		if i < len(rightTuple) {
-			rightPart = rightTuple[i]
-		}
-
-		if leftPart < rightPart {
-			return -1, nil
-		}
-
-		if leftPart > rightPart {
-			return 1, nil
-		}
-	}
-
-	return 0, nil
+	return slices.Compare(leftTuple, rightTuple), nil
 }
 
 func parseGameVersion(version string) (VersionTuple, error) {
