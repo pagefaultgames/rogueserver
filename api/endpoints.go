@@ -355,12 +355,22 @@ func handleUpdateAll(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		cmp, err := savedata.CompareGameVersion(oldSystem.GameVersion, data.System.GameVersion)
+		minVerCmp, err := savedata.CompareGameVersion("1.12.0.1", data.System.GameVersion)
 		if err != nil {
 			httpError(w, r, fmt.Errorf("failed to compare versions: %s", err), http.StatusBadRequest)
 			return
 		}
-		if cmp > 0 {
+		if minVerCmp > 0 {
+			httpError(w, r, fmt.Errorf("session out of date: save version below minimum game version"), http.StatusBadRequest)
+			return
+		}
+
+		saveVerCmp, err := savedata.CompareGameVersion(oldSystem.GameVersion, data.System.GameVersion)
+		if err != nil {
+			httpError(w, r, fmt.Errorf("failed to compare versions: %s", err), http.StatusBadRequest)
+			return
+		}
+		if saveVerCmp > 0 {
 			httpError(w, r, fmt.Errorf("session out of date: existing version is greater"), http.StatusBadRequest)
 			return
 		}
@@ -476,12 +486,22 @@ func handleSystem(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			cmp, err := savedata.CompareGameVersion(oldSystem.GameVersion, system.GameVersion)
+			minVerCmp, err := savedata.CompareGameVersion("1.12.0.1", system.GameVersion)
 			if err != nil {
 				httpError(w, r, fmt.Errorf("failed to compare versions: %s", err), http.StatusBadRequest)
 				return
 			}
-			if cmp > 0 {
+			if minVerCmp > 0 {
+				httpError(w, r, fmt.Errorf("session out of date: save version below minimum game version"), http.StatusBadRequest)
+				return
+			}
+
+			saveVerCmp, err := savedata.CompareGameVersion(oldSystem.GameVersion, system.GameVersion)
+			if err != nil {
+				httpError(w, r, fmt.Errorf("failed to compare versions: %s", err), http.StatusBadRequest)
+				return
+			}
+			if saveVerCmp > 0 {
 				httpError(w, r, fmt.Errorf("session out of date: existing version is greater"), http.StatusBadRequest)
 				return
 			}
