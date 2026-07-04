@@ -505,6 +505,11 @@ func handleSystem(w http.ResponseWriter, r *http.Request) {
 				httpError(w, r, fmt.Errorf("session out of date: existing version is greater"), http.StatusBadRequest)
 				return
 			}
+
+			if !savedata.ValidMigrators(system.AppliedMigrators, oldSystem.AppliedMigrators) {
+				httpError(w, r, fmt.Errorf("session out of date: migrators desynced"), http.StatusBadRequest)
+				return
+			}
 		}
 
 		err = savedata.UpdateSystem(db.Store, uuid, system)
