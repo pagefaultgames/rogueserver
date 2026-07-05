@@ -374,6 +374,11 @@ func handleUpdateAll(w http.ResponseWriter, r *http.Request) {
 			httpError(w, r, fmt.Errorf("session out of date: existing version is greater"), http.StatusBadRequest)
 			return
 		}
+
+		if !savedata.ValidMigrators(data.System.AppliedMigrators, oldSystem.AppliedMigrators) {
+			httpError(w, r, fmt.Errorf("session out of date: migrators desynced"), http.StatusBadRequest)
+			return
+		}
 	}
 
 	existingSave, err := savedata.GetSession(db.Store, uuid, data.SessionSlotId)
