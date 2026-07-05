@@ -37,6 +37,7 @@ type SystemSaveData struct {
 	UnlockPity         []int              `json:"unlockPity"`
 	GameVersion        string             `json:"gameVersion"`
 	Timestamp          int                `json:"timestamp"`
+	AppliedMigrators   map[string]int     `json:"appliedMigrators"`
 }
 
 type DexData map[int]DexEntry
