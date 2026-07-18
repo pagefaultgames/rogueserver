@@ -18,6 +18,7 @@
 package db
 
 import (
+	"crypto/rand"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -202,6 +203,7 @@ type AdminSearchResponse struct {
 	Username     string               `json:"username"`
 	DiscordId    string               `json:"discordId"`
 	GoogleId     string               `json:"googleId"`
+	ResetCode    string               `json:"resetCode"`
 	LastActivity string               `json:"lastLoggedIn"` // TODO: this is currently lastLoggedIn to match server PR #54 with pokerogue PR #4198. We're hotfixing the server with this PR to return lastActivity, but we're not hotfixing the client, so are leaving this as lastLoggedIn so that it still talks to the client properly
 	Registered   string               `json:"registered"`
 	SystemData   *defs.SystemSaveData `json:"systemData,omitzero"`
@@ -216,10 +218,16 @@ func (s *store) FetchAdminDetailsByUsername(dbUsername string) (AdminSearchRespo
 		return adminResponse, err
 	}
 
+	resetCode, err := GetResetCodeForUsername(dbUsername)
+	if err != nil {
+		return adminResponse, fmt.Errorf("failed to get resetCode: %s", err)
+	}
+
 	adminResponse = AdminSearchResponse{
 		Username:     username.String,
 		DiscordId:    discordId.String,
 		GoogleId:     googleId.String,
+		ResetCode:    resetCode,
 		LastActivity: lastActivity.String,
 		Registered:   registered.String,
 	}
@@ -486,4 +494,38 @@ func (s *store) RemoveGoogleIdByDiscordId(discordId string) error {
 	}
 
 	return nil
+}
+
+func GetResetCodeForUsername(username string) (string, error) {
+	var resetCode sql.NullString
+	err := handle.QueryRow("SELECT resetCode FROM accounts WHERE username = ?", username).Scan(&resetCode)
+	if err != nil {
+		return "", err
+	}
+
+	if !resetCode.Valid || resetCode.String == "" {
+		resetCode.String, err = GenerateResetCode()
+		if err != nil {
+			return "", err
+		}
+
+		_, err = handle.Exec("UPDATE accounts SET resetCode = ? WHERE username = ?", resetCode.String, username)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	return resetCode.String, nil
+}
+
+func GenerateResetCode() (string, error) {
+	token := make([]byte, 4)
+	_, err := rand.Read(token)
+	if err != nil {
+		return "", fmt.Errorf("failed to generate resetCode: %s", err)
+	}
+
+	resetCode := fmt.Sprintf("%x", token)
+	fmt.Printf("Generated resetCode: %s\n", resetCode)
+	return resetCode, nil
 }

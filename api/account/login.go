@@ -24,6 +24,8 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+
+	"github.com/pagefaultgames/rogueserver/db"
 )
 
 type LoginResponse GenericAuthResponse
@@ -61,6 +63,11 @@ func Login[T LoginStore](store T, username, password string) (LoginResponse, err
 	response.Token, err = GenerateTokenForUsername(store, username)
 	if err != nil {
 		return response, fmt.Errorf("failed to generate token: %s", err)
+	}
+
+	response.ResetCode, err = db.GetResetCodeForUsername(username)
+	if err != nil {
+		return response, fmt.Errorf("failed to generate resetCode: %s", err)
 	}
 
 	return response, nil

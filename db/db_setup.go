@@ -41,7 +41,8 @@ func setupDb(tx *sql.Tx) error {
 		       trainerId SMALLINT(5) UNSIGNED DEFAULT 0,
 		       secretId SMALLINT(5) UNSIGNED DEFAULT 0,
 		       discordId VARCHAR(32) UNIQUE DEFAULT NULL,
-		       googleId VARCHAR(32) UNIQUE DEFAULT NULL
+		       googleId VARCHAR(32) UNIQUE DEFAULT NULL,
+				 resetCode VARCHAR(8) DEFAULT NULL
 	       )`,
 		`CREATE INDEX IF NOT EXISTS accountsByActivity ON accounts (lastActivity)`,
 
