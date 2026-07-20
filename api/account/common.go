@@ -26,7 +26,6 @@ import (
 
 type GenericAuthResponse struct {
 	Token string `json:"token"`
-	ResetCode string `json:"resetCode"`
 }
 
 const (

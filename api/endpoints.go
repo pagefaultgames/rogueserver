@@ -65,13 +65,18 @@ func handleAccountInfo(w http.ResponseWriter, r *http.Request) {
 		httpError(w, r, err, http.StatusInternalServerError)
 		return
 	}
+	resetCode, err := db.GetResetCodeForUsername(username)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		httpError(w, r, err, http.StatusInternalServerError)
+		return
+	}
 
 	var hasAdminRole bool
 	if discordId != "" {
 		hasAdminRole, _ = account.Discord.IsUserDiscordAdmin(discordId, account.DiscordGuildID)
 	}
 
-	response, err := account.Info(db.Store, username, discordId, googleId, uuid, hasAdminRole)
+	response, err := account.Info(db.Store, username, discordId, googleId, uuid, hasAdminRole, resetCode)
 	if err != nil {
 		httpError(w, r, err, http.StatusInternalServerError)
 		return
