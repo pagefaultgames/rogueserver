@@ -355,7 +355,7 @@ func handleUpdateAll(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		minVerCmp, err := savedata.CompareGameVersion("1.12.0.4", data.System.GameVersion)
+		minVerCmp, err := savedata.CompareGameVersion("1.12.0.11", data.System.GameVersion)
 		if err != nil {
 			httpError(w, r, fmt.Errorf("failed to compare versions: %s", err), http.StatusBadRequest)
 			return
@@ -491,7 +491,7 @@ func handleSystem(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			minVerCmp, err := savedata.CompareGameVersion("1.12.0.4", system.GameVersion)
+			minVerCmp, err := savedata.CompareGameVersion("1.12.0.11", system.GameVersion)
 			if err != nil {
 				httpError(w, r, fmt.Errorf("failed to compare versions: %s", err), http.StatusBadRequest)
 				return
