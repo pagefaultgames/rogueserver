@@ -453,6 +453,15 @@ func handleSystem(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		versionCmp, cmpErr := savedata.CompareGameVersion("1.12.0.10", save.GameVersion)
+		if cmpErr != nil {
+			httpError(w, r, fmt.Errorf("failed to compare versions: %s", cmpErr), http.StatusBadRequest)
+			return
+		}
+		if (versionCmp == 1 && save.AppliedMigrators["1.12.0.10-removeInvalidStarterAndDexData"] > 0) {
+			save.GameVersion = "1.12.0.10"
+		}
+
 		writeJSON(w, r, save)
 	case "update":
 		if !active {
