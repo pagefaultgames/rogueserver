@@ -50,7 +50,7 @@ import (
 //
 // Returns `true` if the IDs are valid or were successfully created. `false` means an http error was
 // generated and the caller should return immediately.
-func validateOrCreateIds(w http.ResponseWriter, r *http.Request, uuid []byte, systemData *defs.SystemSaveData) bool {
+func validateOrCreateIds(w http.ResponseWriter, r *http.Request, uuid []byte, systemData defs.SystemSaveData) bool {
 	storedTrainerId, storedSecretId, err := db.Store.FetchTrainerIds(uuid)
 	if err != nil {
 		httpError(w, r, err, http.StatusInternalServerError)
@@ -400,7 +400,7 @@ func handleUpdateAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !validateOrCreateIds(w, r, uuid, &data.System) {
+	if !validateOrCreateIds(w, r, uuid, data.System) {
 		return
 	}
 
@@ -514,7 +514,7 @@ func handleSystem(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if !validateOrCreateIds(w, r, uuid, &system) {
+		if !validateOrCreateIds(w, r, uuid, system) {
 			return
 		}
 
