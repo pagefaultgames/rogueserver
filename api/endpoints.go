@@ -46,7 +46,7 @@ import (
 // Helper method that validates the trainer and secret IDs in the system save data against the database's
 // stored values.
 // If the stored values are not present, it will create them using the provided system save data.
-// Otherwise, an http error will be generated and
+// Otherwise, an http error will be generated and the caller should return immediately.
 //
 // Returns `true` if the IDs are valid or were successfully created. `false` means an http error was
 // generated and the caller should return immediately.
@@ -72,6 +72,11 @@ func validateOrCreateIds(w http.ResponseWriter, r *http.Request, uuid []byte, sy
 	return true
 }
 
+// Helper method that ensures the client is sending a save with greater (or equal)
+// playtime than the existing save.
+//
+// Returns `true` if the IDs are valid or were successfully created. `false` means an http error was
+// generated and the caller should return immediately.
 func validatePlaytime(w http.ResponseWriter, r *http.Request, systemData defs.SystemSaveData, oldSystem defs.SystemSaveData) bool {
 	playtime, ok := systemData.GameStats.(map[string]interface{})["playTime"].(float64)
 	if !ok {
