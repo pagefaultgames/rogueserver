@@ -43,6 +43,89 @@ import (
 */
 // account
 
+// Helper method that validates the trainer and secret IDs in the system save data against the database's
+// stored values.
+// If the stored values are not present, it will create them using the provided system save data.
+// Otherwise, an http error will be generated and
+//
+// Returns `true` if the IDs are valid or were successfully created. `false` means an http error was
+// generated and the caller should return immediately.
+func validateOrCreateIds(w http.ResponseWriter, r *http.Request, uuid []byte, systemData *defs.SystemSaveData) bool {
+	storedTrainerId, storedSecretId, err := db.Store.FetchTrainerIds(uuid)
+	if err != nil {
+		httpError(w, r, err, http.StatusInternalServerError)
+		return false
+	}
+
+	if storedTrainerId > 0 || storedSecretId > 0 {
+		if systemData.TrainerId != storedTrainerId || systemData.SecretId != storedSecretId {
+			httpError(w, r, fmt.Errorf("session out of date: stored trainer or secret ID does not match"), http.StatusBadRequest)
+			return false
+		}
+	} else {
+		err = db.Store.UpdateTrainerIds(systemData.TrainerId, systemData.SecretId, uuid)
+		if err != nil {
+			httpError(w, r, err, http.StatusInternalServerError)
+			return false
+		}
+	}
+	return true
+}
+
+func validatePlaytime(w http.ResponseWriter, r *http.Request, systemData defs.SystemSaveData, oldSystem defs.SystemSaveData) bool {
+	playtime, ok := systemData.GameStats.(map[string]interface{})["playTime"].(float64)
+	if !ok {
+		httpError(w, r, fmt.Errorf("no playtime found"), http.StatusBadRequest)
+		return false
+	}
+
+	oldPlaytime, ok := oldSystem.GameStats.(map[string]interface{})["playTime"].(float64)
+	if !ok {
+		httpError(w, r, fmt.Errorf("no playtime found"), http.StatusBadRequest)
+		return false
+	}
+
+	if playtime < oldPlaytime {
+		httpError(w, r, fmt.Errorf("session out of date: existing playtime is greater"), http.StatusBadRequest)
+		return false
+	}
+	return true
+}
+
+// Helper method for validating the game version and applied migrators
+//
+// Returns `true` if the data is valid.
+//
+//	`false` means an http error was generated and the caller should return immediately.
+func validateSystemVersion(w http.ResponseWriter, r *http.Request, systemData defs.SystemSaveData, oldSystem defs.SystemSaveData) bool {
+	minVerCmp, err := savedata.CompareGameVersion("1.12.0.10", systemData.GameVersion)
+	if err != nil {
+		httpError(w, r, fmt.Errorf("failed to compare versions: %s", err), http.StatusBadRequest)
+		return false
+	}
+	if minVerCmp > 0 {
+		httpError(w, r, fmt.Errorf("session out of date: save version below minimum game version"), http.StatusBadRequest)
+		return false
+	}
+
+	saveVerCmp, err := savedata.CompareGameVersion(oldSystem.GameVersion, systemData.GameVersion)
+	if err != nil {
+		httpError(w, r, fmt.Errorf("failed to compare versions: %s", err), http.StatusBadRequest)
+		return false
+	}
+	if saveVerCmp > 0 {
+		httpError(w, r, fmt.Errorf("session out of date: existing version is greater"), http.StatusBadRequest)
+		return false
+	}
+
+	if !savedata.ValidMigrators(systemData.AppliedMigrators, oldSystem.AppliedMigrators) {
+		httpError(w, r, fmt.Errorf("session out of date: migrators desynced"), http.StatusBadRequest)
+		return false
+	}
+
+	return true
+}
+
 func handleAccountInfo(w http.ResponseWriter, r *http.Request) {
 	uuid, err := uuidFromRequest(r)
 	if err != nil {
@@ -312,23 +395,8 @@ func handleUpdateAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	storedTrainerId, storedSecretId, err := db.Store.FetchTrainerIds(uuid)
-	if err != nil {
-		httpError(w, r, err, http.StatusInternalServerError)
+	if !validateOrCreateIds(w, r, uuid, &data.System) {
 		return
-	}
-
-	if storedTrainerId > 0 || storedSecretId > 0 {
-		if data.System.TrainerId != storedTrainerId || data.System.SecretId != storedSecretId {
-			httpError(w, r, fmt.Errorf("session out of date: stored trainer or secret ID does not match"), http.StatusBadRequest)
-			return
-		}
-	} else {
-		err = db.Store.UpdateTrainerIds(data.System.TrainerId, data.System.SecretId, uuid)
-		if err != nil {
-			httpError(w, r, err, http.StatusInternalServerError)
-			return
-		}
 	}
 
 	oldSystem, err := savedata.GetSystem(db.Store, uuid)
@@ -338,45 +406,10 @@ func handleUpdateAll(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else {
-		playtime, ok := data.System.GameStats.(map[string]interface{})["playTime"].(float64)
-		if !ok {
-			httpError(w, r, fmt.Errorf("no playtime found"), http.StatusBadRequest)
+		if !validatePlaytime(w, r, data.System, oldSystem) {
 			return
 		}
-
-		oldPlaytime, ok := oldSystem.GameStats.(map[string]interface{})["playTime"].(float64)
-		if !ok {
-			httpError(w, r, fmt.Errorf("no playtime found"), http.StatusBadRequest)
-			return
-		}
-
-		if playtime < oldPlaytime {
-			httpError(w, r, fmt.Errorf("session out of date: existing playtime is greater"), http.StatusBadRequest)
-			return
-		}
-
-		minVerCmp, err := savedata.CompareGameVersion("1.12.0.10", data.System.GameVersion)
-		if err != nil {
-			httpError(w, r, fmt.Errorf("failed to compare versions: %s", err), http.StatusBadRequest)
-			return
-		}
-		if minVerCmp > 0 {
-			httpError(w, r, fmt.Errorf("session out of date: save version below minimum game version"), http.StatusBadRequest)
-			return
-		}
-
-		saveVerCmp, err := savedata.CompareGameVersion(oldSystem.GameVersion, data.System.GameVersion)
-		if err != nil {
-			httpError(w, r, fmt.Errorf("failed to compare versions: %s", err), http.StatusBadRequest)
-			return
-		}
-		if saveVerCmp > 0 {
-			httpError(w, r, fmt.Errorf("session out of date: existing version is greater"), http.StatusBadRequest)
-			return
-		}
-
-		if !savedata.ValidMigrators(data.System.AppliedMigrators, oldSystem.AppliedMigrators) {
-			httpError(w, r, fmt.Errorf("session out of date: migrators desynced"), http.StatusBadRequest)
+		if !validateSystemVersion(w, r, data.System, oldSystem) {
 			return
 		}
 	}
@@ -458,7 +491,7 @@ func handleSystem(w http.ResponseWriter, r *http.Request) {
 			httpError(w, r, fmt.Errorf("failed to compare versions: %s", cmpErr), http.StatusBadRequest)
 			return
 		}
-		if (versionCmp == 1 && save.AppliedMigrators["1.12.0.10-removeInvalidStarterAndDexData"] > 0) {
+		if versionCmp == 1 && save.AppliedMigrators["1.12.0.10-removeInvalidStarterAndDexData"] > 0 {
 			save.GameVersion = "1.12.0.10"
 		}
 
@@ -476,6 +509,10 @@ func handleSystem(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		if !validateOrCreateIds(w, r, uuid, &system) {
+			return
+		}
+
 		oldSystem, err := savedata.GetSystem(db.Store, uuid)
 		if err != nil {
 			if !errors.Is(err, savedata.ErrSaveNotExist) {
@@ -483,45 +520,10 @@ func handleSystem(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		} else {
-			playtime, ok := system.GameStats.(map[string]interface{})["playTime"].(float64)
-			if !ok {
-				httpError(w, r, fmt.Errorf("no playtime found"), http.StatusBadRequest)
+			if !validatePlaytime(w, r, system, oldSystem) {
 				return
 			}
-
-			oldPlaytime, ok := oldSystem.GameStats.(map[string]interface{})["playTime"].(float64)
-			if !ok {
-				httpError(w, r, fmt.Errorf("no playtime found"), http.StatusBadRequest)
-				return
-			}
-
-			if playtime < oldPlaytime {
-				httpError(w, r, fmt.Errorf("session out of date: existing playtime is greater"), http.StatusBadRequest)
-				return
-			}
-
-			minVerCmp, err := savedata.CompareGameVersion("1.12.0.10", system.GameVersion)
-			if err != nil {
-				httpError(w, r, fmt.Errorf("failed to compare versions: %s", err), http.StatusBadRequest)
-				return
-			}
-			if minVerCmp > 0 {
-				httpError(w, r, fmt.Errorf("session out of date: save version below minimum game version"), http.StatusBadRequest)
-				return
-			}
-
-			saveVerCmp, err := savedata.CompareGameVersion(oldSystem.GameVersion, system.GameVersion)
-			if err != nil {
-				httpError(w, r, fmt.Errorf("failed to compare versions: %s", err), http.StatusBadRequest)
-				return
-			}
-			if saveVerCmp > 0 {
-				httpError(w, r, fmt.Errorf("session out of date: existing version is greater"), http.StatusBadRequest)
-				return
-			}
-
-			if !savedata.ValidMigrators(system.AppliedMigrators, oldSystem.AppliedMigrators) {
-				httpError(w, r, fmt.Errorf("session out of date: migrators desynced"), http.StatusBadRequest)
+			if !validateSystemVersion(w, r, system, oldSystem) {
 				return
 			}
 		}
