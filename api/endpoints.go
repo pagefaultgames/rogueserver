@@ -36,6 +36,27 @@ import (
 	"github.com/pagefaultgames/rogueserver/defs"
 )
 
+// Issued when playtime is missing from the save data, indicating corruption or save tampering
+var ErrNoPlaytime = errors.New("no playtime found")
+
+// Issued when the tid/sid does not match database, indicating corruption or save tampering
+var ErrIdMismatch = errors.New("session out of date: stored trainer or secret ID does not match")
+
+// Issued when the playtime in the client save is lower than the server save, indicating an outdated save
+var ErrGreaterPlaytime = errors.New("session out of date: existing playtime is greater")
+
+// Issued when the client save version is lower than the minimum game version, indicating outdated client code
+var ErrVersionTooLow = errors.New("session out of date: save version below minimum game version")
+
+// Issued when the client save version is lower than the existing save version, indicating outdated client code
+var ErrExistingVersionGreater = errors.New("session out of date: existing version is greater")
+
+// Issued when version comparison fails, indicating a missing or malformed version string in the save data
+var ErrVersionCompare = errors.New("failed to compare versions")
+
+// Issued when migrator validation fails
+var ErrMigratorsDesynced = errors.New("session out of date: migrators desynced")
+
 /*
 	The caller of endpoint handler functions are responsible for extracting the necessary data from the request.
 	Handler functions are responsible for checking the validity of this data and returning a result or error.
@@ -48,87 +69,72 @@ import (
 // If the stored values are not present, it will create them using the provided system save data.
 // Otherwise, an http error will be generated and the caller should return immediately.
 //
-// Returns `true` if the IDs are valid or were successfully created. `false` means an http error was
-// generated and the caller should return immediately.
-func validateOrCreateIds(w http.ResponseWriter, r *http.Request, uuid []byte, systemData defs.SystemSaveData) bool {
+// Returns `nil` if the IDs are valid or were successfully created, otherwise returns an error indicating the issue.
+func validateOrCreateIds(w http.ResponseWriter, r *http.Request, uuid []byte, systemData defs.SystemSaveData) (err error, code int) {
 	storedTrainerId, storedSecretId, err := db.Store.FetchTrainerIds(uuid)
 	if err != nil {
-		httpError(w, r, err, http.StatusInternalServerError)
-		return false
+		return err, http.StatusInternalServerError
 	}
 
 	if storedTrainerId > 0 || storedSecretId > 0 {
 		if systemData.TrainerId != storedTrainerId || systemData.SecretId != storedSecretId {
-			httpError(w, r, fmt.Errorf("session out of date: stored trainer or secret ID does not match"), http.StatusBadRequest)
-			return false
+			return err, http.StatusBadRequest
 		}
 	} else {
 		err = db.Store.UpdateTrainerIds(systemData.TrainerId, systemData.SecretId, uuid)
 		if err != nil {
-			httpError(w, r, err, http.StatusInternalServerError)
-			return false
+			return err, http.StatusInternalServerError
 		}
 	}
-	return true
+	return nil, http.StatusOK
 }
 
 // Helper method that ensures the client is sending a save with greater (or equal)
 // playtime than the existing save.
 //
-// Returns `true` if the IDs are valid or were successfully created. `false` means an http error was
-// generated and the caller should return immediately.
-func validatePlaytime(w http.ResponseWriter, r *http.Request, systemData defs.SystemSaveData, oldSystem defs.SystemSaveData) bool {
+// Returns `nil` if the playtime is valid, otherwise returns an error indicating the issue.
+func validatePlaytime(w http.ResponseWriter, r *http.Request, systemData defs.SystemSaveData, oldSystem defs.SystemSaveData) error {
 	playtime, ok := systemData.GameStats.(map[string]interface{})["playTime"].(float64)
 	if !ok {
-		httpError(w, r, fmt.Errorf("no playtime found"), http.StatusBadRequest)
-		return false
+		return ErrNoPlaytime
 	}
 
 	oldPlaytime, ok := oldSystem.GameStats.(map[string]interface{})["playTime"].(float64)
 	if !ok {
-		httpError(w, r, fmt.Errorf("no playtime found"), http.StatusBadRequest)
-		return false
+		return ErrNoPlaytime
 	}
 
 	if playtime < oldPlaytime {
-		httpError(w, r, fmt.Errorf("session out of date: existing playtime is greater"), http.StatusBadRequest)
-		return false
+		return ErrGreaterPlaytime
 	}
-	return true
+	return nil
 }
 
 // Helper method for validating the game version and applied migrators
 //
-// Returns `true` if the data is valid.
-//
-//	`false` means an http error was generated and the caller should return immediately.
-func validateSystemVersion(w http.ResponseWriter, r *http.Request, systemData defs.SystemSaveData, oldSystem defs.SystemSaveData) bool {
+// Returns `nil` if the version and migrators are valid, otherwise returns an error indicating the issue.
+func validateSystemVersion(w http.ResponseWriter, r *http.Request, systemData defs.SystemSaveData, oldSystem defs.SystemSaveData) error {
 	minVerCmp, err := savedata.CompareGameVersion("1.12.0.10", systemData.GameVersion)
 	if err != nil {
-		httpError(w, r, fmt.Errorf("failed to compare versions: %s", err), http.StatusBadRequest)
-		return false
+		return fmt.Errorf("%w: %w", ErrVersionCompare, err)
 	}
 	if minVerCmp > 0 {
-		httpError(w, r, fmt.Errorf("session out of date: save version below minimum game version"), http.StatusBadRequest)
-		return false
+		return ErrVersionTooLow
 	}
 
 	saveVerCmp, err := savedata.CompareGameVersion(oldSystem.GameVersion, systemData.GameVersion)
 	if err != nil {
-		httpError(w, r, fmt.Errorf("failed to compare versions: %s", err), http.StatusBadRequest)
-		return false
+		return fmt.Errorf("%w: %w", ErrVersionCompare, err)
 	}
 	if saveVerCmp > 0 {
-		httpError(w, r, fmt.Errorf("session out of date: existing version is greater"), http.StatusBadRequest)
-		return false
+		return ErrExistingVersionGreater
 	}
 
 	if !savedata.ValidMigrators(systemData.AppliedMigrators, oldSystem.AppliedMigrators) {
-		httpError(w, r, fmt.Errorf("session out of date: migrators desynced"), http.StatusBadRequest)
-		return false
+		return ErrMigratorsDesynced
 	}
 
-	return true
+	return nil
 }
 
 func handleAccountInfo(w http.ResponseWriter, r *http.Request) {
@@ -400,7 +406,9 @@ func handleUpdateAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !validateOrCreateIds(w, r, uuid, data.System) {
+	err, code := validateOrCreateIds(w, r, uuid, data.System)
+	if err != nil {
+		httpError(w, r, err, code)
 		return
 	}
 
@@ -411,10 +419,15 @@ func handleUpdateAll(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else {
-		if !validatePlaytime(w, r, data.System, oldSystem) {
+		err = validatePlaytime(w, r, data.System, oldSystem)
+		if err != nil {
+			httpError(w, r, err, http.StatusBadRequest)
 			return
 		}
-		if !validateSystemVersion(w, r, data.System, oldSystem) {
+
+		err = validateSystemVersion(w, r, data.System, oldSystem)
+		if err != nil {
+			httpError(w, r, err, http.StatusBadRequest)
 			return
 		}
 	}
@@ -514,7 +527,9 @@ func handleSystem(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if !validateOrCreateIds(w, r, uuid, system) {
+		err, code := validateOrCreateIds(w, r, uuid, system)
+		if err != nil {
+			httpError(w, r, err, code)
 			return
 		}
 
@@ -525,10 +540,14 @@ func handleSystem(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		} else {
-			if !validatePlaytime(w, r, system, oldSystem) {
+			err = validatePlaytime(w, r, system, oldSystem)
+			if err != nil {
+				httpError(w, r, err, http.StatusBadRequest)
 				return
 			}
-			if !validateSystemVersion(w, r, system, oldSystem) {
+			err = validateSystemVersion(w, r, system, oldSystem)
+			if err != nil {
+				httpError(w, r, err, http.StatusBadRequest)
 				return
 			}
 		}
