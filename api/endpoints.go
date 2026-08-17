@@ -70,7 +70,7 @@ var ErrMigratorsDesynced = errors.New("session out of date: migrators desynced")
 // Otherwise, an http error will be generated and the caller should return immediately.
 //
 // Returns `nil` if the IDs are valid or were successfully created, otherwise returns an error indicating the issue.
-func validateOrCreateIds(w http.ResponseWriter, r *http.Request, uuid []byte, systemData defs.SystemSaveData) (code int, err error) {
+func validateOrCreateIds(w http.ResponseWriter, r *http.Request, uuid []byte, systemData defs.SystemSaveData) (int, error) {
 	storedTrainerId, storedSecretId, err := db.Store.FetchTrainerIds(uuid)
 	if err != nil {
 		return http.StatusInternalServerError, err
