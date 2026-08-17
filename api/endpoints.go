@@ -70,23 +70,23 @@ var ErrMigratorsDesynced = errors.New("session out of date: migrators desynced")
 // Otherwise, an http error will be generated and the caller should return immediately.
 //
 // Returns `nil` if the IDs are valid or were successfully created, otherwise returns an error indicating the issue.
-func validateOrCreateIds(w http.ResponseWriter, r *http.Request, uuid []byte, systemData defs.SystemSaveData) (err error, code int) {
+func validateOrCreateIds(w http.ResponseWriter, r *http.Request, uuid []byte, systemData defs.SystemSaveData) (code int, err error) {
 	storedTrainerId, storedSecretId, err := db.Store.FetchTrainerIds(uuid)
 	if err != nil {
-		return err, http.StatusInternalServerError
+		return http.StatusInternalServerError, err
 	}
 
 	if storedTrainerId > 0 || storedSecretId > 0 {
 		if systemData.TrainerId != storedTrainerId || systemData.SecretId != storedSecretId {
-			return err, http.StatusBadRequest
+			return http.StatusBadRequest, ErrIdMismatch
 		}
 	} else {
 		err = db.Store.UpdateTrainerIds(systemData.TrainerId, systemData.SecretId, uuid)
 		if err != nil {
-			return err, http.StatusInternalServerError
+			return http.StatusInternalServerError, err
 		}
 	}
-	return nil, http.StatusOK
+	return http.StatusOK, nil
 }
 
 // Helper method that ensures the client is sending a save with greater (or equal)
@@ -406,7 +406,7 @@ func handleUpdateAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err, code := validateOrCreateIds(w, r, uuid, data.System)
+	code, err := validateOrCreateIds(w, r, uuid, data.System)
 	if err != nil {
 		httpError(w, r, err, code)
 		return
@@ -527,7 +527,7 @@ func handleSystem(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err, code := validateOrCreateIds(w, r, uuid, system)
+		code, err := validateOrCreateIds(w, r, uuid, system)
 		if err != nil {
 			httpError(w, r, err, code)
 			return
