@@ -70,7 +70,7 @@ var ErrMigratorsDesynced = errors.New("session out of date: migrators desynced")
 // Otherwise, an http error will be generated and the caller should return immediately.
 //
 // Returns `nil` if the IDs are valid or were successfully created, otherwise returns an error indicating the issue.
-func validateOrCreateIds(w http.ResponseWriter, r *http.Request, uuid []byte, systemData defs.SystemSaveData) (int, error) {
+func validateOrCreateIds(uuid []byte, systemData defs.SystemSaveData) (int, error) {
 	storedTrainerId, storedSecretId, err := db.Store.FetchTrainerIds(uuid)
 	if err != nil {
 		return http.StatusInternalServerError, err
@@ -93,7 +93,7 @@ func validateOrCreateIds(w http.ResponseWriter, r *http.Request, uuid []byte, sy
 // playtime than the existing save.
 //
 // Returns `nil` if the playtime is valid, otherwise returns an error indicating the issue.
-func validatePlaytime(w http.ResponseWriter, r *http.Request, systemData defs.SystemSaveData, oldSystem defs.SystemSaveData) error {
+func validatePlaytime(systemData defs.SystemSaveData, oldSystem defs.SystemSaveData) error {
 	playtime, ok := systemData.GameStats.(map[string]interface{})["playTime"].(float64)
 	if !ok {
 		return ErrNoPlaytime
@@ -113,7 +113,7 @@ func validatePlaytime(w http.ResponseWriter, r *http.Request, systemData defs.Sy
 // Helper method for validating the game version and applied migrators
 //
 // Returns `nil` if the version and migrators are valid, otherwise returns an error indicating the issue.
-func validateSystemVersion(w http.ResponseWriter, r *http.Request, systemData defs.SystemSaveData, oldSystem defs.SystemSaveData) error {
+func validateSystemVersion(systemData defs.SystemSaveData, oldSystem defs.SystemSaveData) error {
 	minVerCmp, err := savedata.CompareGameVersion("1.12.0.10", systemData.GameVersion)
 	if err != nil {
 		return fmt.Errorf("%w: %w", ErrVersionCompare, err)
@@ -406,7 +406,7 @@ func handleUpdateAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	code, err := validateOrCreateIds(w, r, uuid, data.System)
+	code, err := validateOrCreateIds(uuid, data.System)
 	if err != nil {
 		httpError(w, r, err, code)
 		return
@@ -419,13 +419,13 @@ func handleUpdateAll(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else {
-		err = validatePlaytime(w, r, data.System, oldSystem)
+		err = validatePlaytime(data.System, oldSystem)
 		if err != nil {
 			httpError(w, r, err, http.StatusBadRequest)
 			return
 		}
 
-		err = validateSystemVersion(w, r, data.System, oldSystem)
+		err = validateSystemVersion(data.System, oldSystem)
 		if err != nil {
 			httpError(w, r, err, http.StatusBadRequest)
 			return
@@ -527,7 +527,7 @@ func handleSystem(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		code, err := validateOrCreateIds(w, r, uuid, system)
+		code, err := validateOrCreateIds(uuid, system)
 		if err != nil {
 			httpError(w, r, err, code)
 			return
@@ -540,12 +540,12 @@ func handleSystem(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		} else {
-			err = validatePlaytime(w, r, system, oldSystem)
+			err = validatePlaytime(system, oldSystem)
 			if err != nil {
 				httpError(w, r, err, http.StatusBadRequest)
 				return
 			}
-			err = validateSystemVersion(w, r, system, oldSystem)
+			err = validateSystemVersion(system, oldSystem)
 			if err != nil {
 				httpError(w, r, err, http.StatusBadRequest)
 				return
