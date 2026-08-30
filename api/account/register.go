@@ -20,10 +20,13 @@ package account
 import (
 	"crypto/rand"
 	"fmt"
+
+	"github.com/pagefaultgames/rogueserver/db"
 )
 
 // Interface for database operations needed for registration.
 type RegisterStore interface {
+	IsUsernameReserved(uuid []byte, username string) (bool, error)
 	AddAccountRecord(uuid []byte, username string, passwordHash []byte, salt []byte) error
 }
 
@@ -37,8 +40,16 @@ func Register[T RegisterStore](store T, username, password string) error {
 		return fmt.Errorf("invalid password")
 	}
 
+	reserved, err := store.IsUsernameReserved(nil, username)
+	if err != nil {
+		return fmt.Errorf("failed to check username availability: %s", err)
+	}
+	if reserved {
+		return db.ErrUsernameReserved
+	}
+
 	uuid := make([]byte, UUIDSize)
-	_, err := rand.Read(uuid)
+	_, err = rand.Read(uuid)
 	if err != nil {
 		return fmt.Errorf("failed to generate uuid: %s", err)
 	}
