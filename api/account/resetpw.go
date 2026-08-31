@@ -41,11 +41,7 @@ func ResetPW[T ResetPWStore](store T, username string, resetCode string, passwor
 	}
 
 	storedResetCode, err := db.Store.GetResetCodeForUsername(username)
-	if err != nil {
-		return fmt.Errorf("failed to get reset code: %s", err)
-	}
-
-	if storedResetCode != resetCode {
+	if err != nil || storedResetCode != resetCode {
 		return fmt.Errorf("username and reset code do not match")
 	}
 
