@@ -218,7 +218,7 @@ func (s *store) FetchAdminDetailsByUsername(dbUsername string) (AdminSearchRespo
 		return adminResponse, err
 	}
 
-	resetCode, err := GetResetCodeForUsername(dbUsername)
+	resetCode, err := s.GetResetCodeForUsername(dbUsername)
 	if err != nil {
 		return adminResponse, fmt.Errorf("failed to get resetCode: %s", err)
 	}
@@ -496,7 +496,7 @@ func (s *store) RemoveGoogleIdByDiscordId(discordId string) error {
 	return nil
 }
 
-func GetResetCodeForUsername(username string) (string, error) {
+func (s *store) GetResetCodeForUsername(username string) (string, error) {
 	var resetCode sql.NullString
 	err := handle.QueryRow("SELECT resetCode FROM accounts WHERE username = ?", username).Scan(&resetCode)
 	if err != nil {
@@ -504,7 +504,7 @@ func GetResetCodeForUsername(username string) (string, error) {
 	}
 
 	if !resetCode.Valid || resetCode.String == "" {
-		resetCode.String, err = GenerateResetCode()
+		resetCode.String, err = s.GenerateResetCode()
 		if err != nil {
 			return "", err
 		}
@@ -518,7 +518,7 @@ func GetResetCodeForUsername(username string) (string, error) {
 	return resetCode.String, nil
 }
 
-func GenerateResetCode() (string, error) {
+func (s *store) GenerateResetCode() (string, error) {
 	token := make([]byte, 4)
 	_, err := rand.Read(token)
 	if err != nil {
