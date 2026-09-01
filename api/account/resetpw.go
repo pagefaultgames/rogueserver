@@ -40,8 +40,8 @@ func ResetPW[T ResetPWStore](store T, username string, resetCode string, passwor
 		return fmt.Errorf("failed to generate salt: %s", err)
 	}
 
-	storedResetCode, err := db.Store.GetResetCodeForUsername(username)
-	if err != nil || storedResetCode != resetCode {
+	storedResetCode, err := db.Store.GetResetCodeForUsername(username, false)
+	if err != nil || storedResetCode != resetCode || storedResetCode == "" {
 		return fmt.Errorf("username and reset code do not match")
 	}
 

@@ -65,7 +65,7 @@ func handleAccountInfo(w http.ResponseWriter, r *http.Request) {
 		httpError(w, r, err, http.StatusInternalServerError)
 		return
 	}
-	resetCode, err := db.Store.GetResetCodeForUsername(username)
+	resetCode, err := db.Store.GetResetCodeForUsername(username, true)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		httpError(w, r, err, http.StatusInternalServerError)
 		return
