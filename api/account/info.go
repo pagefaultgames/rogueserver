@@ -23,6 +23,7 @@ type InfoResponse struct {
 	GoogleId        string `json:"googleId"`
 	LastSessionSlot int    `json:"lastSessionSlot"`
 	HasAdminRole    bool   `json:"hasAdminRole"`
+	ResetCode		 string `json:"resetCode"`
 }
 
 type InfoStore interface {
@@ -30,7 +31,7 @@ type InfoStore interface {
 }
 
 // /account/info - get account info
-func Info[T InfoStore](store T, username string, discordId string, googleId string, uuid []byte, hasAdminRole bool) (InfoResponse, error) {
+func Info[T InfoStore](store T, username string, discordId string, googleId string, uuid []byte, hasAdminRole bool, resetCode string) (InfoResponse, error) {
 	slot, _ := store.GetLatestSessionSaveDataSlot(uuid)
 	response := InfoResponse{
 		Username:        username,
@@ -38,6 +39,7 @@ func Info[T InfoStore](store T, username string, discordId string, googleId stri
 		DiscordId:       discordId,
 		GoogleId:        googleId,
 		HasAdminRole:    hasAdminRole,
+		ResetCode:       resetCode,
 	}
 	return response, nil
 }

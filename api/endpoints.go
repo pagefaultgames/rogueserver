@@ -159,13 +159,18 @@ func handleAccountInfo(w http.ResponseWriter, r *http.Request) {
 		httpError(w, r, err, http.StatusInternalServerError)
 		return
 	}
+	resetCode, err := db.Store.GetResetCodeForUsername(username, true)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		httpError(w, r, err, http.StatusInternalServerError)
+		return
+	}
 
 	var hasAdminRole bool
 	if discordId != "" {
 		hasAdminRole, _ = account.Discord.IsUserDiscordAdmin(discordId, account.DiscordGuildID)
 	}
 
-	response, err := account.Info(db.Store, username, discordId, googleId, uuid, hasAdminRole)
+	response, err := account.Info(db.Store, username, discordId, googleId, uuid, hasAdminRole, resetCode)
 	if err != nil {
 		httpError(w, r, err, http.StatusInternalServerError)
 		return
@@ -221,6 +226,25 @@ func handleAccountChangePW(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, r, response)
+}
+
+func handleAccountResetPW(w http.ResponseWriter, r *http.Request) {
+    err := account.ResetPW(
+        db.Store,
+        r.PostFormValue("username"),
+        r.PostFormValue("resetCode"),
+        r.PostFormValue("password"),
+    )
+    if err != nil {
+        if err.Error() == "invalid password" || err.Error() == "username and reset code do not match" {
+            httpError(w, r, err, http.StatusBadRequest)
+            return
+        }
+        httpError(w, r, err, http.StatusInternalServerError)
+        return
+    }
+
+    w.WriteHeader(http.StatusOK)
 }
 
 func handleAccountLogout(w http.ResponseWriter, r *http.Request) {
