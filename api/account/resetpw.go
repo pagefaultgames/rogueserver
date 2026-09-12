@@ -59,5 +59,8 @@ func ResetPW[T ResetPWStore](store T, username string, resetCode string, passwor
 		return fmt.Errorf("failed to add account record: %s", err)
 	}
 
+	// Generate a new reset code for the user after successfully resetting the password
+	db.Store.GenerateResetCode(username)
+
 	return nil
 }

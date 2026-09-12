@@ -507,21 +507,16 @@ func (s *store) GetResetCodeForUsername(username string, createIfMissing bool) (
 		if !createIfMissing {
 			return "", nil
 		}
-		resetCode.String, err = s.GenerateResetCode()
+		resetCode.String, err = s.GenerateResetCode(username)
 		if err != nil {
 			return "Failed to generate code", err
-		}
-
-		_, err = handle.Exec("UPDATE accounts SET resetCode = ? WHERE username = ?", resetCode.String, username)
-		if err != nil {
-			return "Failed to update code", err
 		}
 	}
 
 	return resetCode.String, nil
 }
 
-func (s *store) GenerateResetCode() (string, error) {
+func (s *store) GenerateResetCode(username string) (string, error) {
 	token := make([]byte, 4)
 	_, err := rand.Read(token)
 	if err != nil {
@@ -529,6 +524,10 @@ func (s *store) GenerateResetCode() (string, error) {
 	}
 
 	resetCode := fmt.Sprintf("%x", token)
-	fmt.Printf("Generated resetCode: %s\n", resetCode)
+
+	_, err = handle.Exec("UPDATE accounts SET resetCode = ? WHERE username = ?", resetCode, username)
+	if err != nil {
+		return "Failed to update code", err
+	}
 	return resetCode, nil
 }
