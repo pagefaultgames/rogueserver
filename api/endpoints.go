@@ -36,26 +36,28 @@ import (
 	"github.com/pagefaultgames/rogueserver/defs"
 )
 
-// Issued when playtime is missing from the save data, indicating corruption or save tampering
-var ErrNoPlaytime = errors.New("no playtime found")
+var (
+	// Issued when playtime is missing from the save data, indicating corruption or save tampering
+	ErrNoPlaytime = errors.New("no playtime found")
 
-// Issued when the tid/sid does not match database, indicating corruption or save tampering
-var ErrIdMismatch = errors.New("session out of date: stored trainer or secret ID does not match")
+	// Issued when the tid/sid does not match database, indicating corruption or save tampering
+	ErrIdMismatch = errors.New("session out of date: stored trainer or secret ID does not match")
 
-// Issued when the playtime in the client save is lower than the server save, indicating an outdated save
-var ErrGreaterPlaytime = errors.New("session out of date: existing playtime is greater")
+	// Issued when the playtime in the client save is lower than the server save, indicating an outdated save
+	ErrGreaterPlaytime = errors.New("session out of date: existing playtime is greater")
 
-// Issued when the client save version is lower than the minimum game version, indicating outdated client code
-var ErrVersionTooLow = errors.New("session out of date: save version below minimum game version")
+	// Issued when the client save version is lower than the minimum game version, indicating outdated client code
+	ErrVersionTooLow = errors.New("session out of date: save version below minimum game version")
 
-// Issued when the client save version is lower than the existing save version, indicating outdated client code
-var ErrExistingVersionGreater = errors.New("session out of date: existing version is greater")
+	// Issued when the client save version is lower than the existing save version, indicating outdated client code
+	ErrExistingVersionGreater = errors.New("session out of date: existing version is greater")
 
-// Issued when version comparison fails, indicating a missing or malformed version string in the save data
-var ErrVersionCompare = errors.New("failed to compare versions")
+	// Issued when version comparison fails, indicating a missing or malformed version string in the save data
+	ErrVersionCompare = errors.New("failed to compare versions")
 
-// Issued when migrator validation fails
-var ErrMigratorsDesynced = errors.New("session out of date: migrators desynced")
+	// Issued when migrator validation fails
+	ErrMigratorsDesynced = errors.New("session out of date: migrators desynced")
+)
 
 /*
 	The caller of endpoint handler functions are responsible for extracting the necessary data from the request.
@@ -94,12 +96,12 @@ func validateOrCreateIds(uuid []byte, systemData defs.SystemSaveData) (int, erro
 //
 // Returns `nil` if the playtime is valid, otherwise returns an error indicating the issue.
 func validatePlaytime(systemData defs.SystemSaveData, oldSystem defs.SystemSaveData) error {
-	playtime, ok := systemData.GameStats.(map[string]interface{})["playTime"].(float64)
+	playtime, ok := systemData.GameStats.(map[string]any)["playTime"].(float64)
 	if !ok {
 		return ErrNoPlaytime
 	}
 
-	oldPlaytime, ok := oldSystem.GameStats.(map[string]interface{})["playTime"].(float64)
+	oldPlaytime, ok := oldSystem.GameStats.(map[string]any)["playTime"].(float64)
 	if !ok {
 		return ErrNoPlaytime
 	}
@@ -111,6 +113,8 @@ func validatePlaytime(systemData defs.SystemSaveData, oldSystem defs.SystemSaveD
 }
 
 // Helper method for validating the game version and applied migrators
+//
+// Guard calls with `!defs.IsBeta` so this function is stripped from beta builds.
 //
 // Returns `nil` if the version and migrators are valid, otherwise returns an error indicating the issue.
 func validateSystemVersion(systemData defs.SystemSaveData, oldSystem defs.SystemSaveData) error {
@@ -425,10 +429,12 @@ func handleUpdateAll(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err = validateSystemVersion(data.System, oldSystem)
-		if err != nil {
-			httpError(w, r, err, http.StatusBadRequest)
-			return
+		if !defs.IsBeta {
+			err = validateSystemVersion(data.System, oldSystem)
+			if err != nil {
+				httpError(w, r, err, http.StatusBadRequest)
+				return
+			}
 		}
 	}
 
@@ -545,10 +551,12 @@ func handleSystem(w http.ResponseWriter, r *http.Request) {
 				httpError(w, r, err, http.StatusBadRequest)
 				return
 			}
-			err = validateSystemVersion(system, oldSystem)
-			if err != nil {
-				httpError(w, r, err, http.StatusBadRequest)
-				return
+			if !defs.IsBeta {
+				err = validateSystemVersion(system, oldSystem)
+				if err != nil {
+					httpError(w, r, err, http.StatusBadRequest)
+					return
+				}
 			}
 		}
 

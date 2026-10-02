@@ -15,26 +15,33 @@ jobs:
       contents: read
   build:
     needs: changes
-    if: ${{ needs.changes.outputs.ci == 'true' }} && github.repository == 'pagefaultgames/rogueserver'
-    name: Build (${{ matrix.os_name }})
+    if: needs.changes.outputs.ci == 'true' && github.repository == 'pagefaultgames/rogueserver'
+    name: Build (${{ matrix.platform.os_name }}, ${{ matrix.variant.name }})
     env:
       GO_VERSION: 1.22
-      GOOS: ${{ matrix.os_name }}
-      GOARCH: ${{ matrix.arch }}
-    runs-on: ${{ matrix.os }}
+      GOOS: ${{ matrix.platform.os_name }}
+      GOARCH: ${{ matrix.platform.arch }}
+    runs-on: ${{ matrix.platform.os }}
     strategy:
       fail-fast: false
       matrix:
-        include:
+        platform:
           - os: ubuntu-latest
             os_name: linux
             arch: amd64
           - os: windows-latest
             os_name: windows
             arch: amd64
-    # TODO macos needs universal binary!
-    #          - os: macos-latest
-    #            os_name: macos
+          # TODO macos needs universal binary!
+          # - os: macos-latest
+          #   os_name: macos
+        variant:
+          - name: prod
+            tags: ""
+            artifact_suffix: ""
+          - name: beta
+            tags: beta
+            artifact_suffix: -beta
     steps:
       - uses: actions/checkout@v4
       - name: Set up Go ${{ env.GO_VERSION }}
@@ -48,15 +55,15 @@ jobs:
         uses: golangci/golangci-lint-action@v6
         with:
           version: latest
-          args: --config .golangci.yml
+          args: --config .golangci.yml --build-tags=${{ matrix.variant.tags }}
       - name: Test
-        run: go test -v ./...
+        run: go test -tags=${{ matrix.variant.tags }} -v ./...
       - name: Build
-        run: go build -v
+        run: go build -tags=${{ matrix.variant.tags }} -v
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: rogueserver-${{ matrix.os_name }}-${{ matrix.arch }}-${{ github.sha }}
+          name: rogueserver-${{ matrix.platform.os_name }}-${{ matrix.platform.arch }}${{ matrix.variant.artifact_suffix }}-${{ github.sha }}
           path: |
             rogueserver*
             !rogueserver.go

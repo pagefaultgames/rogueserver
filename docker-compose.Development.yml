@@ -5,6 +5,11 @@
 services:
   server:
     image: rogueserver:dev
+    build:
+      context: .
+      args:
+        BUILD_TAGS: ${ROGUESERVER_BUILD_TAGS:-devsetup,beta}
+    pull_policy: build
     restart: unless-stopped
     environment:
       debug: true
