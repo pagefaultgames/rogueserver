@@ -18,11 +18,21 @@ jobs:
 
   build:
     needs: changes
-    name: Build and publish to GHCR
-    if: ${{ needs.changes.outputs.ghcr == 'true' }} && github.repository == 'pagefaultgames/rogueserver'
+    name: Build and publish to GHCR (${{ matrix.variant }})
+    if: needs.changes.outputs.ghcr == 'true' && github.repository == 'pagefaultgames/rogueserver'
     env:
       GO_VERSION: 1.22
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - variant: prod
+            build_tags: devsetup
+            tag_suffix: ""
+          - variant: beta
+            build_tags: devsetup,beta
+            tag_suffix: -beta
     steps:
       - name: Setup Docker BuildX
         uses: docker/setup-buildx-action@v3
@@ -37,15 +47,18 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io/${{ github.repository }}
+          flavor: |
+            suffix=${{ matrix.tag_suffix }},onlatest=true
       - name: Build Docker image
         uses: docker/build-push-action@v5
         with:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=${{ matrix.variant }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.variant }}
           build-args: |
             GO_VERSION=${{ env.GO_VERSION }}
+            BUILD_TAGS=${{ matrix.build_tags }}
             VERSION=${{ github.ref_name }}-SNAPSHOT
             COMMIT_SHA=${{ env.GITHUB_SHA_SHORT }}

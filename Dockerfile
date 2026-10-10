@@ -14,8 +14,10 @@ RUN go mod download && go mod verify
 
 COPY . /src/
 
+ARG BUILD_TAGS=devsetup
+
 RUN CGO_ENABLED=0 \
-    go build -tags=devsetup -o rogueserver
+    go build -tags="${BUILD_TAGS}" -o rogueserver
 
 RUN chmod +x /src/rogueserver
 
