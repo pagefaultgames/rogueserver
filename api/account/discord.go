@@ -1,5 +1,5 @@
 /*
-	Copyright (C) 2024 - 2025  Pagefault Games
+	Copyright (C) 2024 - 2026  Pagefault Games
 
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU Affero General Public License as published by
@@ -20,6 +20,7 @@ package account
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 
@@ -35,26 +36,43 @@ var (
 	DiscordGuildID string
 )
 
+var (
+	ErrEmptyDiscordId   = errors.New("discord returned empty user id")
+	ErrEmptyAccessToken = errors.New("discord returned empty access token")
+)
+
+// Interface providing methods for handling Discord OAuth2 authentication.
 type DiscordProvider interface {
-	HandleDiscordCallback(w http.ResponseWriter, r *http.Request) (string, error)
+	HandleDiscordCallback(r *http.Request) (string, error)
 	RetrieveDiscordId(code string) (string, error)
 	IsUserDiscordAdmin(discordId string, discordGuildID string) (bool, error)
 }
 
-type discordProvider struct{}
+type discordProvider struct {
+	client   *http.Client
+	tokenURL string
+	userURL  string
+}
 
-var Discord = &discordProvider{}
+var Discord = &discordProvider{
+	client:   oauthHTTPClient,
+	tokenURL: "https://discord.com/api/oauth2/token",
+	userURL:  "https://discord.com/api/users/@me",
+}
 
-func (s *discordProvider) HandleDiscordCallback(w http.ResponseWriter, r *http.Request) (string, error) {
-	code := r.URL.Query().Get("code")
-	if code == "" {
-		http.Redirect(w, r, GameURL, http.StatusSeeOther)
-		return "", errors.New("code is empty")
+// Ensure that discordProvider implements DiscordProvider interface
+// Ensures a compile-time error if the interface drifts
+// but disappears at runtime
+var _ DiscordProvider = (*discordProvider)(nil)
+
+func (s *discordProvider) HandleDiscordCallback(r *http.Request) (string, error) {
+	code, err := codeFromCallback(r)
+	if err != nil {
+		return "", err
 	}
 
 	discordId, err := s.RetrieveDiscordId(code)
 	if err != nil {
-		http.Redirect(w, r, GameURL, http.StatusSeeOther)
 		return "", err
 	}
 
@@ -70,9 +88,15 @@ func (s *discordProvider) RetrieveDiscordId(code string) (string, error) {
 	v.Set("redirect_uri", DiscordCallbackURL)
 	v.Set("scope", "identify")
 
-	token, err := http.PostForm("https://discord.com/api/oauth2/token", v)
+	token, err := s.client.PostForm(s.tokenURL, v)
 	if err != nil {
 		return "", err
+	}
+
+	defer token.Body.Close()
+
+	if token.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("discord token exchange failed: %s", token.Status)
 	}
 
 	// extract access_token from token
@@ -92,22 +116,25 @@ func (s *discordProvider) RetrieveDiscordId(code string) (string, error) {
 
 	access_token := tokenResponse.AccessToken
 	if access_token == "" {
-		return "", errors.New("access token is empty")
+		return "", ErrEmptyAccessToken
 	}
 
-	client := &http.Client{}
-	req, err := http.NewRequest("GET", "https://discord.com/api/users/@me", nil)
+	req, err := http.NewRequest("GET", s.userURL, nil)
 	if err != nil {
 		return "", err
 	}
 
 	req.Header.Set("Authorization", "Bearer "+access_token)
-	resp, err := client.Do(req)
+	resp, err := s.client.Do(req)
 	if err != nil {
 		return "", err
 	}
 
 	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("discord users/@me failed: %s", resp.Status)
+	}
 
 	type User struct {
 		Id string `json:"id"`
@@ -117,6 +144,10 @@ func (s *discordProvider) RetrieveDiscordId(code string) (string, error) {
 	err = json.NewDecoder(resp.Body).Decode(&user)
 	if err != nil {
 		return "", err
+	}
+
+	if user.Id == "" {
+		return "", ErrEmptyDiscordId
 	}
 
 	return user.Id, nil

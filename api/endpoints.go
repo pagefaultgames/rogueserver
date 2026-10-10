@@ -19,14 +19,13 @@ package api
 
 import (
 	"database/sql"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/pagefaultgames/rogueserver/api/account"
@@ -678,6 +677,25 @@ func handleDailyRankingPageCount(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, count)
 }
 
+// Helper method that redirects the user to the game URL with an error message in the query string.
+//
+// This allows the client to provide feedback to the user when the OAuth flow fails
+// instead of just redirecting to the game URL with no context.
+func redirectWithOAuthError(w http.ResponseWriter, r *http.Request, provider, reason string) {
+	u, err := url.Parse(account.GameURL)
+	if err != nil {
+		http.Redirect(w, r, account.GameURL, http.StatusSeeOther)
+		return
+	}
+
+	q := u.Query()
+	q.Set("oauthError", reason)
+	q.Set("provider", provider)
+	u.RawQuery = q.Encode()
+
+	http.Redirect(w, r, u.String(), http.StatusSeeOther)
+}
+
 // redirect link after authorizing application link
 func handleProviderCallback(w http.ResponseWriter, r *http.Request) {
 	provider := r.PathValue("provider")
@@ -686,74 +704,57 @@ func handleProviderCallback(w http.ResponseWriter, r *http.Request) {
 	var err error
 	switch provider {
 	case "discord":
-		externalAuthId, err = account.Discord.HandleDiscordCallback(w, r)
+		externalAuthId, err = account.Discord.HandleDiscordCallback(r)
 	case "google":
-		externalAuthId, err = account.Google.HandleGoogleCallback(w, r)
+		externalAuthId, err = account.Google.HandleGoogleCallback(r)
 	default:
 		http.Error(w, "invalid provider", http.StatusBadRequest)
 		return
 	}
 
 	if err != nil {
-		httpError(w, r, err, http.StatusInternalServerError)
+		if errors.Is(err, account.ErrOAuthCancelled) {
+			redirectWithOAuthError(w, r, provider, "cancelled")
+			return
+		}
+
+		// Can't use `httpError` here because we want to redirect
+		log.Printf("%s: %s\n", r.URL.Path, err)
+		redirectWithOAuthError(w, r, provider, "provider_error")
 		return
 	}
 
 	if state != "" {
-		state = strings.Replace(state, " ", "+", -1)
-		stateByte, err := base64.StdEncoding.DecodeString(state)
+		err = account.OAuthLink(db.Store, provider, externalAuthId, state)
 		if err != nil {
-			http.Redirect(w, r, account.GameURL, http.StatusSeeOther)
+			redirectWithOAuthError(w, r, provider, "link_failed")
 			return
 		}
 
-		userName, err := db.Store.FetchUsernameBySessionToken(stateByte)
-		if err != nil {
-			http.Redirect(w, r, account.GameURL, http.StatusSeeOther)
-			return
-		}
-
-		switch provider {
-		case "discord":
-			err = db.Store.AddDiscordIdByUsername(externalAuthId, userName)
-		case "google":
-			err = db.Store.AddGoogleIdByUsername(externalAuthId, userName)
-		}
-
-		if err != nil {
-			http.Redirect(w, r, account.GameURL, http.StatusSeeOther)
-			return
-		}
-
-	} else {
-		var userName string
-		switch provider {
-		case "discord":
-			userName, err = db.Store.FetchUsernameByDiscordId(externalAuthId)
-		case "google":
-			userName, err = db.Store.FetchUsernameByGoogleId(externalAuthId)
-		}
-		if err != nil {
-			http.Redirect(w, r, account.GameURL, http.StatusSeeOther)
-			return
-		}
-
-		sessionToken, err := account.GenerateTokenForUsername(db.Store, userName)
-		if err != nil {
-			http.Redirect(w, r, account.GameURL, http.StatusSeeOther)
-			return
-		}
-
-		http.SetCookie(w, &http.Cookie{
-			Name:     "pokerogue_sessionId",
-			Value:    sessionToken,
-			Path:     "/",
-			Secure:   true,
-			SameSite: http.SameSiteStrictMode,
-			Domain:   "pokerogue.net",
-			Expires:  time.Now().Add(time.Hour * 24 * 30 * 3), // 3 months
-		})
+		http.Redirect(w, r, account.GameURL, http.StatusSeeOther)
+		return
 	}
+
+	sessionToken, err := account.OAuthLogin(db.Store, provider, externalAuthId)
+	if err != nil {
+		if errors.Is(err, account.ErrOAuthNotLinked) {
+			redirectWithOAuthError(w, r, provider, "not_linked")
+			return
+		}
+
+		redirectWithOAuthError(w, r, provider, "server_error")
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "pokerogue_sessionId",
+		Value:    sessionToken,
+		Path:     "/",
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+		Domain:   "pokerogue.net",
+		Expires:  time.Now().Add(time.Hour * 24 * 30 * 3), // 3 months
+	})
 
 	http.Redirect(w, r, account.GameURL, http.StatusSeeOther)
 }
