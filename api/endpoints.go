@@ -244,8 +244,9 @@ func handleSession(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		} else {
-			if existingSave.Seed == session.Seed && existingSave.WaveIndex > session.WaveIndex {
-				httpError(w, r, fmt.Errorf("session out of date: existing wave index is greater"), http.StatusBadRequest)
+			err = validate.Session(existingSave, session)
+			if err != nil {
+				httpError(w, r, err, http.StatusBadRequest)
 				return
 			}
 		}
@@ -365,8 +366,9 @@ func handleUpdateAll(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else {
-		if existingSave.Seed == data.Session.Seed && existingSave.WaveIndex > data.Session.WaveIndex {
-			httpError(w, r, fmt.Errorf("session out of date: existing wave index is greater"), http.StatusBadRequest)
+		err = validate.Session(existingSave, data.Session)
+		if err != nil {
+			httpError(w, r, err, http.StatusBadRequest)
 			return
 		}
 	}
