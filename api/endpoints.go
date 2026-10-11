@@ -69,6 +69,40 @@ func validateOrCreateIds(uuid []byte, systemData defs.SystemSaveData) error {
 	return nil
 }
 
+// checkIncomingSystem validates an incoming system save against the stored
+// one. It checks (and on first save, stores) the trainer IDs, then runs
+// [validate.System] if a system save is already stored.
+func checkIncomingSystem(uuid []byte, next defs.SystemSaveData) error {
+	err := validateOrCreateIds(uuid, next)
+	if err != nil {
+		return err
+	}
+
+	prev, err := savedata.GetSystem(db.Store, uuid)
+	if errors.Is(err, savedata.ErrSaveNotExist) {
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("failed to retrieve playtime: %s", err)
+	}
+
+	return validate.System(prev, next)
+}
+
+// checkIncomingSession validates an incoming session against the one stored
+// in the same slot, running [validate.Session] if one exists.
+func checkIncomingSession(uuid []byte, slot int, next defs.SessionSaveData) error {
+	prev, err := savedata.GetSession(db.Store, uuid, slot)
+	if errors.Is(err, savedata.ErrSaveNotExist) {
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("failed to retrieve session save data: %s", err)
+	}
+
+	return validate.Session(prev, next)
+}
+
 func handleAccountInfo(w http.ResponseWriter, r *http.Request) {
 	uuid, err := uuidFromRequest(r)
 	if err != nil {
@@ -237,18 +271,10 @@ func handleSession(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		existingSave, err := savedata.GetSession(db.Store, uuid, slot)
+		err = checkIncomingSession(uuid, slot, session)
 		if err != nil {
-			if !errors.Is(err, savedata.ErrSaveNotExist) {
-				httpError(w, r, fmt.Errorf("failed to retrieve session save data: %s", err), http.StatusInternalServerError)
-				return
-			}
-		} else {
-			err = validate.Session(existingSave, session)
-			if err != nil {
-				httpError(w, r, err, statusFor(err))
-				return
-			}
+			httpError(w, r, err, statusFor(err))
+			return
 		}
 
 		err = savedata.UpdateSession(db.Store, uuid, slot, session)
@@ -339,38 +365,16 @@ func handleUpdateAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = validateOrCreateIds(uuid, data.System)
+	err = checkIncomingSystem(uuid, data.System)
 	if err != nil {
 		httpError(w, r, err, statusFor(err))
 		return
 	}
 
-	oldSystem, err := savedata.GetSystem(db.Store, uuid)
+	err = checkIncomingSession(uuid, data.SessionSlotId, data.Session)
 	if err != nil {
-		if !errors.Is(err, savedata.ErrSaveNotExist) {
-			httpError(w, r, fmt.Errorf("failed to retrieve playtime: %s", err), http.StatusInternalServerError)
-			return
-		}
-	} else {
-		err = validate.System(oldSystem, data.System)
-		if err != nil {
-			httpError(w, r, err, statusFor(err))
-			return
-		}
-	}
-
-	existingSave, err := savedata.GetSession(db.Store, uuid, data.SessionSlotId)
-	if err != nil {
-		if !errors.Is(err, savedata.ErrSaveNotExist) {
-			httpError(w, r, fmt.Errorf("failed to retrieve session save data: %s", err), http.StatusInternalServerError)
-			return
-		}
-	} else {
-		err = validate.Session(existingSave, data.Session)
-		if err != nil {
-			httpError(w, r, err, statusFor(err))
-			return
-		}
+		httpError(w, r, err, statusFor(err))
+		return
 	}
 
 	err = savedata.Update(db.Store, uuid, data.SessionSlotId, data.Session)
@@ -455,24 +459,10 @@ func handleSystem(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err := validateOrCreateIds(uuid, system)
+		err = checkIncomingSystem(uuid, system)
 		if err != nil {
 			httpError(w, r, err, statusFor(err))
 			return
-		}
-
-		oldSystem, err := savedata.GetSystem(db.Store, uuid)
-		if err != nil {
-			if !errors.Is(err, savedata.ErrSaveNotExist) {
-				httpError(w, r, fmt.Errorf("failed to retrieve playtime: %s", err), http.StatusInternalServerError)
-				return
-			}
-		} else {
-			err = validate.System(oldSystem, system)
-			if err != nil {
-				httpError(w, r, err, statusFor(err))
-				return
-			}
 		}
 
 		err = savedata.UpdateSystem(db.Store, uuid, system)
