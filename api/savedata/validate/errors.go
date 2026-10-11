@@ -22,9 +22,9 @@ var (
 )
 
 // Rejection reasons. Each message is sent to the client as is, and messages
-// beginning with "session out of date" are matched by the client
+// beginning with "session out of date" are matched by the client.
 //
-// don't reword them without verifying against what the pokerogue repository expects.
+// Do not reword them without verifying against what the pokerogue repository expects.
 var (
 	// ErrNoPlaytime is returned when a save has no gameStats.playTime,
 	// indicating corruption or save tampering.

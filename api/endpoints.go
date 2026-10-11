@@ -57,8 +57,8 @@ func validateOrCreateIds(uuid []byte, systemData defs.SystemSaveData) (int, erro
 	}
 
 	if storedTrainerId > 0 || storedSecretId > 0 {
-		if systemData.TrainerId != storedTrainerId || systemData.SecretId != storedSecretId {
-			return http.StatusBadRequest, validate.ErrIdMismatch
+		if err := validate.Ids(storedTrainerId, storedSecretId, systemData); err != nil {
+			return http.StatusBadRequest, err
 		}
 	} else {
 		err = db.Store.UpdateTrainerIds(systemData.TrainerId, systemData.SecretId, uuid)
@@ -67,56 +67,6 @@ func validateOrCreateIds(uuid []byte, systemData defs.SystemSaveData) (int, erro
 		}
 	}
 	return http.StatusOK, nil
-}
-
-// Helper method that ensures the client is sending a save with greater (or equal)
-// playtime than the existing save.
-//
-// Returns `nil` if the playtime is valid, otherwise returns an error indicating the issue.
-func validatePlaytime(systemData defs.SystemSaveData, oldSystem defs.SystemSaveData) error {
-	playtime, ok := systemData.GameStats.(map[string]any)["playTime"].(float64)
-	if !ok {
-		return validate.ErrNoPlaytime
-	}
-
-	oldPlaytime, ok := oldSystem.GameStats.(map[string]any)["playTime"].(float64)
-	if !ok {
-		return validate.ErrNoPlaytime
-	}
-
-	if playtime < oldPlaytime {
-		return validate.ErrGreaterPlaytime
-	}
-	return nil
-}
-
-// Helper method for validating the game version and applied migrators
-//
-// Guard calls with `!defs.IsBeta` so this function is stripped from beta builds.
-//
-// Returns `nil` if the version and migrators are valid, otherwise returns an error indicating the issue.
-func validateSystemVersion(systemData defs.SystemSaveData, oldSystem defs.SystemSaveData) error {
-	minVerCmp, err := validate.CompareGameVersion(validate.MinGameVersion, systemData.GameVersion)
-	if err != nil {
-		return fmt.Errorf("%w: %w", validate.ErrVersionCompare, err)
-	}
-	if minVerCmp > 0 {
-		return validate.ErrVersionTooLow
-	}
-
-	saveVerCmp, err := validate.CompareGameVersion(oldSystem.GameVersion, systemData.GameVersion)
-	if err != nil {
-		return fmt.Errorf("%w: %w", validate.ErrVersionCompare, err)
-	}
-	if saveVerCmp > 0 {
-		return validate.ErrExistingVersionGreater
-	}
-
-	if !validate.ValidMigrators(systemData.AppliedMigrators, oldSystem.AppliedMigrators) {
-		return validate.ErrMigratorsDesynced
-	}
-
-	return nil
 }
 
 func handleAccountInfo(w http.ResponseWriter, r *http.Request) {
@@ -401,18 +351,10 @@ func handleUpdateAll(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else {
-		err = validatePlaytime(data.System, oldSystem)
+		err = validate.System(oldSystem, data.System)
 		if err != nil {
 			httpError(w, r, err, http.StatusBadRequest)
 			return
-		}
-
-		if !defs.IsBeta {
-			err = validateSystemVersion(data.System, oldSystem)
-			if err != nil {
-				httpError(w, r, err, http.StatusBadRequest)
-				return
-			}
 		}
 	}
 
@@ -524,17 +466,10 @@ func handleSystem(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		} else {
-			err = validatePlaytime(system, oldSystem)
+			err = validate.System(oldSystem, system)
 			if err != nil {
 				httpError(w, r, err, http.StatusBadRequest)
 				return
-			}
-			if !defs.IsBeta {
-				err = validateSystemVersion(system, oldSystem)
-				if err != nil {
-					httpError(w, r, err, http.StatusBadRequest)
-					return
-				}
 			}
 		}
 

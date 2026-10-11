@@ -18,7 +18,7 @@ import (
 // [Version] rejects saves below it with [ErrVersionTooLow].
 const MinGameVersion = "1.12.0.10"
 
-type VersionTuple []int
+type versionTuple []int
 
 // CompareGameVersion compares two game version strings and returns
 //   - `-1` if left < right
@@ -38,13 +38,13 @@ func CompareGameVersion(left string, right string) (int, error) {
 	return slices.Compare(leftTuple, rightTuple), nil
 }
 
-func parseGameVersion(version string) (VersionTuple, error) {
+func parseGameVersion(version string) (versionTuple, error) {
 	parts := strings.Split(version, ".")
 	if len(parts) < 3 || len(parts) > 4 {
 		return nil, fmt.Errorf("invalid version format: %q", version)
 	}
 
-	tuple := make(VersionTuple, 0, len(parts))
+	tuple := make(versionTuple, 0, len(parts))
 	for _, part := range parts {
 		if part == "" {
 			return nil, fmt.Errorf("invalid version format: %q", version)
@@ -61,7 +61,7 @@ func parseGameVersion(version string) (VersionTuple, error) {
 	return trimTrailingZeros(tuple), nil
 }
 
-func trimTrailingZeros(tuple VersionTuple) VersionTuple {
+func trimTrailingZeros(tuple versionTuple) versionTuple {
 	trimmed := len(tuple)
 	for trimmed > 0 && tuple[trimmed-1] == 0 {
 		trimmed--

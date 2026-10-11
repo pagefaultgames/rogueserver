@@ -16,6 +16,7 @@ import (
 )
 
 // TestPurity enforces the rule in the package doc: validate does no I/O.
+//
 // It fails if the package (or anything it pulls in) depends on a non-standard
 // package other than defs, or directly imports a standard package that talks
 // to the outside world.

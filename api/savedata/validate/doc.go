@@ -7,8 +7,8 @@
 
 // Package validate decides whether an incoming save may replace the stored one.
 //
-// Functions in this package should be pure: they are intended to compare
-// two saves and return an error describing why the new one is unacceptable,
+// Functions in this package are pure: they are compare two saves
+// and return an error describing why the new one is unacceptable,
 // or nil.
 //
 // Nothing in this package reads or writes storage, the environment, or the network, so
