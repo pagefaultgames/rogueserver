@@ -44,29 +44,29 @@ import (
 */
 // account
 
-// Helper method that validates the trainer and secret IDs in the system save data against the database's
-// stored values.
-// If the stored values are not present, it will create them using the provided system save data.
-// Otherwise, an http error will be generated and the caller should return immediately.
+// validateOrCreateIds checks the save's trainer and secret IDs against the
+// ones stored for the account.
 //
-// Returns `nil` if the IDs are valid or were successfully created, otherwise returns an error indicating the issue.
-func validateOrCreateIds(uuid []byte, systemData defs.SystemSaveData) (int, error) {
+// If none are stored yet, it stores the save's
+// IDs instead. It returns [validate.ErrIdMismatch] if the IDs differ, or the
+// database error if reading or writing them fails.
+func validateOrCreateIds(uuid []byte, systemData defs.SystemSaveData) error {
 	storedTrainerId, storedSecretId, err := db.Store.FetchTrainerIds(uuid)
 	if err != nil {
-		return http.StatusInternalServerError, err
+		return err
 	}
 
 	if storedTrainerId > 0 || storedSecretId > 0 {
 		if err := validate.Ids(storedTrainerId, storedSecretId, systemData); err != nil {
-			return http.StatusBadRequest, err
+			return err
 		}
 	} else {
 		err = db.Store.UpdateTrainerIds(systemData.TrainerId, systemData.SecretId, uuid)
 		if err != nil {
-			return http.StatusInternalServerError, err
+			return err
 		}
 	}
-	return http.StatusOK, nil
+	return nil
 }
 
 func handleAccountInfo(w http.ResponseWriter, r *http.Request) {
@@ -246,7 +246,7 @@ func handleSession(w http.ResponseWriter, r *http.Request) {
 		} else {
 			err = validate.Session(existingSave, session)
 			if err != nil {
-				httpError(w, r, err, http.StatusBadRequest)
+				httpError(w, r, err, statusFor(err))
 				return
 			}
 		}
@@ -339,9 +339,9 @@ func handleUpdateAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	code, err := validateOrCreateIds(uuid, data.System)
+	err = validateOrCreateIds(uuid, data.System)
 	if err != nil {
-		httpError(w, r, err, code)
+		httpError(w, r, err, statusFor(err))
 		return
 	}
 
@@ -354,7 +354,7 @@ func handleUpdateAll(w http.ResponseWriter, r *http.Request) {
 	} else {
 		err = validate.System(oldSystem, data.System)
 		if err != nil {
-			httpError(w, r, err, http.StatusBadRequest)
+			httpError(w, r, err, statusFor(err))
 			return
 		}
 	}
@@ -368,7 +368,7 @@ func handleUpdateAll(w http.ResponseWriter, r *http.Request) {
 	} else {
 		err = validate.Session(existingSave, data.Session)
 		if err != nil {
-			httpError(w, r, err, http.StatusBadRequest)
+			httpError(w, r, err, statusFor(err))
 			return
 		}
 	}
@@ -455,9 +455,9 @@ func handleSystem(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		code, err := validateOrCreateIds(uuid, system)
+		err := validateOrCreateIds(uuid, system)
 		if err != nil {
-			httpError(w, r, err, code)
+			httpError(w, r, err, statusFor(err))
 			return
 		}
 
@@ -470,7 +470,7 @@ func handleSystem(w http.ResponseWriter, r *http.Request) {
 		} else {
 			err = validate.System(oldSystem, system)
 			if err != nil {
-				httpError(w, r, err, http.StatusBadRequest)
+				httpError(w, r, err, statusFor(err))
 				return
 			}
 		}
