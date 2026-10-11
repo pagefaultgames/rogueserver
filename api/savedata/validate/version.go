@@ -1,4 +1,11 @@
-package savedata
+/*
+ * SPDX-FileCopyrightText: 2024-2026 Pagefault Games
+ * SPDX-FileContributor: SirzBenjie
+ *
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+
+package validate
 
 import (
 	"fmt"
@@ -6,6 +13,10 @@ import (
 	"strconv"
 	"strings"
 )
+
+// MinGameVersion is the oldest game version whose saves are accepted.
+// [Version] rejects saves below it with [ErrVersionTooLow].
+const MinGameVersion = "1.12.0.10"
 
 type VersionTuple []int
 
@@ -25,17 +36,6 @@ func CompareGameVersion(left string, right string) (int, error) {
 	}
 
 	return slices.Compare(leftTuple, rightTuple), nil
-}
-
-// Confirm that every migrator existing in the old save exists in the new save with identical timestamp
-func ValidMigrators(new map[string]int, old map[string]int) bool {
-	for migrator, timestamp := range old {
-		newTimestamp := new[migrator]
-		if newTimestamp != timestamp {
-			return false
-		}
-	}
-	return true
 }
 
 func parseGameVersion(version string) (VersionTuple, error) {

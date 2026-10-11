@@ -32,31 +32,9 @@ import (
 	"github.com/pagefaultgames/rogueserver/api/account"
 	"github.com/pagefaultgames/rogueserver/api/daily"
 	"github.com/pagefaultgames/rogueserver/api/savedata"
+	"github.com/pagefaultgames/rogueserver/api/savedata/validate"
 	"github.com/pagefaultgames/rogueserver/db"
 	"github.com/pagefaultgames/rogueserver/defs"
-)
-
-var (
-	// Issued when playtime is missing from the save data, indicating corruption or save tampering
-	ErrNoPlaytime = errors.New("no playtime found")
-
-	// Issued when the tid/sid does not match database, indicating corruption or save tampering
-	ErrIdMismatch = errors.New("session out of date: stored trainer or secret ID does not match")
-
-	// Issued when the playtime in the client save is lower than the server save, indicating an outdated save
-	ErrGreaterPlaytime = errors.New("session out of date: existing playtime is greater")
-
-	// Issued when the client save version is lower than the minimum game version, indicating outdated client code
-	ErrVersionTooLow = errors.New("session out of date: save version below minimum game version")
-
-	// Issued when the client save version is lower than the existing save version, indicating outdated client code
-	ErrExistingVersionGreater = errors.New("session out of date: existing version is greater")
-
-	// Issued when version comparison fails, indicating a missing or malformed version string in the save data
-	ErrVersionCompare = errors.New("failed to compare versions")
-
-	// Issued when migrator validation fails
-	ErrMigratorsDesynced = errors.New("session out of date: migrators desynced")
 )
 
 /*
@@ -80,7 +58,7 @@ func validateOrCreateIds(uuid []byte, systemData defs.SystemSaveData) (int, erro
 
 	if storedTrainerId > 0 || storedSecretId > 0 {
 		if systemData.TrainerId != storedTrainerId || systemData.SecretId != storedSecretId {
-			return http.StatusBadRequest, ErrIdMismatch
+			return http.StatusBadRequest, validate.ErrIdMismatch
 		}
 	} else {
 		err = db.Store.UpdateTrainerIds(systemData.TrainerId, systemData.SecretId, uuid)
@@ -98,16 +76,16 @@ func validateOrCreateIds(uuid []byte, systemData defs.SystemSaveData) (int, erro
 func validatePlaytime(systemData defs.SystemSaveData, oldSystem defs.SystemSaveData) error {
 	playtime, ok := systemData.GameStats.(map[string]any)["playTime"].(float64)
 	if !ok {
-		return ErrNoPlaytime
+		return validate.ErrNoPlaytime
 	}
 
 	oldPlaytime, ok := oldSystem.GameStats.(map[string]any)["playTime"].(float64)
 	if !ok {
-		return ErrNoPlaytime
+		return validate.ErrNoPlaytime
 	}
 
 	if playtime < oldPlaytime {
-		return ErrGreaterPlaytime
+		return validate.ErrGreaterPlaytime
 	}
 	return nil
 }
@@ -118,24 +96,24 @@ func validatePlaytime(systemData defs.SystemSaveData, oldSystem defs.SystemSaveD
 //
 // Returns `nil` if the version and migrators are valid, otherwise returns an error indicating the issue.
 func validateSystemVersion(systemData defs.SystemSaveData, oldSystem defs.SystemSaveData) error {
-	minVerCmp, err := savedata.CompareGameVersion("1.12.0.10", systemData.GameVersion)
+	minVerCmp, err := validate.CompareGameVersion(validate.MinGameVersion, systemData.GameVersion)
 	if err != nil {
-		return fmt.Errorf("%w: %w", ErrVersionCompare, err)
+		return fmt.Errorf("%w: %w", validate.ErrVersionCompare, err)
 	}
 	if minVerCmp > 0 {
-		return ErrVersionTooLow
+		return validate.ErrVersionTooLow
 	}
 
-	saveVerCmp, err := savedata.CompareGameVersion(oldSystem.GameVersion, systemData.GameVersion)
+	saveVerCmp, err := validate.CompareGameVersion(oldSystem.GameVersion, systemData.GameVersion)
 	if err != nil {
-		return fmt.Errorf("%w: %w", ErrVersionCompare, err)
+		return fmt.Errorf("%w: %w", validate.ErrVersionCompare, err)
 	}
 	if saveVerCmp > 0 {
-		return ErrExistingVersionGreater
+		return validate.ErrExistingVersionGreater
 	}
 
-	if !savedata.ValidMigrators(systemData.AppliedMigrators, oldSystem.AppliedMigrators) {
-		return ErrMigratorsDesynced
+	if !validate.ValidMigrators(systemData.AppliedMigrators, oldSystem.AppliedMigrators) {
+		return validate.ErrMigratorsDesynced
 	}
 
 	return nil
@@ -510,7 +488,7 @@ func handleSystem(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		versionCmp, cmpErr := savedata.CompareGameVersion("1.12.0.10", save.GameVersion)
+		versionCmp, cmpErr := validate.CompareGameVersion(validate.MinGameVersion, save.GameVersion)
 		if cmpErr != nil {
 			httpError(w, r, fmt.Errorf("failed to compare versions: %s", cmpErr), http.StatusBadRequest)
 			return
