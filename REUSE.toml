@@ -20,13 +20,13 @@ SPDX-License-Identifier = "CC0-1.0"
 
 [[annotations]] # source files
 path = ["**/*.go", "**/*.toml", ".github/workflows/*.yml"]
-SPDX-FileCopyrightText = "2024-2025 Pagefault Games"
+SPDX-FileCopyrightText = "2024-2026 Pagefault Games"
 SPDX-License-Identifier = "AGPL-3.0-or-later"
 
 
 [[annotations]] # documentation files
 path = ["**/*.md"]
-SPDX-FileCopyrightText = "2024-2025 Pagefault Games"
+SPDX-FileCopyrightText = "2024-2026 Pagefault Games"
 SPDX-License-Identifier = "CC-BY-NC-SA-4.0"
 
 # REUSE lint will fail if any file (other than those in the LICENSES/ directory) is not explicitly licensed.
