@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-// Interface for database operations needed for OAuth login.
+// OAuthLoginStore defines the database operations needed for OAuth login.
 type OAuthLoginStore interface {
 	GenerateTokenForUsernameStore
 	FetchUsernameByDiscordId(discordId string) (string, error)
@@ -23,11 +23,11 @@ var (
 	ErrUnknownProvider = errors.New("unknown oauth provider")
 )
 
-// Used for requests to OAuth providers, with a timeout
-// so that requests to stay pending forever
+// oauthHTTPClient is used for requests to OAuth providers. It has a timeout
+// so that requests can't stay pending forever.
 var oauthHTTPClient = &http.Client{Timeout: 10 * time.Second}
 
-// Extract the authorization code from a provider callback.
+// codeFromCallback extracts the authorization code from a provider callback.
 func codeFromCallback(r *http.Request) (string, error) {
 	q := r.URL.Query()
 	if q.Get("error") != "" { // e.g. access_denied when the user clicks Cancel
@@ -40,8 +40,8 @@ func codeFromCallback(r *http.Request) (string, error) {
 	return code, nil
 }
 
-// Find the account linked to externalId and creates a session for it.
-// Returns `ErrOAuthNotLinked` if no account has that external ID.
+// OAuthLogin finds the account linked to externalId and creates a session for it.
+// It returns [ErrOAuthNotLinked] if no account has that external ID.
 func OAuthLogin[T OAuthLoginStore](store T, provider, externalId string) (string, error) {
 	if externalId == "" {
 		return "", errors.New("empty external id")
@@ -67,14 +67,14 @@ func OAuthLogin[T OAuthLoginStore](store T, provider, externalId string) (string
 	return GenerateTokenForUsername(store, username)
 }
 
-// Interface for database operations needed for linking OAuth accounts.
+// OAuthLinkStore defines the database operations needed for linking OAuth accounts.
 type OAuthLinkStore interface {
 	FetchUsernameBySessionToken(token []byte) (string, error)
 	AddDiscordIdByUsername(discordId, username string) error
 	AddGoogleIdByUsername(googleId, username string) error
 }
 
-// Attach externalId to the account whose session token is in state.
+// OAuthLink attaches externalId to the account whose session token is in state.
 func OAuthLink[T OAuthLinkStore](store T, provider, externalId, state string) error {
 	if externalId == "" {
 		return errors.New("empty external id")

@@ -19,21 +19,21 @@ func jsonResponse(status int, body string) *http.Response {
 	}
 }
 
-// return a round-trip func that always answers with status and body.
+// respond returns a round-trip func that always answers with status and body.
 func respond(status int, body string) func(*http.Request) (*http.Response, error) {
 	return func(*http.Request) (*http.Response, error) {
 		return jsonResponse(status, body), nil
 	}
 }
 
-// return a round-trip func that always fails with err, like a network error.
+// fail returns a round-trip func that always fails with err, like a network error.
 func fail(err error) func(*http.Request) (*http.Response, error) {
 	return func(*http.Request) (*http.Response, error) {
 		return nil, err
 	}
 }
 
-// fail the test unless err is nil and gotId matches wantId.
+// expectId fails the test unless err is nil and gotId matches wantId.
 func expectId(t *testing.T, gotId string, err error, wantId string) {
 	t.Helper()
 	if err != nil {
@@ -44,7 +44,7 @@ func expectId(t *testing.T, gotId string, err error, wantId string) {
 	}
 }
 
-// fail the test unless err is non-nil, and matches wantErrIs when it's set.
+// expectErr fails the test unless err is non-nil, and matches wantErrIs when it's set.
 func expectErr(t *testing.T, err error, wantErrIs error) {
 	t.Helper()
 	if err == nil {

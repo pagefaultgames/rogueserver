@@ -677,7 +677,8 @@ func handleDailyRankingPageCount(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, count)
 }
 
-// Helper method that redirects the user to the game URL with an error message in the query string.
+// redirectWithOAuthError redirects the user to the game URL with an error message
+// in the query string.
 //
 // This allows the client to provide feedback to the user when the OAuth flow fails
 // instead of just redirecting to the game URL with no context.

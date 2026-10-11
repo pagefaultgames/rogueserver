@@ -33,7 +33,7 @@ var (
 	GoogleCallbackURL  string
 )
 
-// Interface providing methods for handling Google OAuth2 authentication.
+// GoogleProvider provides methods for handling Google OAuth2 authentication.
 type GoogleProvider interface {
 	HandleGoogleCallback(r *http.Request) (string, error)
 	RetrieveGoogleId(code string) (string, error)
@@ -49,9 +49,9 @@ var Google = &googleProvider{
 	tokenURL: "https://oauth2.googleapis.com/token",
 }
 
-// Ensure that googleProvider implements GoogleProvider interface
-// Ensures a compile-time error if the interface drifts
-// but disappears at runtime
+// Ensure that googleProvider implements GoogleProvider.
+// This causes a compile-time error if the interface drifts,
+// and has no runtime cost.
 var _ GoogleProvider = (*googleProvider)(nil)
 
 func (g *googleProvider) HandleGoogleCallback(r *http.Request) (string, error) {

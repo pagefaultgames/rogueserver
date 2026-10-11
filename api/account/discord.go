@@ -41,7 +41,7 @@ var (
 	ErrEmptyAccessToken = errors.New("discord returned empty access token")
 )
 
-// Interface providing methods for handling Discord OAuth2 authentication.
+// DiscordProvider provides methods for handling Discord OAuth2 authentication.
 type DiscordProvider interface {
 	HandleDiscordCallback(r *http.Request) (string, error)
 	RetrieveDiscordId(code string) (string, error)
@@ -60,9 +60,9 @@ var Discord = &discordProvider{
 	userURL:  "https://discord.com/api/users/@me",
 }
 
-// Ensure that discordProvider implements DiscordProvider interface
-// Ensures a compile-time error if the interface drifts
-// but disappears at runtime
+// Ensure that discordProvider implements DiscordProvider.
+// This causes a compile-time error if the interface drifts,
+// and has no runtime cost.
 var _ DiscordProvider = (*discordProvider)(nil)
 
 func (s *discordProvider) HandleDiscordCallback(r *http.Request) (string, error) {

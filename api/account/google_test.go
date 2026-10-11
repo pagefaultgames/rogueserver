@@ -21,7 +21,7 @@ func (m *mockGoogleTransport) RoundTrip(req *http.Request) (*http.Response, erro
 	return nil, fmt.Errorf("unexpected request to %s", req.URL)
 }
 
-// Build a token response whose id_token carries the given claims.
+// googleTokenBody builds a token response whose id_token carries the given claims.
 // The signature is never checked, so any key works.
 func googleTokenBody(claims jwt.MapClaims) string {
 	idToken, _ := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte("test-key"))
@@ -34,7 +34,7 @@ func defaultMockGoogleTransport() *mockGoogleTransport {
 	}
 }
 
-// Return a provider backed by the default mock transport.
+// newTestGoogleProvider returns a provider backed by the default mock transport.
 // A nil tokenFunc keeps the default successful response.
 func newTestGoogleProvider(tokenFunc func(*http.Request) (*http.Response, error)) *googleProvider {
 	transport := defaultMockGoogleTransport()
