@@ -22,9 +22,9 @@ func TestReasons(t *testing.T) {
 		msg      string
 		category error
 	}{
-		{ErrNoPlaytime, "no playtime found", ErrInvalidSave},
-		{ErrIdMismatch, "session out of date: stored trainer or secret ID does not match", ErrInvalidSave},
-		{ErrVersionCompare, "failed to compare versions", ErrInvalidSave},
+		{ErrNoPlaytime, "invalid save: no playtime found", ErrInvalidSave},
+		{ErrVersionCompare, "invalid save: failed to compare versions", ErrInvalidSave},
+		{ErrIdMismatch, "session out of date: stored trainer or secret ID does not match", ErrStale},
 		{ErrGreaterPlaytime, "session out of date: existing playtime is greater", ErrStale},
 		{ErrVersionTooLow, "session out of date: save version below minimum game version", ErrStale},
 		{ErrExistingVersionGreater, "session out of date: existing version is greater", ErrStale},

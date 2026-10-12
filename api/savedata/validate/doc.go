@@ -22,13 +22,15 @@
 // choose a response:
 //
 //   - [ErrInvalidSave]: the save is malformed or impossible (missing playtime,
-//     unparseable version, mismatched trainer IDs). Retrying won't help.
-//   - [ErrStale]: the save is well-formed but older than what's stored (lower
-//     playtime, earlier wave in the same run). The client should reload.
+//     unparseable version). Retrying won't help.
+//   - [ErrStale]: the client's save disagrees with what's stored in a way that
+//     reloading fixes (lower playtime, earlier wave in the same run,
+//     mismatched trainer IDs). The client should reload.
 //
 // Test for the category with errors.Is; the specific error (for example
 // [ErrGreaterPlaytime]) is for logs.
 //
-// Error messages beginning with "session out of date" are matched by the
-// client. Don't reword them without checking pokerogue.
+// Each error message starts with its category's text. The client reloads when
+// a message starts with [ErrStale]'s text, so don't change it without
+// updating pokerogue.
 package validate
