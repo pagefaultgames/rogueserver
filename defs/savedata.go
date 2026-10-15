@@ -25,6 +25,7 @@ type SystemSaveData struct {
 	Gender             int                `json:"gender"`
 	DexData            DexData            `json:"dexData"`
 	StarterData        StarterData        `json:"starterData"`
+	StarterPreferences StarterPreferences `json:"starterPreferences,omitempty"`
 	StarterMoveData    StarterMoveData    `json:"starterMoveData"`    // Legacy
 	StarterEggMoveData StarterEggMoveData `json:"starterEggMoveData"` // Legacy
 	GameStats          GameStats          `json:"gameStats"`
@@ -64,6 +65,26 @@ type StarterEntry struct {
 	PassiveAttr     int         `json:"passiveAttr"`
 	ValueReduction  int         `json:"valueReduction"`
 	ClassicWinCount int         `json:"classicWinCount"`
+}
+
+// StarterPreferences holds per-species starter customization, keyed by species ID.
+// Sparse by design: species the player has not customized are absent entirely.
+type StarterPreferences map[int]StarterAttributes
+
+// StarterAttributes mirrors the client's `StarterAttributes` interface in
+// src/@types/save-data.ts. Every field is optional on the client, so each is a
+// pointer here — this distinguishes "the player did not set this" from "the
+// player set this to zero", which a value type would silently collapse.
+type StarterAttributes struct {
+	Nature   *int    `json:"nature,omitempty"`
+	Ability  *int    `json:"ability,omitempty"`
+	Variant  *int    `json:"variant,omitempty"`
+	Form     *int    `json:"form,omitempty"`
+	Female   *bool   `json:"female,omitempty"`
+	Shiny    *bool   `json:"shiny,omitempty"`
+	Favorite *bool   `json:"favorite,omitempty"`
+	Nickname *string `json:"nickname,omitempty"`
+	Tera     *int    `json:"tera,omitempty"`
 }
 
 type StarterMoveData map[int]interface{}
