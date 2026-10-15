@@ -1,5 +1,5 @@
 /*
-	Copyright (C) 2024 - 2025  Pagefault Games
+	Copyright (C) 2024 - 2026  Pagefault Games
 
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU Affero General Public License as published by
@@ -20,6 +20,7 @@ package account
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 
@@ -32,32 +33,42 @@ var (
 	GoogleCallbackURL  string
 )
 
+// GoogleProvider provides methods for handling Google OAuth2 authentication.
 type GoogleProvider interface {
-	HandleGoogleCallback(w http.ResponseWriter, r *http.Request) (string, error)
+	HandleGoogleCallback(r *http.Request) (string, error)
 	RetrieveGoogleId(code string) (string, error)
 }
 
-type googleProvider struct{}
+type googleProvider struct {
+	client   *http.Client
+	tokenURL string
+}
 
-var Google = &googleProvider{}
+var Google = &googleProvider{
+	client:   oauthHTTPClient,
+	tokenURL: "https://oauth2.googleapis.com/token",
+}
 
-func (g *googleProvider) HandleGoogleCallback(w http.ResponseWriter, r *http.Request) (string, error) {
-	code := r.URL.Query().Get("code")
-	if code == "" {
-		http.Redirect(w, r, GameURL, http.StatusSeeOther)
-		return "", errors.New("code is empty")
+// Ensure that googleProvider implements GoogleProvider.
+// This causes a compile-time error if the interface drifts,
+// and has no runtime cost.
+var _ GoogleProvider = (*googleProvider)(nil)
+
+func (g *googleProvider) HandleGoogleCallback(r *http.Request) (string, error) {
+	code, err := codeFromCallback(r)
+	if err != nil {
+		return "", err
 	}
 
-	googleId, err := RetrieveGoogleId(code)
+	googleId, err := g.RetrieveGoogleId(code)
 	if err != nil {
-		http.Redirect(w, r, GameURL, http.StatusSeeOther)
 		return "", err
 	}
 
 	return googleId, nil
 }
 
-func RetrieveGoogleId(code string) (string, error) {
+func (g *googleProvider) RetrieveGoogleId(code string) (string, error) {
 	v := make(url.Values)
 	v.Set("client_id", GoogleClientID)
 	v.Set("client_secret", GoogleClientSecret)
@@ -65,12 +76,16 @@ func RetrieveGoogleId(code string) (string, error) {
 	v.Set("grant_type", "authorization_code")
 	v.Set("redirect_uri", GoogleCallbackURL)
 
-	token, err := http.PostForm("https://oauth2.googleapis.com/token", v)
+	token, err := g.client.PostForm(g.tokenURL, v)
 	if err != nil {
 		return "", err
 	}
 
 	defer token.Body.Close()
+
+	if token.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("google token exchange failed: %s", token.Status)
+	}
 
 	type TokenResponse struct {
 		AccessToken  string `json:"access_token"`
