@@ -1,5 +1,5 @@
 /*
-	Copyright (C) 2024 - 2025  Pagefault Games
+	Copyright (C) 2024 - 2026  Pagefault Games
 
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU Affero General Public License as published by
@@ -31,31 +31,9 @@ import (
 	"github.com/pagefaultgames/rogueserver/api/account"
 	"github.com/pagefaultgames/rogueserver/api/daily"
 	"github.com/pagefaultgames/rogueserver/api/savedata"
+	"github.com/pagefaultgames/rogueserver/api/savedata/validate"
 	"github.com/pagefaultgames/rogueserver/db"
 	"github.com/pagefaultgames/rogueserver/defs"
-)
-
-var (
-	// Issued when playtime is missing from the save data, indicating corruption or save tampering
-	ErrNoPlaytime = errors.New("no playtime found")
-
-	// Issued when the tid/sid does not match database, indicating corruption or save tampering
-	ErrIdMismatch = errors.New("session out of date: stored trainer or secret ID does not match")
-
-	// Issued when the playtime in the client save is lower than the server save, indicating an outdated save
-	ErrGreaterPlaytime = errors.New("session out of date: existing playtime is greater")
-
-	// Issued when the client save version is lower than the minimum game version, indicating outdated client code
-	ErrVersionTooLow = errors.New("session out of date: save version below minimum game version")
-
-	// Issued when the client save version is lower than the existing save version, indicating outdated client code
-	ErrExistingVersionGreater = errors.New("session out of date: existing version is greater")
-
-	// Issued when version comparison fails, indicating a missing or malformed version string in the save data
-	ErrVersionCompare = errors.New("failed to compare versions")
-
-	// Issued when migrator validation fails
-	ErrMigratorsDesynced = errors.New("session out of date: migrators desynced")
 )
 
 /*
@@ -65,79 +43,63 @@ var (
 */
 // account
 
-// Helper method that validates the trainer and secret IDs in the system save data against the database's
-// stored values.
-// If the stored values are not present, it will create them using the provided system save data.
-// Otherwise, an http error will be generated and the caller should return immediately.
+// validateOrCreateIds checks the save's trainer and secret IDs against the
+// ones stored for the account.
 //
-// Returns `nil` if the IDs are valid or were successfully created, otherwise returns an error indicating the issue.
-func validateOrCreateIds(uuid []byte, systemData defs.SystemSaveData) (int, error) {
+// If none are stored yet, it stores the save's
+// IDs instead. It returns [validate.ErrIdMismatch] if the IDs differ, or the
+// database error if reading or writing them fails.
+func validateOrCreateIds(uuid []byte, systemData defs.SystemSaveData) error {
 	storedTrainerId, storedSecretId, err := db.Store.FetchTrainerIds(uuid)
 	if err != nil {
-		return http.StatusInternalServerError, err
+		return err
 	}
 
 	if storedTrainerId > 0 || storedSecretId > 0 {
-		if systemData.TrainerId != storedTrainerId || systemData.SecretId != storedSecretId {
-			return http.StatusBadRequest, ErrIdMismatch
+		if err := validate.Ids(storedTrainerId, storedSecretId, systemData); err != nil {
+			return err
 		}
 	} else {
 		err = db.Store.UpdateTrainerIds(systemData.TrainerId, systemData.SecretId, uuid)
 		if err != nil {
-			return http.StatusInternalServerError, err
+			return err
 		}
 	}
-	return http.StatusOK, nil
-}
-
-// Helper method that ensures the client is sending a save with greater (or equal)
-// playtime than the existing save.
-//
-// Returns `nil` if the playtime is valid, otherwise returns an error indicating the issue.
-func validatePlaytime(systemData defs.SystemSaveData, oldSystem defs.SystemSaveData) error {
-	playtime, ok := systemData.GameStats.(map[string]any)["playTime"].(float64)
-	if !ok {
-		return ErrNoPlaytime
-	}
-
-	oldPlaytime, ok := oldSystem.GameStats.(map[string]any)["playTime"].(float64)
-	if !ok {
-		return ErrNoPlaytime
-	}
-
-	if playtime < oldPlaytime {
-		return ErrGreaterPlaytime
-	}
 	return nil
 }
 
-// Helper method for validating the game version and applied migrators
-//
-// Guard calls with `!defs.IsBeta` so this function is stripped from beta builds.
-//
-// Returns `nil` if the version and migrators are valid, otherwise returns an error indicating the issue.
-func validateSystemVersion(systemData defs.SystemSaveData, oldSystem defs.SystemSaveData) error {
-	minVerCmp, err := savedata.CompareGameVersion("1.12.0.10", systemData.GameVersion)
+// checkIncomingSystem validates an incoming system save against the stored
+// one. It checks (and on first save, stores) the trainer IDs, then runs
+// [validate.System] if a system save is already stored.
+func checkIncomingSystem(uuid []byte, next defs.SystemSaveData) error {
+	err := validateOrCreateIds(uuid, next)
 	if err != nil {
-		return fmt.Errorf("%w: %w", ErrVersionCompare, err)
-	}
-	if minVerCmp > 0 {
-		return ErrVersionTooLow
+		return err
 	}
 
-	saveVerCmp, err := savedata.CompareGameVersion(oldSystem.GameVersion, systemData.GameVersion)
+	prev, err := savedata.GetSystem(db.Store, uuid)
+	if errors.Is(err, savedata.ErrSaveNotExist) {
+		return nil
+	}
 	if err != nil {
-		return fmt.Errorf("%w: %w", ErrVersionCompare, err)
-	}
-	if saveVerCmp > 0 {
-		return ErrExistingVersionGreater
+		return fmt.Errorf("failed to retrieve playtime: %s", err)
 	}
 
-	if !savedata.ValidMigrators(systemData.AppliedMigrators, oldSystem.AppliedMigrators) {
-		return ErrMigratorsDesynced
+	return validate.System(prev, next)
+}
+
+// checkIncomingSession validates an incoming session against the one stored
+// in the same slot, running [validate.Session] if one exists.
+func checkIncomingSession(uuid []byte, slot int, next defs.SessionSaveData) error {
+	prev, err := savedata.GetSession(db.Store, uuid, slot)
+	if errors.Is(err, savedata.ErrSaveNotExist) {
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("failed to retrieve session save data: %s", err)
 	}
 
-	return nil
+	return validate.Session(prev, next)
 }
 
 func handleAccountInfo(w http.ResponseWriter, r *http.Request) {
@@ -308,17 +270,10 @@ func handleSession(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		existingSave, err := savedata.GetSession(db.Store, uuid, slot)
+		err = checkIncomingSession(uuid, slot, session)
 		if err != nil {
-			if !errors.Is(err, savedata.ErrSaveNotExist) {
-				httpError(w, r, fmt.Errorf("failed to retrieve session save data: %s", err), http.StatusInternalServerError)
-				return
-			}
-		} else {
-			if existingSave.Seed == session.Seed && existingSave.WaveIndex > session.WaveIndex {
-				httpError(w, r, fmt.Errorf("session out of date: existing wave index is greater"), http.StatusBadRequest)
-				return
-			}
+			httpError(w, r, err, statusFor(err))
+			return
 		}
 
 		err = savedata.UpdateSession(db.Store, uuid, slot, session)
@@ -409,45 +364,16 @@ func handleUpdateAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	code, err := validateOrCreateIds(uuid, data.System)
+	err = checkIncomingSystem(uuid, data.System)
 	if err != nil {
-		httpError(w, r, err, code)
+		httpError(w, r, err, statusFor(err))
 		return
 	}
 
-	oldSystem, err := savedata.GetSystem(db.Store, uuid)
+	err = checkIncomingSession(uuid, data.SessionSlotId, data.Session)
 	if err != nil {
-		if !errors.Is(err, savedata.ErrSaveNotExist) {
-			httpError(w, r, fmt.Errorf("failed to retrieve playtime: %s", err), http.StatusInternalServerError)
-			return
-		}
-	} else {
-		err = validatePlaytime(data.System, oldSystem)
-		if err != nil {
-			httpError(w, r, err, http.StatusBadRequest)
-			return
-		}
-
-		if !defs.IsBeta {
-			err = validateSystemVersion(data.System, oldSystem)
-			if err != nil {
-				httpError(w, r, err, http.StatusBadRequest)
-				return
-			}
-		}
-	}
-
-	existingSave, err := savedata.GetSession(db.Store, uuid, data.SessionSlotId)
-	if err != nil {
-		if !errors.Is(err, savedata.ErrSaveNotExist) {
-			httpError(w, r, fmt.Errorf("failed to retrieve session save data: %s", err), http.StatusInternalServerError)
-			return
-		}
-	} else {
-		if existingSave.Seed == data.Session.Seed && existingSave.WaveIndex > data.Session.WaveIndex {
-			httpError(w, r, fmt.Errorf("session out of date: existing wave index is greater"), http.StatusBadRequest)
-			return
-		}
+		httpError(w, r, err, statusFor(err))
+		return
 	}
 
 	err = savedata.Update(db.Store, uuid, data.SessionSlotId, data.Session)
@@ -509,7 +435,7 @@ func handleSystem(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		versionCmp, cmpErr := savedata.CompareGameVersion("1.12.0.10", save.GameVersion)
+		versionCmp, cmpErr := validate.CompareGameVersion(validate.MinGameVersion, save.GameVersion)
 		if cmpErr != nil {
 			httpError(w, r, fmt.Errorf("failed to compare versions: %s", cmpErr), http.StatusBadRequest)
 			return
@@ -532,31 +458,10 @@ func handleSystem(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		code, err := validateOrCreateIds(uuid, system)
+		err = checkIncomingSystem(uuid, system)
 		if err != nil {
-			httpError(w, r, err, code)
+			httpError(w, r, err, statusFor(err))
 			return
-		}
-
-		oldSystem, err := savedata.GetSystem(db.Store, uuid)
-		if err != nil {
-			if !errors.Is(err, savedata.ErrSaveNotExist) {
-				httpError(w, r, fmt.Errorf("failed to retrieve playtime: %s", err), http.StatusInternalServerError)
-				return
-			}
-		} else {
-			err = validatePlaytime(system, oldSystem)
-			if err != nil {
-				httpError(w, r, err, http.StatusBadRequest)
-				return
-			}
-			if !defs.IsBeta {
-				err = validateSystemVersion(system, oldSystem)
-				if err != nil {
-					httpError(w, r, err, http.StatusBadRequest)
-					return
-				}
-			}
 		}
 
 		err = savedata.UpdateSystem(db.Store, uuid, system)

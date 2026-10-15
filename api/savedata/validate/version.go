@@ -1,4 +1,11 @@
-package savedata
+/*
+ * SPDX-FileCopyrightText: 2024-2026 Pagefault Games
+ * SPDX-FileContributor: SirzBenjie
+ *
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+
+package validate
 
 import (
 	"fmt"
@@ -7,7 +14,11 @@ import (
 	"strings"
 )
 
-type VersionTuple []int
+// MinGameVersion is the oldest game version whose saves are accepted.
+// [Version] rejects saves below it with [ErrVersionTooLow].
+const MinGameVersion = "1.12.0.10"
+
+type versionTuple []int
 
 // CompareGameVersion compares two game version strings and returns
 //   - `-1` if left < right
@@ -27,24 +38,13 @@ func CompareGameVersion(left string, right string) (int, error) {
 	return slices.Compare(leftTuple, rightTuple), nil
 }
 
-// Confirm that every migrator existing in the old save exists in the new save with identical timestamp
-func ValidMigrators(new map[string]int, old map[string]int) bool {
-	for migrator, timestamp := range old {
-		newTimestamp := new[migrator]
-		if newTimestamp != timestamp {
-			return false
-		}
-	}
-	return true
-}
-
-func parseGameVersion(version string) (VersionTuple, error) {
+func parseGameVersion(version string) (versionTuple, error) {
 	parts := strings.Split(version, ".")
 	if len(parts) < 3 || len(parts) > 4 {
 		return nil, fmt.Errorf("invalid version format: %q", version)
 	}
 
-	tuple := make(VersionTuple, 0, len(parts))
+	tuple := make(versionTuple, 0, len(parts))
 	for _, part := range parts {
 		if part == "" {
 			return nil, fmt.Errorf("invalid version format: %q", version)
@@ -61,7 +61,7 @@ func parseGameVersion(version string) (VersionTuple, error) {
 	return trimTrailingZeros(tuple), nil
 }
 
-func trimTrailingZeros(tuple VersionTuple) VersionTuple {
+func trimTrailingZeros(tuple versionTuple) versionTuple {
 	trimmed := len(tuple)
 	for trimmed > 0 && tuple[trimmed-1] == 0 {
 		trimmed--
