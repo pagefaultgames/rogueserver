@@ -64,6 +64,7 @@ type StarterEntry struct {
 	PassiveAttr     int         `json:"passiveAttr"`
 	ValueReduction  int         `json:"valueReduction"`
 	ClassicWinCount int         `json:"classicWinCount"`
+	Pity            []int       `json:"pity"`
 }
 
 type StarterMoveData map[int]interface{}
